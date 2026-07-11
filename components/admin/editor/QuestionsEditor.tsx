@@ -2,7 +2,6 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   Question,
@@ -27,6 +26,7 @@ import {
   TrashIcon,
 } from './ui';
 import ThemePanel from './ThemePanel';
+import TopBar from './TopBar';
 
 type Rail = 'questions' | 'categories' | 'sections' | 'theme' | 'page';
 type Section = 'header' | 'questions' | 'progress' | 'footer';
@@ -61,6 +61,27 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [panelWidth, setPanelWidth] = useState(330);
+
+  // Drag the divider next to the questions list to widen/narrow the panel.
+  function startPanelResize(e: React.MouseEvent) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+    function onMove(ev: MouseEvent) {
+      setPanelWidth(Math.min(640, Math.max(240, startWidth + ev.clientX - startX)));
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
 
   const page = config.questionsPage!;
   const q = config.questions.find((x) => x.id === selQ) ?? config.questions[0];
@@ -175,57 +196,15 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-gray-100">
-      {/* Top bar */}
-      <div className="flex flex-none items-center justify-between border-b border-gray-200 bg-white px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href="/admin"
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50"
-            aria-label="Back to dashboard"
-          >
-            ‹
-          </Link>
-          <span className="truncate text-[15px] font-medium">{config.title}</span>
-        </div>
-
-        <div className="hidden items-center gap-2 rounded-full border border-gray-200 px-4 py-1.5 text-sm md:flex">
-          <span className="text-muted">Questions</span>
-          <span className="text-muted">›</span>
-          <span className="font-semibold">Questions Flow</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="hidden rounded-lg border border-gray-200 p-0.5 sm:flex">
-            <button
-              onClick={() => setDevice('desktop')}
-              aria-label="Desktop preview"
-              className={`rounded-md px-2 py-1 ${device === 'desktop' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-                <rect x="3" y="5" width="18" height="12" rx="1.5" />
-                <path d="M9 20h6M12 17v3" strokeLinecap="round" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setDevice('mobile')}
-              aria-label="Mobile preview"
-              className={`rounded-md px-2 py-1 ${device === 'mobile' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-                <rect x="8" y="3" width="8" height="18" rx="1.5" />
-                <path d="M11.5 18h1" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-          <button
-            onClick={save}
-            disabled={!dirty || saving}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-40"
-          >
-            {saving ? 'Saving…' : 'Save →'}
-          </button>
-        </div>
-      </div>
+      <TopBar
+        title={config.title}
+        content="questions"
+        device={device}
+        setDevice={setDevice}
+        dirty={dirty}
+        saving={saving}
+        onSave={save}
+      />
 
       <div className="flex min-h-0 flex-1">
         {/* Icon rail */}
@@ -269,8 +248,8 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
           </RailButton>
         </div>
 
-        {/* Panel column */}
-        <div className="flex w-[330px] flex-none flex-col border-r border-gray-200 bg-white">
+        {/* Panel column (resizable via the divider on its right edge) */}
+        <div className="flex flex-none flex-col bg-white" style={{ width: panelWidth }}>
           {rail === 'questions' && (
             <>
               <p className="flex-none px-5 pb-2 pt-4 text-lg font-semibold">Questions</p>
@@ -421,6 +400,13 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
             </div>
           )}
         </div>
+
+        {/* Resize handle */}
+        <div
+          onMouseDown={startPanelResize}
+          title="Drag to resize"
+          className="w-1 flex-none cursor-col-resize border-l border-gray-200 transition hover:bg-primary/30 active:bg-primary/40"
+        />
 
         {/* Preview */}
         <div className="min-w-0 flex-1 overflow-y-auto p-5">

@@ -2,7 +2,17 @@
 
 import { usePathname } from 'next/navigation';
 
-export default function ShareBar({ text }: { text: string }) {
+export default function ShareBar({
+  text,
+  show = { facebook: true, x: true, linkedin: true },
+  background = '#152042',
+  linksColor = '#ffffff',
+}: {
+  text: string;
+  show?: { facebook: boolean; x: boolean; linkedin: boolean };
+  background?: string;
+  linksColor?: string;
+}) {
   const pathname = usePathname();
   const url = typeof window !== 'undefined' ? `${window.location.origin}/` : '/';
   const enc = encodeURIComponent(url);
@@ -37,12 +47,19 @@ export default function ShareBar({ text }: { text: string }) {
     },
   ];
   void pathname;
+  const visible = links.filter(
+    (l) => (l.key === 'facebook' && show.facebook) || (l.key === 'x' && show.x) || (l.key === 'linkedin' && show.linkedin)
+  );
 
   return (
-    <section className="bg-navy px-6 py-10">
-      <p className="text-center text-xl font-semibold text-white md:text-2xl">{text}</p>
-      <div className="mt-6 flex items-center justify-center gap-8 text-white">
-        {links.map((l) => (
+    <section className="px-6 py-10" style={{ backgroundColor: background }}>
+      <p
+        className="text-center text-xl font-semibold md:text-2xl"
+        style={{ color: linksColor }}
+        dangerouslySetInnerHTML={{ __html: text }}
+      />
+      <div className="mt-6 flex items-center justify-center gap-8" style={{ color: linksColor }}>
+        {visible.map((l) => (
           <a key={l.key} href={l.href} target="_blank" rel="noopener noreferrer" aria-label={l.key} className="hover:opacity-75">
             {l.icon}
           </a>

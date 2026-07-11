@@ -17,6 +17,7 @@ import {
   TrashIcon,
 } from './ui';
 import ThemePanel from './ThemePanel';
+import TopBar from './TopBar';
 
 type Rail = 'sections' | 'theme' | 'page';
 type Section = 'header' | 'leadform' | 'banner' | 'categories' | 'cta' | 'footer';
@@ -97,68 +98,15 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-gray-100">
-      {/* Top bar */}
-      <div className="flex flex-none items-center justify-between border-b border-gray-200 bg-white px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href="/admin"
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-md border border-gray-200 hover:bg-gray-50"
-            aria-label="Back to dashboard"
-          >
-            ‹
-          </Link>
-          <span className="truncate text-[15px] font-medium">{config.title}</span>
-        </div>
-
-        <div className="hidden items-center gap-2 rounded-full border border-gray-200 px-4 py-1.5 text-sm md:flex">
-          <span className="text-muted">Landing Pages</span>
-          <span className="text-muted">›</span>
-          <span className="font-semibold">Main Landing Page</span>
-          <span className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Home page
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="hidden rounded-lg border border-gray-200 p-0.5 sm:flex">
-            <button
-              onClick={() => setDevice('desktop')}
-              aria-label="Desktop preview"
-              className={`rounded-md px-2 py-1 ${device === 'desktop' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-                <rect x="3" y="5" width="18" height="12" rx="1.5" />
-                <path d="M9 20h6M12 17v3" strokeLinecap="round" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setDevice('mobile')}
-              aria-label="Mobile preview"
-              className={`rounded-md px-2 py-1 ${device === 'mobile' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
-                <rect x="8" y="3" width="8" height="18" rx="1.5" />
-                <path d="M11.5 18h1" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-          <Link
-            href="/"
-            target="_blank"
-            className="hidden rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm text-muted hover:bg-gray-50 sm:block"
-            title="Open live page"
-          >
-            ▶
-          </Link>
-          <button
-            onClick={save}
-            disabled={!dirty || saving}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition hover:brightness-110 disabled:opacity-40"
-          >
-            {saving ? 'Saving…' : 'Save →'}
-          </button>
-        </div>
-      </div>
+      <TopBar
+        title={config.title}
+        content="landing"
+        device={device}
+        setDevice={setDevice}
+        dirty={dirty}
+        saving={saving}
+        onSave={save}
+      />
 
       <div className="flex min-h-0 flex-1">
         {/* Icon rail */}

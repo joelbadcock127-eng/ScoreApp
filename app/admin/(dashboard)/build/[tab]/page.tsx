@@ -3,6 +3,7 @@ import { getConfig } from '@/lib/server/config';
 import BuildScreen from '@/components/admin/BuildScreen';
 import QuestionsEditor from '@/components/admin/editor/QuestionsEditor';
 import LandingEditor from '@/components/admin/editor/LandingEditor';
+import ResultsEditor from '@/components/admin/editor/ResultsEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,5 +19,9 @@ export default async function BuildPage({ params }: { params: { tab: string } })
     const config = await getConfig();
     return <LandingEditor initialConfig={config} />;
   }
-  return <BuildScreen tab={params.tab as 'results' | 'pdf'} />;
+  if (params.tab === 'results') {
+    const config = await getConfig();
+    return <ResultsEditor initialConfig={config} />;
+  }
+  return <BuildScreen tab="pdf" />;
 }

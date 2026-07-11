@@ -9,6 +9,7 @@ import {
   QuestionOption,
   QuestionType,
   QuestionsPageConfig,
+  ResultsSectionKey,
   Tier,
 } from '@/lib/types';
 
@@ -157,6 +158,92 @@ export async function PUT(req: NextRequest) {
       },
       progress: { show: Boolean(p.progress?.show) },
       footer: { show: Boolean(p.footer?.show) },
+    };
+  }
+
+  if (body.results && typeof body.results === 'object') {
+    const res = body.results;
+    const cur = config.results;
+    const str = (v: unknown, fallback: string, len = 4000) =>
+      v != null ? sanitizeRichText(String(v)).slice(0, len) : fallback;
+    const strArr = (v: unknown, fallback: string[], len = 4000) =>
+      Array.isArray(v) ? v.map((x) => sanitizeRichText(String(x)).slice(0, len)).slice(0, 12) : fallback;
+    const tierRecord = (v: unknown, fallback: Record<string, { headline: string; body: string[] }>) => {
+      if (!v || typeof v !== 'object') return fallback;
+      const out: Record<string, { headline: string; body: string[] }> = {};
+      for (const [k, val] of Object.entries(v as Record<string, { headline?: string; body?: string[] }>)) {
+        out[k.slice(0, 60)] = { headline: str(val?.headline, '', 1000), body: strArr(val?.body, []) };
+      }
+      return out;
+    };
+    const textRecord = (v: unknown, fallback: Record<string, Record<string, string>>) => {
+      if (!v || typeof v !== 'object') return fallback;
+      const out: Record<string, Record<string, string>> = {};
+      for (const [cat, tiers] of Object.entries(v as Record<string, Record<string, string>>)) {
+        out[cat.slice(0, 60)] = {};
+        for (const [t, text] of Object.entries(tiers ?? {})) out[cat.slice(0, 60)][t.slice(0, 60)] = str(text, '');
+      }
+      return out;
+    };
+    config.results = {
+      ...cur,
+      thanksPrefix: str(res.thanksPrefix, cur.thanksPrefix, 300),
+      overallHeading: str(res.overallHeading, cur.overallHeading, 300),
+      tierIntros: tierRecord(res.tierIntros, cur.tierIntros),
+      emailedNote: str(res.emailedNote, cur.emailedNote, 300),
+      changeEmailLabel: str(res.changeEmailLabel, cur.changeEmailLabel, 120),
+      categoryHeading: str(res.categoryHeading, cur.categoryHeading, 300),
+      categorySub: strArr(res.categorySub, cur.categorySub, 600),
+      categoryTexts: textRecord(res.categoryTexts, cur.categoryTexts),
+      cta: res.cta
+        ? {
+            heading: str(res.cta.heading, cur.cta.heading, 300),
+            leftTitle: str(res.cta.leftTitle, cur.cta.leftTitle, 300),
+            leftBody: str(res.cta.leftBody, cur.cta.leftBody),
+            leftButton: str(res.cta.leftButton, cur.cta.leftButton, 120),
+            rightTitle: str(res.cta.rightTitle, cur.cta.rightTitle, 300),
+            rightBody: str(res.cta.rightBody, cur.cta.rightBody),
+            rightButton: str(res.cta.rightButton, cur.cta.rightButton, 120),
+          }
+        : cur.cta,
+      share: str(res.share, cur.share, 600),
+      changeDetails: res.changeDetails
+        ? {
+            heading: String(res.changeDetails.heading ?? cur.changeDetails.heading).slice(0, 200),
+            subheading: String(res.changeDetails.subheading ?? cur.changeDetails.subheading).slice(0, 300),
+            submitLabel: String(res.changeDetails.submitLabel ?? cur.changeDetails.submitLabel).slice(0, 60),
+          }
+        : cur.changeDetails,
+    };
+  }
+
+  if (body.resultsPage && typeof body.resultsPage === 'object') {
+    const p = body.resultsPage;
+    const SECTIONS = ['speedChart', 'categoryScores', 'cta', 'share'];
+    const HIDEABLE = ['header', 'footer', ...SECTIONS];
+    config.resultsPage = {
+      order: (Array.isArray(p.order)
+        ? p.order.filter((k: string, i: number, a: string[]) => SECTIONS.includes(k) && a.indexOf(k) === i)
+        : SECTIONS) as ResultsSectionKey[],
+      hidden: Array.isArray(p.hidden) ? p.hidden.filter((k: string) => HIDEABLE.includes(k)) : [],
+      speedChart: {
+        chartPosition: p.speedChart?.chartPosition === 'left' ? 'left' : 'right',
+        showOverall: Boolean(p.speedChart?.showOverall),
+        scoreFormat: p.speedChart?.scoreFormat === 'outof100' ? 'outof100' : 'percent',
+        showTiers: Boolean(p.speedChart?.showTiers),
+      },
+      categories: {
+        itemsPerRow: num(p.categories?.itemsPerRow, 2, 1, 4),
+        showScores: Boolean(p.categories?.showScores),
+        showTier: Boolean(p.categories?.showTier),
+      },
+      share: {
+        facebook: Boolean(p.share?.facebook),
+        twitter: Boolean(p.share?.twitter),
+        linkedin: Boolean(p.share?.linkedin),
+        background: color(p.share?.background, '#152042'),
+        linksColor: color(p.share?.linksColor, '#ffffff'),
+      },
     };
   }
 

@@ -205,6 +205,13 @@ export const defaultConfig: ScorecardConfig = {
     progress: { show: true },
     footer: { show: false },
   },
+  resultsPage: {
+    order: ['speedChart', 'categoryScores', 'cta', 'share'],
+    hidden: [],
+    speedChart: { chartPosition: 'right', showOverall: true, scoreFormat: 'percent', showTiers: true },
+    categories: { itemsPerRow: 2, showScores: true, showTier: true },
+    share: { facebook: true, twitter: true, linkedin: true, background: '#152042', linksColor: '#ffffff' },
+  },
   landing: {
     heroImage: '/images/hero-report.png',
     imagePosition: 'right',

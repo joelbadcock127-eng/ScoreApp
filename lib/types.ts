@@ -110,6 +110,7 @@ export interface ScorecardConfig {
   branding: Branding;
   pdf: PdfConfig;
   questionsPage?: QuestionsPageConfig;
+  resultsPage?: ResultsPageConfig;
   landing: {
     heroImage?: string;
     imagePosition?: 'left' | 'right';
@@ -163,6 +164,32 @@ export interface ScorecardConfig {
       subheading: string;
       submitLabel: string;
     };
+  };
+}
+
+// Results page layout/styling, edited via the results editor Sections rail.
+export type ResultsSectionKey = 'speedChart' | 'categoryScores' | 'cta' | 'share';
+
+export interface ResultsPageConfig {
+  order: ResultsSectionKey[]; // middle sections, in render order (removed = deleted)
+  hidden: string[]; // section keys currently hidden (header/footer included)
+  speedChart: {
+    chartPosition: 'left' | 'right';
+    showOverall: boolean;
+    scoreFormat: 'percent' | 'outof100';
+    showTiers: boolean;
+  };
+  categories: {
+    itemsPerRow: number;
+    showScores: boolean;
+    showTier: boolean;
+  };
+  share: {
+    facebook: boolean;
+    twitter: boolean;
+    linkedin: boolean;
+    background: string;
+    linksColor: string;
   };
 }
 
