@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const form = await req.formData().catch(() => null);
   const kind = form?.get('kind');
   const file = form?.get('file');
-  if (!form || (kind !== 'logo' && kind !== 'icon') || !(file instanceof File)) {
+  if (!form || (kind !== 'logo' && kind !== 'icon' && kind !== 'asset') || !(file instanceof File)) {
     return NextResponse.json({ error: 'Invalid upload' }, { status: 400 });
   }
   if (file.size > 4 * 1024 * 1024) {
@@ -46,9 +46,13 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const { data } = sb.storage.from(BUCKET).getPublicUrl(path);
-  const config = await getConfig();
-  if (kind === 'logo') config.branding.logoUrl = data.publicUrl;
-  else config.branding.iconUrl = data.publicUrl;
-  await saveConfig(config);
+  if (kind !== 'asset') {
+    // Generic assets are referenced from wherever they were uploaded (e.g. the
+    // landing editor); only logo/icon update the branding config directly.
+    const config = await getConfig();
+    if (kind === 'logo') config.branding.logoUrl = data.publicUrl;
+    else config.branding.iconUrl = data.publicUrl;
+    await saveConfig(config);
+  }
   return NextResponse.json({ ok: true, url: data.publicUrl });
 }

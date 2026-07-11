@@ -4,6 +4,9 @@ import { getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { Lead } from '@/lib/types';
 import Donut from '@/components/Donut';
+import LeadsChart from '@/components/admin/LeadsChart';
+import TierFace, { faceForTierIndex } from '@/components/TierFace';
+import { tierFor } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +22,8 @@ export default async function OverviewPage() {
   const sb = supabaseAdmin();
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
-  const [{ data: leads }, { count: visitCount }] = await Promise.all([
+  const chartSince = new Date(Date.now() - 365 * 24 * 3600 * 1000).toISOString();
+  const [{ data: leads }, { count: visitCount }, { data: chartLeads }] = await Promise.all([
     sb
       .from('leads')
       .select('id, first_name, last_name, email, overall_percent, status, created_at')
@@ -27,6 +31,7 @@ export default async function OverviewPage() {
       .order('created_at', { ascending: false })
       .returns<Lead[]>(),
     sb.from('visits').select('*', { count: 'exact', head: true }).gte('created_at', since),
+    sb.from('leads').select('created_at').gte('created_at', chartSince).returns<{ created_at: string }[]>(),
   ]);
 
   const all = leads ?? [];
@@ -34,18 +39,6 @@ export default async function OverviewPage() {
   const finished = all.filter((l) => l.status === 'completed').length;
   const visits = visitCount ?? 0;
   const conversion = visits > 0 ? Math.min(100, Math.round((finished / visits) * 100)) : 0;
-
-  // Daily leads for the chart (last 30 days)
-  const days: { label: string; count: number }[] = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(Date.now() - i * 24 * 3600 * 1000);
-    const key = d.toISOString().slice(0, 10);
-    days.push({
-      label: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
-      count: all.filter((l) => l.created_at.slice(0, 10) === key).length,
-    });
-  }
-  const maxCount = Math.max(2, ...days.map((d) => d.count));
 
   const h = headers();
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
@@ -114,30 +107,8 @@ export default async function OverviewPage() {
         </div>
       </div>
 
-      {/* Daily leads chart */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Daily Leads</p>
-        </div>
-        <div className="mt-4 flex h-40 items-end gap-[3px]">
-          {days.map((d, i) => (
-            <div key={i} className="group relative flex-1">
-              <div
-                className="w-full rounded-t bg-primary/80 transition group-hover:bg-primary"
-                style={{ height: `${Math.max(3, (d.count / maxCount) * 150)}px`, opacity: d.count ? 1 : 0.15 }}
-              />
-              <div className="pointer-events-none absolute -top-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded bg-navy px-2 py-0.5 text-xs text-white group-hover:block">
-                {d.label}: {d.count}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-2 flex justify-between text-xs text-muted">
-          <span>{days[0].label}</span>
-          <span>{days[14].label}</span>
-          <span>{days[29].label}</span>
-        </div>
-      </div>
+      {/* Leads chart with daily/weekly/monthly toggle */}
+      <LeadsChart createdDates={(chartLeads ?? []).map((l) => l.created_at)} />
 
       {/* Recent leads */}
       <div className="mt-6 rounded-xl border border-gray-200 bg-white">
@@ -158,7 +129,20 @@ export default async function OverviewPage() {
                 {l.first_name} {l.last_name}
               </span>
               <span className="text-sm text-muted">{l.email}</span>
-              <span className="font-medium">{l.overall_percent != null ? `${l.overall_percent}%` : '—'}</span>
+              {l.overall_percent != null ? (
+                (() => {
+                  const t = tierFor(l.overall_percent, config.tiers);
+                  const face = faceForTierIndex(config.tiers.findIndex((x) => x.key === t.key), config.tiers.length);
+                  return (
+                    <span className="flex items-center gap-2 font-semibold" style={{ color: t.color }}>
+                      <TierFace kind={face} color={t.color} />
+                      {l.overall_percent}%
+                    </span>
+                  );
+                })()
+              ) : (
+                <span className="font-medium">—</span>
+              )}
             </Link>
           ))}
           {all.length === 0 && <p className="border-t border-gray-100 px-6 py-6 text-muted">No leads yet.</p>}

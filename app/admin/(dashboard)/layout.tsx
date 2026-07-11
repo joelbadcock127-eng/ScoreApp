@@ -3,33 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isAdmin } from '@/lib/server/auth';
 import { getConfig } from '@/lib/server/config';
-
-const groups: { heading: string | null; items: { href: string; label: string }[] }[] = [
-  {
-    heading: null,
-    items: [
-      { href: '/admin', label: 'Overview' },
-      { href: '/admin/leads', label: 'Leads' },
-    ],
-  },
-  {
-    heading: 'Build',
-    items: [
-      { href: '/admin/build/landing', label: 'Landing Page' },
-      { href: '/admin/build/questions', label: 'Questions' },
-      { href: '/admin/build/results', label: 'Results Page' },
-      { href: '/admin/build/pdf', label: 'PDF Reports' },
-    ],
-  },
-  {
-    heading: 'Settings',
-    items: [
-      { href: '/admin/settings/branding', label: 'Branding' },
-      { href: '/admin/settings/score-tiers', label: 'Score Tiers' },
-      { href: '/admin/settings/lead-form', label: 'Lead Form' },
-    ],
-  },
-];
+import AdminNav, { AdminNavMobile } from '@/components/admin/AdminNav';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   if (!isAdmin()) redirect('/admin/login');
@@ -41,28 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <img src={config.branding.iconUrl} alt="" className="h-9 w-9" />
           <span className="text-[15px] font-semibold">{config.title}</span>
         </Link>
-        <nav className="mt-6 space-y-6">
-          {groups.map((g) => (
-            <div key={g.heading ?? 'main'}>
-              {g.heading && (
-                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
-                  {g.heading}
-                </p>
-              )}
-              <div className="space-y-0.5">
-                {g.items.map((n) => (
-                  <Link
-                    key={n.href}
-                    href={n.href}
-                    className="block rounded-md px-3 py-2 text-[15px] text-ink hover:bg-gray-100"
-                  >
-                    {n.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
+        <AdminNav />
         <div className="mt-8 border-t border-gray-200 pt-4">
           <Link
             href="/"
@@ -75,13 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
       <div className="min-w-0 flex-1">
         <div className="overflow-x-auto border-b border-gray-200 bg-white px-6 py-3 md:hidden">
-          <nav className="flex gap-4 whitespace-nowrap text-sm">
-            {groups.flatMap((g) => g.items).map((n) => (
-              <Link key={n.href} href={n.href} className="text-ink hover:text-primary">
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+          <AdminNavMobile />
         </div>
         <div className="p-6 md:p-10">{children}</div>
       </div>

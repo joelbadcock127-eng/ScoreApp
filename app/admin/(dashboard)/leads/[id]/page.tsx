@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { tierFor } from '@/lib/scoring';
+import { answerLabel, tierFor } from '@/lib/scoring';
 import { CategoryScore, Lead } from '@/lib/types';
 import Donut from '@/components/Donut';
 
@@ -136,21 +136,13 @@ export default async function LeadDetailPage({
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              {config.questions.map((q, i) => {
-                const v = lead.answers?.[q.id];
-                const label =
-                  v === q.min ? q.labels.left : v === q.max ? q.labels.right : v === Math.ceil((q.min + q.max) / 2) ? q.labels.center : '';
-                return (
-                  <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-5">
-                    <p className="text-sm text-muted">Question {i + 1}</p>
-                    <p className="mt-1 font-medium">{q.text}</p>
-                    <p className="mt-2 text-primary">
-                      {v != null ? `${v} / ${q.max}` : 'Not answered'}
-                      {label && <span className="ml-2 text-muted">— {label}</span>}
-                    </p>
-                  </div>
-                );
-              })}
+              {config.questions.map((q, i) => (
+                <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-5">
+                  <p className="text-sm text-muted">Question {i + 1}</p>
+                  <p className="mt-1 font-medium">{q.text}</p>
+                  <p className="mt-2 text-primary">{answerLabel(q, lead.answers?.[q.id])}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>

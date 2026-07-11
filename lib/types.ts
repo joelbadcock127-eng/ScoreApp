@@ -16,19 +16,36 @@ export interface LeadFormField {
   enabled: boolean;
 }
 
+export type QuestionType = 'linear' | 'yesno' | 'buttons' | 'checkboxes' | 'radio' | 'text';
+
+export interface QuestionOption {
+  label: string;
+  score: number;
+}
+
 export interface Question {
   id: string;
   category: string;
-  text: string;
+  text: string; // plain text fallback
+  textHtml?: string; // sanitized rich text (b/i/u only)
+  type?: QuestionType; // defaults to 'linear'
+  instruction?: string;
+  showInstruction?: boolean;
+  required?: boolean;
   min: number;
   max: number;
   start: number;
   labels: { left: string; center: string; right: string };
+  options?: QuestionOption[]; // for choice types
 }
+
+// Answers: linear => number score, choice => option index, checkboxes => indices, text => string
+export type AnswerValue = number | number[] | string;
 
 export interface Category {
   key: string;
   label: string;
+  description?: string;
 }
 
 export interface TierContent {
@@ -41,6 +58,23 @@ export interface Branding {
   iconUrl: string;
   primaryColor: string;
   secondaryColor: string;
+}
+
+export interface ThemeConfig {
+  backgroundColor: string;
+  headingColor: string;
+  bodyColor: string;
+  headingFont: string;
+  bodyFont: string;
+  headingSize: number;
+  bodySize: number;
+}
+
+export interface QuestionsPageConfig {
+  header: { show: boolean; logoMaxWidth: number; alignment: 'left' | 'center' | 'right' };
+  questions: { align: 'left' | 'center'; showBack: boolean; showCategoryName: boolean };
+  progress: { show: boolean };
+  footer: { show: boolean };
 }
 
 export interface PdfCategoryContent {
@@ -59,26 +93,36 @@ export interface PdfConfig {
   closing: string[];
 }
 
+export interface LandingConfig {
+  header: { logoMaxWidth: number; alignment: 'left' | 'center' | 'right' };
+  heroTitle: string; // sanitized rich text allowed
+  heroSubtitle: string;
+  heroBody: string;
+  heroBullets: string[];
+  heroCta: string;
+  heroImage: string;
+  heroImagePosition: 'left' | 'right';
+  bannerBackground: string; // css color or 'transparent'
+  howItWorksLabel: string;
+  howItWorksTitle: string;
+  howItWorksBody: string;
+  categoriesPerRow: 1 | 2 | 4;
+  categoryCards: { key: string; title: string; body: string; image: string }[];
+  bottomTitle: string;
+  bottomBody: string;
+  bottomCta: string;
+  bottomNote: string;
+  footer: { show: boolean };
+}
+
 export interface ScorecardConfig {
   title: string;
   copyright: string;
   branding: Branding;
+  theme: ThemeConfig;
+  questionsPage: QuestionsPageConfig;
   pdf: PdfConfig;
-  landing: {
-    heroTitle: string;
-    heroSubtitle: string;
-    heroBody: string;
-    heroBullets: string[];
-    heroCta: string;
-    howItWorksLabel: string;
-    howItWorksTitle: string;
-    howItWorksBody: string;
-    categoryCards: { key: string; title: string; body: string; image: string }[];
-    bottomTitle: string;
-    bottomBody: string;
-    bottomCta: string;
-    bottomNote: string;
-  };
+  landing: LandingConfig;
   leadForm: {
     heading: string;
     fields: LeadFormField[];
@@ -130,7 +174,7 @@ export interface Lead {
   email: string;
   business: string;
   contact_opt_in: boolean;
-  answers: Record<string, number>;
+  answers: Record<string, AnswerValue>;
   score_total: number | null;
   score_max: number | null;
   overall_percent: number | null;

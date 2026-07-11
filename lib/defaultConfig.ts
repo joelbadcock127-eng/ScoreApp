@@ -11,6 +11,21 @@ export const defaultConfig: ScorecardConfig = {
     primaryColor: '#1c78fe',
     secondaryColor: '#152042',
   },
+  theme: {
+    backgroundColor: '#ffffff',
+    headingColor: '#0c0d0d',
+    bodyColor: '#616366',
+    headingFont: 'Inter',
+    bodyFont: 'Inter',
+    headingSize: 48,
+    bodySize: 16,
+  },
+  questionsPage: {
+    header: { show: true, logoMaxWidth: 250, alignment: 'center' },
+    questions: { align: 'center', showBack: true, showCategoryName: false },
+    progress: { show: true },
+    footer: { show: false },
+  },
   pdf: {
     coverTitle: 'The AI Opportunity Assessment Report',
     howToReadTitle: 'How to Read Your AI Opportunity Report',
@@ -192,6 +207,7 @@ export const defaultConfig: ScorecardConfig = {
     ],
   },
   landing: {
+    header: { logoMaxWidth: 250, alignment: 'center' },
     heroTitle: 'Identify your biggest AI wins in minutes',
     heroSubtitle: 'Answer 21 questions and we’ll send you a personalised report',
     heroBody:
@@ -202,8 +218,12 @@ export const defaultConfig: ScorecardConfig = {
       'Receive customised results instantly',
     ],
     heroCta: 'Take the Scorecard',
+    heroImage: '/images/hero-report.png',
+    heroImagePosition: 'right',
+    bannerBackground: 'transparent',
     howItWorksLabel: 'How it works',
     howItWorksTitle: 'Assess Your Business in Four Key Areas',
+    categoriesPerRow: 2,
     howItWorksBody:
       'AI adoption is moving fast. Almost 60% of small businesses are now reported to be using AI, more than double the level reported in 2025. This assessment shows where AI could give your business a practical edge before competitors use it to reply faster, follow up better, save time and look more organised. Get clear, tailored feedback across four key areas: Marketing & Sales, People, Finance and Systems.',
     categoryCards: [
@@ -237,6 +257,7 @@ export const defaultConfig: ScorecardConfig = {
       'Find your business’s most valuable AI opportunity in under 3 minutes. Get a tailored, practical results you can act on immediately.',
     bottomCta: 'Get Started',
     bottomNote: 'It’s free and only takes 2 minutes',
+    footer: { show: true },
   },
   leadForm: {
     heading: 'Enter your details below to start the scorecard',

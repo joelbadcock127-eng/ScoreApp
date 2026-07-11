@@ -16,11 +16,11 @@ const TAB_META: Record<
   pdf: { group: 'PDF Reports', pageName: 'Main Report', src: '/api/report/preview?tier=medium', badge: 'DEFAULT' },
 };
 
-const CONTENT_RAIL: { tab: Tab; label: string }[] = [
-  { tab: 'landing', label: 'Landing Pages' },
-  { tab: 'questions', label: 'Questions' },
-  { tab: 'results', label: 'Result Pages' },
-  { tab: 'pdf', label: 'PDF Reports' },
+const CONTENT_RAIL: { href: string; label: string; tab?: Tab }[] = [
+  { href: '/admin/editor/landing', label: 'Landing Pages' },
+  { href: '/admin/editor/questions', label: 'Questions' },
+  { href: '/admin/build/results', label: 'Result Pages', tab: 'results' },
+  { href: '/admin/build/pdf', label: 'PDF Reports', tab: 'pdf' },
 ];
 
 // ScoreApp-style build screen: top bar with a centered dropdown tab,
@@ -75,10 +75,10 @@ export default function BuildScreen({ tab }: { tab: Tab }) {
                 </p>
                 {CONTENT_RAIL.map((c) => (
                   <button
-                    key={c.tab}
+                    key={c.href}
                     onClick={() => {
                       setMenuOpen(false);
-                      router.push(`/admin/build/${c.tab}`);
+                      router.push(c.href);
                     }}
                     className={`block w-full rounded-md px-2 py-2 text-left text-sm ${
                       c.tab === tab ? 'bg-gray-100 font-medium' : 'hover:bg-gray-50'

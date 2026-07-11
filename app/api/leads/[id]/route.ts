@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/server/config';
-import { computeScores } from '@/lib/scoring';
+import { computeScores, questionType } from '@/lib/scoring';
+import { AnswerValue } from '@/lib/types';
 import { supabaseAdmin } from '@/lib/server/supabase';
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
@@ -19,13 +20,32 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
   if (body.action === 'complete') {
     const config = await getConfig();
-    const answers: Record<string, number> = {};
+    const answers: Record<string, AnswerValue> = {};
     for (const q of config.questions) {
-      const v = Number((body.answers ?? {})[q.id]);
-      if (!Number.isInteger(v) || v < q.min || v > q.max) {
-        return NextResponse.json({ error: `Missing answer for ${q.id}` }, { status: 400 });
+      const raw = (body.answers ?? {})[q.id];
+      const type = questionType(q);
+      const required = q.required !== false;
+      if (type === 'linear') {
+        const v = Number(raw);
+        if (!Number.isInteger(v) || v < q.min || v > q.max) {
+          if (required) return NextResponse.json({ error: `Missing answer for ${q.id}` }, { status: 400 });
+          continue;
+        }
+        answers[q.id] = v;
+      } else if (type === 'text') {
+        if (typeof raw === 'string' && raw.trim()) answers[q.id] = String(raw).slice(0, 2000);
+        else if (required && !(typeof raw === 'string')) answers[q.id] = '';
+      } else if (type === 'checkboxes') {
+        const arr = Array.isArray(raw) ? raw.map(Number).filter((i) => Number.isInteger(i) && i >= 0 && i < (q.options ?? []).length) : [];
+        answers[q.id] = arr;
+      } else {
+        const idx = Number(raw);
+        if (!Number.isInteger(idx) || idx < 0 || idx >= (q.options ?? []).length) {
+          if (required) return NextResponse.json({ error: `Missing answer for ${q.id}` }, { status: 400 });
+          continue;
+        }
+        answers[q.id] = idx;
       }
-      answers[q.id] = v;
     }
     const { categoryScores, score_total, score_max, overall_percent } = computeScores(config, answers);
     const duration = Number(body.duration_seconds);

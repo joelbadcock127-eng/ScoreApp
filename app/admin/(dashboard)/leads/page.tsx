@@ -1,10 +1,12 @@
 import { supabaseAdmin } from '@/lib/server/supabase';
+import { getConfig } from '@/lib/server/config';
 import { Lead } from '@/lib/types';
 import LeadRow from '@/components/admin/LeadRow';
 
 export const dynamic = 'force-dynamic';
 
 export default async function LeadsPage({ searchParams }: { searchParams: { q?: string } }) {
+  const config = await getConfig();
   const sb = supabaseAdmin();
   let query = sb
     .from('leads')
@@ -56,7 +58,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: { q?: 
             </thead>
             <tbody>
               {leads.map((l) => (
-                <LeadRow key={l.id} lead={l} />
+                <LeadRow key={l.id} lead={l} tiers={config.tiers} />
               ))}
               {leads.length === 0 && (
                 <tr>

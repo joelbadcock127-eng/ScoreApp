@@ -1,7 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Lead } from '@/lib/types';
+import { Lead, Tier } from '@/lib/types';
+import { tierFor } from '@/lib/scoring';
+import TierFace, { faceForTierIndex } from '@/components/TierFace';
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
@@ -16,8 +18,11 @@ function fmtDuration(s: number | null) {
 }
 
 // Entire row is clickable and drills into the lead, like the ScoreApp leads table.
-export default function LeadRow({ lead }: { lead: Lead }) {
+export default function LeadRow({ lead, tiers }: { lead: Lead; tiers: Tier[] }) {
   const router = useRouter();
+  const pct = lead.overall_percent ?? 0;
+  const tier = tierFor(pct, tiers);
+  const face = faceForTierIndex(tiers.findIndex((t) => t.key === tier.key), tiers.length);
   return (
     <tr
       onClick={() => router.push(`/admin/leads/${lead.id}`)}
@@ -31,7 +36,12 @@ export default function LeadRow({ lead }: { lead: Lead }) {
         {fmtDate(lead.created_at)}
         <span className="ml-3 text-muted">⏱ {fmtDuration(lead.duration_seconds)}</span>
       </td>
-      <td className="px-6 py-4 text-right font-medium">{lead.overall_percent}%</td>
+      <td className="px-6 py-4">
+        <span className="flex items-center justify-end gap-2 font-semibold" style={{ color: tier.color }}>
+          <TierFace kind={face} color={tier.color} />
+          {pct}%
+        </span>
+      </td>
     </tr>
   );
 }
