@@ -36,9 +36,31 @@ export interface TierContent {
   body: string[];
 }
 
+export interface Branding {
+  logoUrl: string;
+  iconUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+}
+
+export interface PdfCategoryContent {
+  intro: string[];
+  exampleTitle: string;
+  example: string[];
+}
+
+export interface PdfConfig {
+  coverTitle: string;
+  coverSubtitle: string;
+  keysHeading: string;
+  categories: Record<string, Record<TierKey, PdfCategoryContent>>;
+}
+
 export interface ScorecardConfig {
   title: string;
   copyright: string;
+  branding: Branding;
+  pdf: PdfConfig;
   landing: {
     heroTitle: string;
     heroSubtitle: string;

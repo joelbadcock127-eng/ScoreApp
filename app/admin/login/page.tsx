@@ -38,7 +38,7 @@ export default function AdminLoginPage() {
           className="mt-6 w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-primary"
         />
         {error && <p className="mt-3 text-sm text-tier-low">{error}</p>}
-        <button className="mt-5 w-full rounded-md bg-primary py-3 font-medium text-white hover:bg-blue-600">
+        <button className="mt-5 w-full rounded-md bg-primary py-3 font-medium text-white hover:brightness-110">
           Log in
         </button>
       </form>

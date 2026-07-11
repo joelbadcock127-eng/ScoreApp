@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ScorecardConfig } from '@/lib/types';
 import LeadFormFields from './LeadFormFields';
+import Modal from './Modal';
+import Spinner from './Spinner';
 
 // Wraps the landing page; any element with [data-start-scorecard] opens the lead form modal.
 export default function StartScorecard({
@@ -54,29 +56,21 @@ export default function StartScorecard({
   return (
     <>
       {children}
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
-        >
-          <div className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-8 shadow-card md:p-10">
-            <p className="text-center text-lg">{leadForm.heading}</p>
-            <form onSubmit={onSubmit} className="mt-6">
-              <LeadFormFields fields={leadForm.fields} />
-              {error && <p className="mt-4 text-sm text-tier-low">{error}</p>}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="mt-6 w-full rounded-md bg-primary py-4 text-lg font-medium text-white transition hover:bg-blue-600 disabled:opacity-60"
-              >
-                {submitting ? '…' : leadForm.submitLabel}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal open={open} onClose={() => setOpen(false)}>
+        <p className="text-center text-lg">{leadForm.heading}</p>
+        <form onSubmit={onSubmit} className="mt-6">
+          <LeadFormFields fields={leadForm.fields} />
+          {error && <p className="mt-4 text-sm text-tier-low">{error}</p>}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-6 flex w-full items-center justify-center gap-3 rounded-md bg-primary py-4 text-lg font-medium text-white transition hover:brightness-110 disabled:opacity-60"
+          >
+            {submitting && <Spinner className="h-5 w-5 text-white" />}
+            {submitting ? 'Starting…' : leadForm.submitLabel}
+          </button>
+        </form>
+      </Modal>
     </>
   );
 }

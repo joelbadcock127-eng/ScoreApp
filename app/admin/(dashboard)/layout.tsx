@@ -1,42 +1,82 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isAdmin } from '@/lib/server/auth';
+import { getConfig } from '@/lib/server/config';
 
-const nav = [
-  { href: '/admin', label: 'Leads' },
-  { href: '/admin/settings/score-tiers', label: 'Score Tiers' },
-  { href: '/admin/settings/lead-form', label: 'Lead Form' },
+const groups: { heading: string | null; items: { href: string; label: string }[] }[] = [
+  {
+    heading: null,
+    items: [
+      { href: '/admin', label: 'Overview' },
+      { href: '/admin/leads', label: 'Leads' },
+    ],
+  },
+  {
+    heading: 'Build',
+    items: [
+      { href: '/admin/build/landing', label: 'Landing Page' },
+      { href: '/admin/build/questions', label: 'Questions' },
+      { href: '/admin/build/results', label: 'Results Page' },
+      { href: '/admin/build/pdf', label: 'PDF Reports' },
+    ],
+  },
+  {
+    heading: 'Settings',
+    items: [
+      { href: '/admin/settings/branding', label: 'Branding' },
+      { href: '/admin/settings/score-tiers', label: 'Score Tiers' },
+      { href: '/admin/settings/lead-form', label: 'Lead Form' },
+    ],
+  },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   if (!isAdmin()) redirect('/admin/login');
+  const config = await getConfig();
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <aside className="hidden w-60 flex-none border-r border-gray-200 bg-white px-4 py-6 md:block">
-        <p className="px-3 text-sm font-semibold uppercase tracking-wide text-muted">
-          Scorecard Setup
-        </p>
-        <nav className="mt-4 space-y-1">
-          {nav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              className="block rounded-md px-3 py-2 text-[15px] text-ink hover:bg-gray-100"
-            >
-              {n.label}
-            </Link>
+      <aside className="hidden w-60 flex-none border-r border-gray-200 bg-white px-4 py-5 md:block">
+        <Link href="/admin" className="flex items-center gap-2 px-2">
+          <img src={config.branding.iconUrl} alt="" className="h-9 w-9" />
+          <span className="text-[15px] font-semibold">{config.title}</span>
+        </Link>
+        <nav className="mt-6 space-y-6">
+          {groups.map((g) => (
+            <div key={g.heading ?? 'main'}>
+              {g.heading && (
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
+                  {g.heading}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {g.items.map((n) => (
+                  <Link
+                    key={n.href}
+                    href={n.href}
+                    className="block rounded-md px-3 py-2 text-[15px] text-ink hover:bg-gray-100"
+                  >
+                    {n.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="mt-8 border-t border-gray-200 pt-4">
-          <Link href="/" className="block rounded-md px-3 py-2 text-[15px] text-muted hover:bg-gray-100">
-            ← View Scorecard
+          <Link
+            href="/"
+            target="_blank"
+            className="block rounded-md px-3 py-2 text-[15px] text-muted hover:bg-gray-100"
+          >
+            View Scorecard ↗
           </Link>
         </div>
       </aside>
       <div className="min-w-0 flex-1">
-        <div className="border-b border-gray-200 bg-white px-6 py-3 md:hidden">
-          <nav className="flex gap-4 text-sm">
-            {nav.map((n) => (
+        <div className="overflow-x-auto border-b border-gray-200 bg-white px-6 py-3 md:hidden">
+          <nav className="flex gap-4 whitespace-nowrap text-sm">
+            {groups.flatMap((g) => g.items).map((n) => (
               <Link key={n.href} href={n.href} className="text-ink hover:text-primary">
                 {n.label}
               </Link>

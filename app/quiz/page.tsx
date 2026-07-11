@@ -7,10 +7,18 @@ export const dynamic = 'force-dynamic';
 export default async function QuizPage({
   searchParams,
 }: {
-  searchParams: { lead?: string };
+  searchParams: { lead?: string; preview?: string };
 }) {
+  const preview = searchParams.preview === '1';
   const leadId = searchParams.lead;
-  if (!leadId) redirect('/');
+  if (!leadId && !preview) redirect('/');
   const config = await getConfig();
-  return <QuizFlow leadId={leadId} questions={config.questions} />;
+  return (
+    <QuizFlow
+      leadId={leadId ?? 'preview'}
+      questions={config.questions}
+      logoUrl={config.branding.logoUrl}
+      preview={preview}
+    />
+  );
 }

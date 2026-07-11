@@ -1,0 +1,82 @@
+import { NextRequest, NextResponse } from 'next/server';
+import React from 'react';
+import { renderToBuffer } from '@react-pdf/renderer';
+import { getConfig } from '@/lib/server/config';
+import { supabaseAdmin } from '@/lib/server/supabase';
+import { CategoryScore, Lead } from '@/lib/types';
+import { ReportDocument, ReportData } from '@/lib/pdf/ReportDocument';
+import { sampleResults } from '@/lib/sampleData';
+import { readFile } from 'fs/promises';
+import path from 'path';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
+
+async function loadLogo(logoUrl: string, origin: string): Promise<Buffer | null> {
+  try {
+    if (logoUrl.startsWith('/')) {
+      // Local public asset: read straight from disk.
+      return await readFile(path.join(process.cwd(), 'public', logoUrl));
+    }
+    const res = await fetch(logoUrl.startsWith('http') ? logoUrl : `${origin}${logoUrl}`);
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const config = await getConfig();
+
+  let data: ReportData;
+  if (params.id === 'preview') {
+    const tier = req.nextUrl.searchParams.get('tier') ?? 'medium';
+    const sample = sampleResults(config, ['low', 'medium', 'high'].includes(tier) ? tier : 'medium');
+    data = {
+      firstName: sample.first_name,
+      lastName: sample.last_name,
+      business: sample.business,
+      overallPercent: sample.overall_percent,
+      categoryScores: sample.category_scores,
+      date: new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }),
+    };
+  } else {
+    if (!/^[0-9a-f-]{36}$/i.test(params.id)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    const { data: lead } = await supabaseAdmin()
+      .from('leads')
+      .select('*')
+      .eq('id', params.id)
+      .maybeSingle<Lead>();
+    if (!lead || lead.status !== 'completed' || lead.overall_percent == null) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    data = {
+      firstName: lead.first_name,
+      lastName: lead.last_name,
+      business: lead.business,
+      overallPercent: lead.overall_percent,
+      categoryScores: (lead.category_scores ?? []) as CategoryScore[],
+      date: new Date(lead.completed_at ?? lead.created_at).toLocaleDateString('en-AU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+    };
+  }
+
+  const logo = await loadLogo(config.branding.logoUrl, req.nextUrl.origin);
+  const pdf = await renderToBuffer(
+    React.createElement(ReportDocument, { config, data, logo }) as never
+  );
+
+  return new NextResponse(new Uint8Array(pdf), {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename="ai-opportunity-report.pdf"`,
+      'Cache-Control': 'no-store',
+    },
+  });
+}

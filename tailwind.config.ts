@@ -5,10 +5,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: '#1c78fe',
+        primary: 'var(--primary, #1c78fe)',
         ink: '#0c0d0d',
         muted: '#616366',
-        navy: '#152042',
+        navy: 'var(--secondary, #152042)',
         'tier-low': '#d41f34',
         'tier-medium': '#f26527',
         'tier-high': '#66bc46',

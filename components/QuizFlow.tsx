@@ -1,13 +1,25 @@
 'use client';
 
-import Image from 'next/image';
+/* eslint-disable @next/next/no-img-element */
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Question } from '@/lib/types';
+import Spinner from './Spinner';
 
 // One question per screen: numbered 1-5 radios with left/center/right labels,
 // Back link, Next button and a completion bar pinned to the bottom — as per ScoreApp.
-export default function QuizFlow({ leadId, questions }: { leadId: string; questions: Question[] }) {
+// In preview mode (admin Build section) nothing is saved; completion opens the results preview.
+export default function QuizFlow({
+  leadId,
+  questions,
+  logoUrl,
+  preview = false,
+}: {
+  leadId: string;
+  questions: Question[];
+  logoUrl: string;
+  preview?: boolean;
+}) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -36,6 +48,10 @@ export default function QuizFlow({ leadId, questions }: { leadId: string; questi
     }
     setSubmitting(true);
     setError('');
+    if (preview) {
+      router.push('/results/preview');
+      return;
+    }
     try {
       const res = await fetch(`/api/leads/${leadId}`, {
         method: 'PATCH',
@@ -56,8 +72,14 @@ export default function QuizFlow({ leadId, questions }: { leadId: string; questi
 
   return (
     <main className="flex min-h-screen flex-col">
+      {submitting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/90 backdrop-blur-sm">
+          <Spinner className="h-10 w-10 text-primary" />
+          <p className="text-lg text-navy">Calculating your results…</p>
+        </div>
+      )}
       <header className="flex justify-center py-6">
-        <Image src="/images/logo.png" alt="Acceso AI" width={140} height={140} className="h-24 w-auto" priority />
+        <img src={logoUrl} alt="Logo" className="h-24 w-auto" />
       </header>
 
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 pb-16">
@@ -103,9 +125,9 @@ export default function QuizFlow({ leadId, questions }: { leadId: string; questi
         <button
           onClick={next}
           disabled={submitting}
-          className="mx-auto mt-10 w-full max-w-xs rounded-md bg-primary py-3.5 text-lg font-medium text-white transition hover:bg-blue-600 disabled:opacity-60"
+          className="mx-auto mt-10 w-full max-w-xs rounded-md bg-primary py-3.5 text-lg font-medium text-white transition hover:brightness-110 disabled:opacity-60"
         >
-          {submitting ? '…' : 'Next'}
+          Next
         </button>
       </div>
 

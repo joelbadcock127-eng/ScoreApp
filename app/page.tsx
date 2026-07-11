@@ -1,7 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 import Image from 'next/image';
 import { getConfig } from '@/lib/server/config';
 import StartScorecard from '@/components/StartScorecard';
 import Footer from '@/components/Footer';
+import VisitBeacon from '@/components/VisitBeacon';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +14,10 @@ export default async function LandingPage() {
   return (
     <StartScorecard leadForm={leadForm}>
       <main>
+        <VisitBeacon />
         {/* Header */}
         <header className="flex justify-center py-6">
-          <Image src="/images/logo.png" alt="Acceso AI" width={160} height={160} className="h-24 w-auto" priority />
+          <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
         </header>
 
         {/* Hero */}
@@ -35,7 +38,7 @@ export default async function LandingPage() {
             </ul>
             <button
               data-start-scorecard
-              className="mt-10 w-full rounded-md bg-primary px-10 py-4 text-lg font-medium text-white transition hover:bg-blue-600 md:w-auto md:min-w-[340px]"
+              className="mt-10 w-full rounded-md bg-primary px-10 py-4 text-lg font-medium text-white transition hover:brightness-110 md:w-auto md:min-w-[340px]"
             >
               {landing.heroCta}
             </button>
@@ -76,14 +79,14 @@ export default async function LandingPage() {
           <p className="mx-auto mt-8 max-w-3xl text-lg leading-relaxed text-muted">{landing.bottomBody}</p>
           <button
             data-start-scorecard
-            className="mt-10 rounded-md bg-primary px-12 py-4 text-lg font-medium text-white transition hover:bg-blue-600"
+            className="mt-10 rounded-md bg-primary px-12 py-4 text-lg font-medium text-white transition hover:brightness-110"
           >
             {landing.bottomCta}
           </button>
           <p className="mt-10 text-lg text-muted">{landing.bottomNote}</p>
         </section>
 
-        <Footer copyright={config.copyright} />
+        <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} />
       </main>
     </StartScorecard>
   );

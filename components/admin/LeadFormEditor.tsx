@@ -123,7 +123,7 @@ export default function LeadFormEditor({ initial }: { initial: LeadForm }) {
           <button
             onClick={save}
             disabled={saving}
-            className="rounded-md bg-primary px-8 py-2.5 font-medium text-white hover:bg-blue-600 disabled:opacity-60"
+            className="rounded-md bg-primary px-8 py-2.5 font-medium text-white hover:brightness-110 disabled:opacity-60"
           >
             Save
           </button>

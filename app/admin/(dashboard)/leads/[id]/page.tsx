@@ -41,7 +41,7 @@ export default async function LeadDetailPage({
 
   return (
     <div>
-      <Link href="/admin" className="text-sm text-muted hover:text-primary">
+      <Link href="/admin/leads" className="text-sm text-muted hover:text-primary">
         ← LEADS
       </Link>
 
