@@ -1,101 +1,90 @@
-import Image from "next/image";
+import Image from 'next/image';
+import { getConfig } from '@/lib/server/config';
+import StartScorecard from '@/components/StartScorecard';
+import Footer from '@/components/Footer';
 
-export default function Home() {
+export const dynamic = 'force-dynamic';
+
+export default async function LandingPage() {
+  const config = await getConfig();
+  const { landing, leadForm } = config;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <StartScorecard leadForm={leadForm}>
+      <main>
+        {/* Header */}
+        <header className="flex justify-center py-6">
+          <Image src="/images/logo.png" alt="Acceso AI" width={160} height={160} className="h-24 w-auto" priority />
+        </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+        {/* Hero */}
+        <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 pb-20 pt-8 md:grid-cols-2">
+          <div>
+            <h1 className="text-4xl font-bold leading-tight md:text-6xl">{landing.heroTitle}</h1>
+            <p className="mt-6 text-xl font-medium md:text-2xl">{landing.heroSubtitle}</p>
+            <p className="mt-6 text-lg leading-relaxed text-muted">{landing.heroBody}</p>
+            <ul className="mt-8 space-y-3">
+              {landing.heroBullets.map((b) => (
+                <li key={b} className="flex items-center gap-3 text-lg">
+                  <svg className="h-5 w-5 flex-none text-primary" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M3 11l4 4 10-11" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {b}
+                </li>
+              ))}
+            </ul>
+            <button
+              data-start-scorecard
+              className="mt-10 w-full rounded-md bg-primary px-10 py-4 text-lg font-medium text-white transition hover:bg-blue-600 md:w-auto md:min-w-[340px]"
+            >
+              {landing.heroCta}
+            </button>
+          </div>
+          <div className="flex justify-center">
             <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+              src="/images/hero-report.png"
+              alt="Your AI Opportunity Report"
+              width={520}
+              height={694}
+              priority
+              className="w-full max-w-[520px] rounded-lg shadow-card"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section className="mx-auto max-w-6xl px-6 py-16">
+          <p className="text-center text-lg">{landing.howItWorksLabel}</p>
+          <h2 className="mt-4 text-center text-3xl font-bold md:text-5xl">{landing.howItWorksTitle}</h2>
+          <p className="mx-auto mt-6 max-w-4xl text-center text-lg leading-relaxed text-muted">
+            {landing.howItWorksBody}
+          </p>
+          <div className="mt-14 grid gap-8 md:grid-cols-2">
+            {landing.categoryCards.map((card) => (
+              <div key={card.key} className="border border-gray-200 bg-white px-8 py-14 text-center">
+                <Image src={card.image} alt="" width={90} height={90} className="mx-auto h-[90px] w-[90px] object-contain" />
+                <h3 className="mt-8 text-2xl font-semibold">{card.title}</h3>
+                <p className="mx-auto mt-5 max-w-md text-lg leading-relaxed text-muted">{card.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Bottom CTA */}
+        <section className="mx-auto max-w-4xl px-6 py-24 text-center">
+          <h2 className="text-3xl font-bold md:text-5xl">{landing.bottomTitle}</h2>
+          <p className="mx-auto mt-8 max-w-3xl text-lg leading-relaxed text-muted">{landing.bottomBody}</p>
+          <button
+            data-start-scorecard
+            className="mt-10 rounded-md bg-primary px-12 py-4 text-lg font-medium text-white transition hover:bg-blue-600"
           >
-            Read our docs
-          </a>
-        </div>
+            {landing.bottomCta}
+          </button>
+          <p className="mt-10 text-lg text-muted">{landing.bottomNote}</p>
+        </section>
+
+        <Footer copyright={config.copyright} />
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    </StartScorecard>
   );
 }

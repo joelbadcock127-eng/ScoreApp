@@ -1,16 +1,20 @@
-import type { Config } from "tailwindcss";
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  content: ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        primary: '#1c78fe',
+        ink: '#0c0d0d',
+        muted: '#616366',
+        navy: '#152042',
+        'tier-low': '#d41f34',
+        'tier-medium': '#f26527',
+        'tier-high': '#66bc46',
+      },
+      boxShadow: {
+        card: '0 10px 40px rgba(21, 32, 66, 0.12)',
       },
     },
   },

@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# The AI Opportunity Assessment — ScoreApp rebuild
 
-## Getting Started
+A standalone rebuild of the Acceso AI scorecard originally built on ScoreApp
+(https://accesoai.scoreapp.com/). Next.js + Tailwind on the front, Supabase for storage.
 
-First, run the development server:
+## What's included
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Landing page** (`/`) — hero, "Assess Your Business in Four Key Areas" cards, bottom CTA,
+  lead-capture popup. Fully responsive.
+- **Quiz** (`/quiz`) — 23 linear-scale questions (1–5) with left/centre/right labels,
+  back navigation and a completion bar, one question per screen.
+- **Results** (`/results/[id]`) — speed-chart gauge, overall score, and **dynamic content on
+  three score tiers** (Low 0–50, Medium 51–79, High 80–100): tier-specific intro plus
+  tier-specific text for each of the four categories, "Next steps?" CTA, share bar,
+  "Update your details" popup.
+- **Admin** (`/admin`, password-gated) —
+  - **Leads**: searchable list (name, email, date, completion time, score), CSV export,
+    per-lead detail with overall/category donuts and an Answers tab.
+  - **Settings → Score Tiers**: edit tier colours, labels and score ranges.
+  - **Settings → Lead Form**: edit the signup form fields (label, type, required, enabled).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Scoring: each answer scores its position (1–5). Category % = points / max points;
+overall % = total points / 115, matching ScoreApp's numbers exactly.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a Supabase project and run the migration in `supabase/migrations`
+   (already applied to the "ScoreApp" project) — tables `scorecard_config` and `leads`
+   with RLS enabled and **no** anon policies; all access goes through the app server
+   with the service role key.
+2. Copy `.env.example` to `.env.local` and fill in:
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (Supabase dashboard -> Settings -> API)
+   - `ADMIN_PASSWORD` (protects `/admin`)
+3. `npm install && npm run dev`
 
-## Learn More
+All scorecard content (questions, tier texts, landing copy) is seeded from
+`lib/defaultConfig.ts` into the `scorecard_config` table on first load; tiers and the
+lead form are then editable from the admin settings.
 
-To learn more about Next.js, take a look at the following resources:
+## Not wired up (yet)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Result / abandon emails** — the results page says "Your full report has been emailed…"
+  to match the original, but no email is sent. Needs an email provider (e.g. Resend/Postmark).
+- **PDF report** — "Open my Report" is a placeholder; ScoreApp's PDF report builder is a
+  separate feature.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Reference screenshots of the original ScoreApp scorecard live in
+`docs/reference-screenshots/` (see `docs/screenshot-map.md`).
