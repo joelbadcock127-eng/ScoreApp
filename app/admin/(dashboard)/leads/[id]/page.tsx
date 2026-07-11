@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { tierFor } from '@/lib/scoring';
+import { tierFor, questionMax } from '@/lib/scoring';
+import { stripTags } from '@/lib/richtext';
 import { CategoryScore, Lead } from '@/lib/types';
 import Donut from '@/components/Donut';
 
@@ -143,9 +144,9 @@ export default async function LeadDetailPage({
                 return (
                   <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-5">
                     <p className="text-sm text-muted">Question {i + 1}</p>
-                    <p className="mt-1 font-medium">{q.text}</p>
+                    <p className="mt-1 font-medium">{stripTags(q.text)}</p>
                     <p className="mt-2 text-primary">
-                      {v != null ? `${v} / ${q.max}` : 'Not answered'}
+                      {v != null ? `${v} / ${questionMax(q) || q.max}` : 'Not answered'}
                       {label && <span className="ml-2 text-muted">— {label}</span>}
                     </p>
                   </div>

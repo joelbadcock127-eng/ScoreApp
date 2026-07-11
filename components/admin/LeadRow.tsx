@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Lead } from '@/lib/types';
+import { Lead, Tier } from '@/lib/types';
+import ScoreFace from '@/components/ScoreFace';
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
@@ -16,7 +17,7 @@ function fmtDuration(s: number | null) {
 }
 
 // Entire row is clickable and drills into the lead, like the ScoreApp leads table.
-export default function LeadRow({ lead }: { lead: Lead }) {
+export default function LeadRow({ lead, tiers }: { lead: Lead; tiers: Tier[] }) {
   const router = useRouter();
   return (
     <tr
@@ -31,7 +32,9 @@ export default function LeadRow({ lead }: { lead: Lead }) {
         {fmtDate(lead.created_at)}
         <span className="ml-3 text-muted">⏱ {fmtDuration(lead.duration_seconds)}</span>
       </td>
-      <td className="px-6 py-4 text-right font-medium">{lead.overall_percent}%</td>
+      <td className="px-6 py-4 text-right">
+        <ScoreFace percent={lead.overall_percent} tiers={tiers} className="justify-end" />
+      </td>
     </tr>
   );
 }

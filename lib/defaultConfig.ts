@@ -191,7 +191,26 @@ export const defaultConfig: ScorecardConfig = {
       'I personally review selected assessments where the results indicate a strong opportunity. To register your interest, reply to the email that delivered this report with “Personal review”. I will examine your answers and, if I believe there is a strong fit, contact you with an initial observation and an invitation to discuss the opportunity further.',
     ],
   },
+  questionsPage: {
+    header: { show: true, align: 'center', maxWidth: 250, topMargin: 13, bottomMargin: 13 },
+    questions: {
+      align: 'center',
+      showBack: true,
+      showCategory: false,
+      optionTextColor: '#152042',
+      buttonColor: '#1c78fe',
+      questionTextColor: '#152042',
+      backgroundColor: '#ffffff',
+    },
+    progress: { show: true },
+    footer: { show: false },
+  },
   landing: {
+    heroImage: '/images/hero-report.png',
+    imagePosition: 'right',
+    categoriesPerRow: 2,
+    showHeader: true,
+    showFooter: true,
     heroTitle: 'Identify your biggest AI wins in minutes',
     heroSubtitle: 'Answer 21 questions and we’ll send you a personalised report',
     heroBody:

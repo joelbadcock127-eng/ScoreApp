@@ -1,11 +1,22 @@
 import { notFound } from 'next/navigation';
+import { getConfig } from '@/lib/server/config';
 import BuildScreen from '@/components/admin/BuildScreen';
+import QuestionsEditor from '@/components/admin/editor/QuestionsEditor';
+import LandingEditor from '@/components/admin/editor/LandingEditor';
 
 export const dynamic = 'force-dynamic';
 
 const TABS = ['landing', 'questions', 'results', 'pdf'] as const;
 
-export default function BuildPage({ params }: { params: { tab: string } }) {
+export default async function BuildPage({ params }: { params: { tab: string } }) {
   if (!TABS.includes(params.tab as (typeof TABS)[number])) notFound();
-  return <BuildScreen tab={params.tab as (typeof TABS)[number]} />;
+  if (params.tab === 'questions') {
+    const config = await getConfig();
+    return <QuestionsEditor initialConfig={config} />;
+  }
+  if (params.tab === 'landing') {
+    const config = await getConfig();
+    return <LandingEditor initialConfig={config} />;
+  }
+  return <BuildScreen tab={params.tab as 'results' | 'pdf'} />;
 }

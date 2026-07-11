@@ -17,7 +17,10 @@ export default async function QuizPage({
     <QuizFlow
       leadId={leadId ?? 'preview'}
       questions={config.questions}
+      categories={config.categories}
       logoUrl={config.branding.logoUrl}
+      copyright={config.copyright}
+      page={config.questionsPage}
       preview={preview}
     />
   );

@@ -16,19 +16,56 @@ export interface LeadFormField {
   enabled: boolean;
 }
 
+// Answer formats supported by the questions editor. Existing configs without a
+// type are treated as 'scale' (the original 1-5 linear scale).
+export type QuestionType = 'scale' | 'yes_no' | 'buttons' | 'checkboxes' | 'radio' | 'text';
+
+export interface QuestionOption {
+  label: string;
+  score: number;
+}
+
 export interface Question {
   id: string;
   category: string;
+  type?: QuestionType;
   text: string;
+  instruction?: string;
+  required?: boolean;
   min: number;
   max: number;
   start: number;
   labels: { left: string; center: string; right: string };
+  options?: QuestionOption[];
 }
 
 export interface Category {
   key: string;
   label: string;
+  description?: string;
+  icon?: string;
+}
+
+// Layout/styling for the questions flow page, edited via the Sections rail.
+export interface QuestionsPageConfig {
+  header: {
+    show: boolean;
+    align: 'left' | 'center' | 'right';
+    maxWidth: number;
+    topMargin: number;
+    bottomMargin: number;
+  };
+  questions: {
+    align: 'left' | 'center' | 'right';
+    showBack: boolean;
+    showCategory: boolean;
+    optionTextColor: string;
+    buttonColor: string;
+    questionTextColor: string;
+    backgroundColor: string;
+  };
+  progress: { show: boolean };
+  footer: { show: boolean };
 }
 
 export interface TierContent {
@@ -41,6 +78,14 @@ export interface Branding {
   iconUrl: string;
   primaryColor: string;
   secondaryColor: string;
+  // Theme extras (edited via the Theme rail in the editors)
+  backgroundColor?: string;
+  headingTextColor?: string;
+  bodyTextColor?: string;
+  headingFont?: string;
+  headingSize?: number;
+  bodyFont?: string;
+  bodySize?: number;
 }
 
 export interface PdfCategoryContent {
@@ -64,7 +109,13 @@ export interface ScorecardConfig {
   copyright: string;
   branding: Branding;
   pdf: PdfConfig;
+  questionsPage?: QuestionsPageConfig;
   landing: {
+    heroImage?: string;
+    imagePosition?: 'left' | 'right';
+    categoriesPerRow?: number;
+    showHeader?: boolean;
+    showFooter?: boolean;
     heroTitle: string;
     heroSubtitle: string;
     heroBody: string;
