@@ -51,9 +51,12 @@ export interface PdfCategoryContent {
 
 export interface PdfConfig {
   coverTitle: string;
-  coverSubtitle: string;
+  howToReadTitle: string;
+  howToRead: string[];
   keysHeading: string;
   categories: Record<string, Record<TierKey, PdfCategoryContent>>;
+  closingTitle: string;
+  closing: string[];
 }
 
 export interface ScorecardConfig {

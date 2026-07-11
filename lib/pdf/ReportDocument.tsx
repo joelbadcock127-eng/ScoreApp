@@ -15,26 +15,24 @@ export interface ReportData {
 const NAVY = '#152042';
 
 const s = StyleSheet.create({
-  frame: { backgroundColor: NAVY, padding: 24 },
-  sheet: { backgroundColor: '#ffffff', borderRadius: 4, padding: 36, flexGrow: 1 },
-  h1: { fontSize: 26, fontFamily: 'Helvetica-Bold', color: '#0c0d0d' },
-  h2: { fontSize: 16, fontFamily: 'Helvetica-Bold', color: '#0c0d0d', marginBottom: 8 },
+  frame: { backgroundColor: NAVY, padding: 22 },
+  sheet: { backgroundColor: '#ffffff', borderRadius: 3, padding: 40, flexGrow: 1 },
+  h1: { fontSize: 25, fontFamily: 'Helvetica-Bold', color: '#0c0d0d' },
+  h2: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#0c0d0d', marginBottom: 8 },
   p: { fontSize: 10.5, lineHeight: 1.55, color: '#3a3d40', marginBottom: 10 },
-  pageNo: { position: 'absolute', bottom: 14, right: 24, fontSize: 9, color: '#616366' },
+  footerLeft: { position: 'absolute', bottom: 16, left: 40, fontSize: 9, color: '#616366' },
+  pageNo: { position: 'absolute', bottom: 16, right: 40, fontSize: 9, color: '#616366' },
   scoreCard: {
     position: 'absolute',
-    right: 36,
-    top: 96,
-    width: 150,
+    right: 40,
+    top: 92,
+    width: 148,
     backgroundColor: '#ffffff',
     padding: 14,
     alignItems: 'center',
     border: '1 solid #e6e6e6',
   },
   circle: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -43,7 +41,9 @@ const s = StyleSheet.create({
 function ScoreBadge({ percent, tier }: { percent: number; tier: Tier }) {
   return (
     <View style={s.scoreCard}>
-      <View style={[s.circle, { backgroundColor: tier.color, border: `3 solid ${tier.color}` }]}>
+      <View
+        style={[s.circle, { width: 74, height: 74, borderRadius: 37, backgroundColor: tier.color }]}
+      >
         <Text style={{ color: '#ffffff', fontSize: 20, fontFamily: 'Helvetica-Bold' }}>
           {percent}%
         </Text>
@@ -55,6 +55,8 @@ function ScoreBadge({ percent, tier }: { percent: number; tier: Tier }) {
   );
 }
 
+// Mirrors the original ScoreApp PDF: cover, how-to-read, transformation keys,
+// one tier-dynamic page per category, then the personal-review closing page.
 export function ReportDocument({
   config,
   data,
@@ -64,100 +66,50 @@ export function ReportDocument({
   data: ReportData;
   logo: Buffer | null;
 }) {
-  const overallTier = tierFor(data.overallPercent, config.tiers);
-  const intro = config.results.tierIntros[overallTier.key] ?? config.results.tierIntros.medium;
-
   return (
     <Document title={`${config.pdf.coverTitle} — ${data.firstName} ${data.lastName}`}>
-      {/* Cover */}
+      {/* Page 1: Cover */}
       <Page size="A4" style={{ backgroundColor: NAVY, padding: 48 }}>
         <View style={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
           {logo && (
-            <View style={{ backgroundColor: '#ffffff', borderRadius: 8, padding: 16, marginBottom: 36 }}>
+            <View style={{ backgroundColor: '#ffffff', borderRadius: 8, padding: 16, marginBottom: 40 }}>
               {/* eslint-disable-next-line jsx-a11y/alt-text */}
-              <Image src={logo} style={{ width: 130, height: 130, objectFit: 'contain' }} />
+              <Image src={logo} style={{ width: 120, height: 120, objectFit: 'contain' }} />
             </View>
           )}
-          <Text style={{ color: '#ffffff', fontSize: 30, fontFamily: 'Helvetica-Bold', textAlign: 'center' }}>
+          <Text style={{ color: '#ffffff', fontSize: 28, fontFamily: 'Helvetica-Bold', textAlign: 'center', maxWidth: 420 }}>
             {config.pdf.coverTitle}
           </Text>
-          <Text style={{ color: '#c6cbe0', fontSize: 12, marginTop: 14, textAlign: 'center', maxWidth: 380, lineHeight: 1.5 }}>
-            {config.pdf.coverSubtitle}
+          <Text style={{ color: '#ffffff', fontSize: 14, marginTop: 28 }}>
+            {data.firstName} {data.lastName}
           </Text>
-          <View style={{ marginTop: 44, alignItems: 'center' }}>
-            <Text style={{ color: '#ffffff', fontSize: 13 }}>
-              Prepared for {data.firstName} {data.lastName}
-            </Text>
-            {data.business ? (
-              <Text style={{ color: '#c6cbe0', fontSize: 11, marginTop: 6 }}>{data.business}</Text>
-            ) : null}
-            <Text style={{ color: '#c6cbe0', fontSize: 10, marginTop: 6 }}>{data.date}</Text>
-          </View>
-          <View
-            style={{
-              marginTop: 44,
-              width: 110,
-              height: 110,
-              borderRadius: 55,
-              backgroundColor: overallTier.color,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Text style={{ color: '#ffffff', fontSize: 28, fontFamily: 'Helvetica-Bold' }}>
-              {data.overallPercent}%
-            </Text>
-          </View>
-          <Text style={{ color: '#ffffff', fontSize: 11, marginTop: 10, letterSpacing: 2 }}>
-            YOUR OVERALL SCORE
-          </Text>
+          {data.business ? (
+            <Text style={{ color: '#c6cbe0', fontSize: 11, marginTop: 8 }}>{data.business}</Text>
+          ) : null}
+          <Text style={{ color: '#c6cbe0', fontSize: 11, marginTop: 8 }}>{data.date}</Text>
         </View>
       </Page>
 
-      {/* Overall result */}
+      {/* Page 2: How to read */}
       <Page size="A4" style={s.frame}>
         <View style={s.sheet}>
-          <Text style={{ fontSize: 13, color: '#616366' }}>Thank you for taking the</Text>
-          <Text style={[s.h1, { marginTop: 4 }]}>{config.title}</Text>
-          <View
-            style={{
-              marginTop: 24,
-              padding: 16,
-              backgroundColor: '#f6f7fb',
-              borderRadius: 6,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 16,
-            }}
-          >
-            <View style={[s.circle, { width: 64, height: 64, borderRadius: 32, backgroundColor: overallTier.color }]}>
-              <Text style={{ color: '#ffffff', fontSize: 17, fontFamily: 'Helvetica-Bold' }}>
-                {data.overallPercent}%
+          <Text style={[s.h1, { fontSize: 22 }]}>{config.pdf.howToReadTitle}</Text>
+          <View style={{ marginTop: 20 }}>
+            {config.pdf.howToRead.map((p, i) => (
+              <Text key={i} style={s.p}>
+                {p}
               </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>
-                {config.results.overallHeading}: {overallTier.label}
-              </Text>
-              <Text style={{ fontSize: 10, color: '#616366' }}>
-                Scored against the {config.categories.length} key areas of your business.
-              </Text>
-            </View>
+            ))}
           </View>
-          <Text style={[s.h2, { marginTop: 26 }]}>{intro.headline}</Text>
-          {intro.body.map((p, i) => (
-            <Text key={i} style={s.p}>
-              {p}
-            </Text>
-          ))}
+          <Text style={s.footerLeft}>{config.title}</Text>
           <Text style={s.pageNo}>2</Text>
         </View>
       </Page>
 
-      {/* Transformation keys summary */}
+      {/* Page 3: Transformation keys summary */}
       <Page size="A4" style={s.frame}>
         <View style={s.sheet}>
-          <Text style={[s.h2, { fontSize: 18, marginBottom: 18 }]}>{config.pdf.keysHeading}</Text>
+          <Text style={[s.h2, { fontSize: 17, marginBottom: 18 }]}>{config.pdf.keysHeading}</Text>
           {data.categoryScores.map((c) => {
             const t = tierFor(c.percent, config.tiers);
             const text = config.results.categoryTexts[c.key]?.[t.key] ?? '';
@@ -179,11 +131,12 @@ export function ReportDocument({
               </View>
             );
           })}
+          <Text style={s.footerLeft}>{config.title}</Text>
           <Text style={s.pageNo}>3</Text>
         </View>
       </Page>
 
-      {/* Individual category pages */}
+      {/* Pages 4-7: Individual category pages */}
       {data.categoryScores.map((c, idx) => {
         const t = tierFor(c.percent, config.tiers);
         const content =
@@ -192,18 +145,16 @@ export function ReportDocument({
         return (
           <Page key={c.key} size="A4" style={s.frame}>
             <View style={s.sheet}>
-              <View
-                style={{ height: 90, backgroundColor: NAVY, borderRadius: 4, marginBottom: 18, opacity: 0.9 }}
-              />
+              <View style={{ height: 88, backgroundColor: NAVY, borderRadius: 3, marginBottom: 18, opacity: 0.92 }} />
               <ScoreBadge percent={c.percent} tier={t} />
-              <Text style={[s.h1, { maxWidth: 330 }]}>{c.label}</Text>
-              <View style={{ marginTop: 20 }}>
+              <Text style={[s.h1, { maxWidth: 320 }]}>{c.label}</Text>
+              <View style={{ marginTop: 18 }}>
                 {content.intro.map((p, i) => (
                   <Text key={i} style={s.p}>
                     {p}
                   </Text>
                 ))}
-                <Text style={[s.h2, { marginTop: 8 }]}>{content.exampleTitle}</Text>
+                <Text style={[s.h2, { marginTop: 6 }]}>{content.exampleTitle}</Text>
                 {content.example.map((p, i) => (
                   <Text key={i} style={s.p}>
                     {p}
@@ -216,16 +167,19 @@ export function ReportDocument({
         );
       })}
 
-      {/* Closing page */}
-      <Page size="A4" style={{ backgroundColor: NAVY, padding: 48 }}>
-        <View style={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: '#ffffff', fontSize: 22, fontFamily: 'Helvetica-Bold', textAlign: 'center', maxWidth: 400 }}>
-            Ready to unlock your AI opportunity?
-          </Text>
-          <Text style={{ color: '#c6cbe0', fontSize: 11.5, marginTop: 16, textAlign: 'center', maxWidth: 380, lineHeight: 1.6 }}>
-            {config.results.cta.rightBody}
-          </Text>
-          <Text style={{ color: '#ffffff', fontSize: 10, marginTop: 40 }}>{config.copyright} Acceso AI</Text>
+      {/* Final page: next step */}
+      <Page size="A4" style={s.frame}>
+        <View style={[s.sheet, { justifyContent: 'center' }]}>
+          <Text style={[s.h1, { fontSize: 22, textAlign: 'center' }]}>{config.pdf.closingTitle}</Text>
+          <View style={{ marginTop: 24, alignSelf: 'center', maxWidth: 420 }}>
+            {config.pdf.closing.map((p, i) => (
+              <Text key={i} style={[s.p, { textAlign: 'center' }]}>
+                {p}
+              </Text>
+            ))}
+          </View>
+          <Text style={s.footerLeft}>{config.title}</Text>
+          <Text style={s.pageNo}>{4 + data.categoryScores.length}</Text>
         </View>
       </Page>
     </Document>

@@ -12,8 +12,13 @@ export const defaultConfig: ScorecardConfig = {
     secondaryColor: '#152042',
   },
   pdf: {
-    coverTitle: 'YOUR AI OPPORTUNITY REPORT',
-    coverSubtitle: 'A personalised assessment of where AI can make the biggest difference in your business',
+    coverTitle: 'The AI Opportunity Assessment Report',
+    howToReadTitle: 'How to Read Your AI Opportunity Report',
+    howToRead: [
+      'Your scores show how effectively each area of your business operates today and where AI could create the greatest improvement. This report breaks down your results across Marketing and Sales, People, Finance and Systems.',
+      'A low score indicates significant gaps, inefficiencies or reliance on manual work, meaning AI and automation could make a substantial impact. A medium score suggests that you have a reasonable foundation, but there are clear opportunities to improve consistency, save time and strengthen performance. A high score means the area is already operating effectively, so the focus shifts towards refining processes, scaling what works and exploring more advanced uses of AI.',
+      'Each category page will explain your result and provide specific actions, practical strategies and relevant examples of how AI could be used in your situation, helping you identify what to prioritise and where to begin.',
+    ],
     keysHeading: 'We have scored you against the following 4 Transformation Keys:',
     categories: {
       marketing: {
@@ -31,15 +36,15 @@ export const defaultConfig: ScorecardConfig = {
         },
         medium: {
           intro: [
-            'Your score suggests that your marketing and sales are producing results, but consistency and responsiveness could be improved. Some enquiries are followed up well while others slip through when the business gets busy, and content is produced when time allows rather than to a reliable rhythm. This indicates a practical opportunity to use AI to remove friction, tighten follow-up and make your existing marketing effort go further.',
-            'The highest-value priorities are usually to standardise follow-up, keep leads warm automatically and make content production faster. AI can draft follow-up emails and social posts from approved business information, remind staff when a lead has gone quiet and summarise which channels are producing the best enquiries. These changes could reduce marketing and sales administration by approximately 20–30%, keep every enquiry moving and lift conversion from enquiry to sale without extra advertising spend.',
+            'Your score suggests that your business has some effective marketing and sales practices, but results may still depend on manual effort and inconsistent follow-up. Your website, social media or enquiry process may generate leads, yet opportunities can still be lost through slow responses, irregular content or limited staff time. AI and automation could improve conversion rates without significantly increasing advertising spend or workload.',
+            'The main opportunities are to connect marketing channels, respond faster, qualify leads and standardise follow-up. AI can draft emails, social posts, website content and sales responses using existing business knowledge. Automations can capture enquiries, collect required information, schedule appointments and create follow-up reminders. These improvements could reduce marketing and sales administration by 20–35%, cut content preparation time by more than half and help the business manage more enquiries without additional staff.',
           ],
-          exampleTitle: 'Example: Strengthening Follow-Up in a Landscaping Business',
+          exampleTitle: 'Example: Streamlining Enquiries in an Accounting Firm',
           example: [
-            'A landscaping business wins most quoted jobs when it responds quickly, but quotes prepared in busy weeks are often sent days late and rarely followed up more than once.',
-            'A simple AI-supported workflow could acknowledge each enquiry immediately, prepare a draft quote from job photos and standard pricing, and schedule two or three polite follow-up messages that stop automatically when the customer replies. A weekly summary would show which quotes are still open and which sources produce the best jobs.',
-            'A basic version could usually be set up within one to two weeks using the business’s existing email, calendar and quoting tools. The owner would need a few hours to approve message templates and pricing rules. Implementation could cost approximately $1,000–$2,500, with low ongoing software costs.',
-            'This could save two to four hours per week, lift quote conversion by ensuring every enquiry is followed up and smooth out the pipeline between busy and quiet periods.',
+            'An accounting firm receives enquiries through its website, email, referrals and social media. An employee currently reads each message, asks standard questions, sends a booking link and manually enters the details into the customer management system. During busy periods, follow-up is often delayed.',
+            'An automated workflow could immediately send a professional response and a short form asking about the client’s business, turnover, accounting software and required service. AI could summarise and classify the enquiry, prepare a response and direct specialist matters to the right accountant. Suitable prospects could receive a booking link automatically, while their details and follow-up tasks are added to the firm’s systems.',
+            'A basic workflow could usually be implemented within one to two weeks using the firm’s existing website, email, calendar and customer management software. Staff may need four to six hours to approve the questions, qualification rules and responses. Implementation could cost approximately $1,500–$4,000, with modest ongoing software costs.',
+            'This could save five to eight staff hours per week, reduce response times from hours to minutes and improve enquiry-to-consultation conversion by 10–20%, while allowing staff to focus on higher-value advisory work.',
           ],
         },
         high: {
@@ -72,15 +77,15 @@ export const defaultConfig: ScorecardConfig = {
         },
         medium: {
           intro: [
-            'Your score suggests that the team generally works well, but some knowledge still sits with particular people and parts of onboarding, scheduling or communication rely on manual effort. Things run smoothly until someone is away or busy, at which point questions queue up and tasks slow down. This indicates a practical opportunity to use AI to make knowledge more accessible and reduce day-to-day admin.',
-            'The main priorities are usually to centralise frequently used information, semi-automate onboarding and routine communication, and reduce time spent answering the same questions. AI can turn existing documents into a searchable knowledge base, draft handover notes and summaries, and keep checklists up to date. These changes could reduce people-related administration by 15–30% and make the business noticeably less dependent on any single person.',
+            'Your score suggests that the business has some useful systems in place, but still depends heavily on you for decisions, client knowledge and day-to-day delivery. You may be managing a reasonable workload, yet repeated questions, manual administration and information spread across different tools can still create delays. There is a clear opportunity to use AI to improve capacity without immediately adding wages or hiring support.',
+            'The main priorities are to centralise knowledge, reduce repetitive work and make routine tasks easier to complete without your direct involvement. AI can summarise meetings, draft proposals and emails, organise client information, prepare follow-up actions and answer common questions using approved business material. These changes could reduce administration by 20–30% and return four to seven hours each week for client work, sales or business development.',
           ],
-          exampleTitle: 'Example: Smoothing Knowledge Flow for a Business Consultant',
+          exampleTitle: 'Example: Increasing Capacity for Business Consultants',
           example: [
-            'A consultant with a small support team keeps most templates and client history well organised, but team members still interrupt each other for answers about processes, pricing and past decisions, and onboarding a new assistant takes weeks.',
-            'An AI-supported workflow could gather existing documents, emails and templates into one searchable assistant that answers routine questions with approved information, drafts onboarding checklists and prepares meeting summaries with clear action items for each person.',
-            'A basic setup could be completed within about a week using existing document and email tools. The team may need three to five hours to review and approve the source material. Setup could cost approximately $800–$2,500, with low ongoing software costs.',
-            'This could save three to six team hours per week, cut onboarding time roughly in half and reduce the risk of important knowledge leaving with a departing team member.',
+            'A consultant already uses templates and online tools, but still spends several hours each week preparing meeting notes, rewriting similar proposals, locating client information and responding to recurring questions. Work continues to move, but growth is limited by the consultant’s available time.',
+            'A simple workflow could automatically summarise each client meeting, save key decisions, create follow-up tasks and prepare a draft email. Approved proposal templates and service information could then be used by AI to generate a first draft for review. Client notes and common answers could also be stored in one searchable knowledge base.',
+            'This could be implemented within a few days using existing email, meeting and document tools. The consultant may need three to four hours to organise templates and confirm the workflow, with setup costs of approximately $500–$1,500 and low ongoing fees.',
+            'The result could be four to six hours saved each week, faster client follow-up and capacity for one or two additional clients each month without increasing working hours or hiring immediately.',
           ],
         },
         high: {
@@ -113,15 +118,15 @@ export const defaultConfig: ScorecardConfig = {
         },
         medium: {
           intro: [
-            'Your score suggests that your financial foundations are generally sound, but reporting may arrive later than ideal and some monitoring still relies on manual effort. Profitability is acceptable, yet small leaks in margins, slow-moving stock or late invoices may go unnoticed between reviews. This indicates a practical opportunity to use AI to keep a closer, more regular watch on the numbers.',
-            'The main priorities are usually to automate regular reporting, flag unusual spending or margin changes early and shorten the gap between something happening and the owner knowing about it. AI can combine accounting, sales and banking data into short weekly summaries, chase overdue invoices automatically and highlight trends worth attention. These changes could reduce financial administration by 15–25% and help decisions be made on current rather than month-old information.',
+            'Your score suggests that the business has reasonable financial controls, but important information may still arrive too late or lack the detail needed for confident decisions. Profitability may be acceptable, yet cash flow, stock purchasing and sales consistency could still improve. AI and automation can provide clearer, faster reporting and help the owner focus on the products and activities that generate the strongest returns.',
+            'The main opportunities are to create simple weekly financial summaries, track margins by product category and identify changes in sales patterns earlier. AI can combine information from accounting, sales and inventory systems, flag unusual costs and highlight which products are improving or weakening. This could reduce financial administration by 15–25%, improve purchasing decisions and strengthen profit without requiring a large system change.',
           ],
-          exampleTitle: 'Example: Tightening the Numbers in a Local Bookshop',
+          exampleTitle: 'Example: Improving Profitability in a Local Bookshop',
           example: [
-            'A local bookshop keeps accurate accounts and reviews performance monthly, but overdue trade invoices are chased only when noticed and margin changes on key categories tend to be spotted a month or two late.',
-            'A simple AI-supported workflow could prepare a short weekly snapshot of revenue, cash position and margins, automatically send polite reminders for overdue invoices and flag categories where costs have risen or sales have slowed.',
-            'A basic version could be introduced within about a week using the shop’s existing accounting and point-of-sale systems. The owner may need two to four hours to approve the report format and reminder wording. Setup could cost approximately $800–$2,000, with low ongoing fees.',
-            'This could save two to four hours per week, bring cash in faster through consistent invoice follow-up and catch margin problems weeks earlier than monthly reporting allows.',
+            'A local bookshop already uses accounting and point-of-sale software, but the owner still reviews several reports separately. They can see total sales and profit, but it takes time to understand which categories, promotions and customer groups are producing the best results.',
+            'A lightweight workflow could combine weekly sales, stock and expense data into one summary. AI could highlight bestselling and slow-moving categories, changing margins, upcoming payments and stock likely to run out. It could also suggest which products to reorder, promote or discount based on recent sales.',
+            'Because the shop already has digital systems, this could be introduced within several days. The owner may need two to four hours to approve the report format and key alerts, with setup costs of approximately $750–$2,000 and low ongoing fees.',
+            'This could save two to four hours per week, reduce excess stock by 5–15% and improve margins by directing spending towards products with stronger demand. It would also give the owner earlier warning of cash flow or profitability issues.',
           ],
         },
         high: {
@@ -154,15 +159,15 @@ export const defaultConfig: ScorecardConfig = {
         },
         medium: {
           intro: [
-            'Your score suggests that several systems are working well, but the business still relies on manual steps, disconnected tools or informal handovers in places. Most days run smoothly, yet double-handling of information, occasional missed notes and small inconsistencies between staff absorb time and create avoidable errors. This indicates a practical opportunity to connect what already exists and automate the gaps.',
-            'The main priorities are usually to link key platforms so information flows automatically, tidy up partially documented processes and automate routine updates between staff and customers. AI can summarise notes into a shared record, keep procedures current and pass information between tools without retyping. These changes could reduce routine administration by 15–30% and make service quality noticeably more consistent.',
+            'Your score suggests that the business has some reliable systems, but parts of the operation may still depend on individual employees, manual checks or information stored across different places. Customer service is generally consistent, although repeated questions, incomplete handovers and approval bottlenecks may still create delays during busy periods.',
+            'The main opportunities are to centralise procedures, improve communication between shifts and automate routine updates. AI can help staff find approved answers, summarise notes, organise customer information and identify recurring issues. These improvements could reduce routine administration by 15–25%, improve consistency and free managers from repeatedly answering the same questions.',
           ],
-          exampleTitle: 'Example: Connecting Systems in a Takeaway Shop',
+          exampleTitle: 'Example: Streamlining Systems in a Takeaway Shop',
           example: [
-            'A takeaway shop uses online ordering and digital rosters, but shift notes, stock issues and customer complaints are still handled through a mix of paper, messages and word of mouth, so problems are sometimes discovered late.',
-            'A simple workflow could route orders, shift notes and complaint forms into one central record, use AI to summarise each day for the manager and automatically notify customers about delays or collection times. Recurring issues, such as an item frequently out of stock, would be flagged rather than rediscovered.',
-            'A basic version could be introduced within about a week using the shop’s existing tablets and online tools. The owner may need three to four hours to approve the forms and message templates. Setup could cost approximately $800–$2,500, with low ongoing software costs.',
-            'This could save three to five staff hours per week, reduce double-handling of information and catch operational problems earlier, giving customers a more consistent experience as the shop gets busier.',
+            'A takeaway shop already uses online ordering and digital rosters, but staff still rely on group chats, paper notes and verbal instructions for stock issues, customer complaints and shift handovers. Managers are often interrupted to confirm procedures or approve simple decisions.',
+            'A lightweight workflow could capture shift notes, complaints, equipment problems and stock shortages through one digital form. AI could summarise each submission, assign it to the right person and create a clear handover for the next shift. A searchable knowledge base could also give staff quick access to recipes, allergen information, refund rules and opening or closing procedures.',
+            'Because the shop already uses digital tools, this could be introduced within several days. The owner and senior staff may need three to four hours to organise key information and approve workflows, with setup costs of approximately $750–$2,000 and low ongoing fees.',
+            'This could save three to five staff hours per week, reduce repeated questions by 20–30% and improve shift handovers, order accuracy and customer service without adding more management time.',
           ],
         },
         high: {
@@ -180,6 +185,11 @@ export const defaultConfig: ScorecardConfig = {
         },
       },
     },
+    closingTitle: 'Turn Your Results Into a Practical Next Step',
+    closing: [
+      'Your report has identified where AI and automation could create the greatest value in your business. The next step is determining which opportunity is practical, commercially worthwhile and capable of producing a measurable return.',
+      'I personally review selected assessments where the results indicate a strong opportunity. To register your interest, reply to the email that delivered this report with “Personal review”. I will examine your answers and, if I believe there is a strong fit, contact you with an initial observation and an invitation to discuss the opportunity further.',
+    ],
   },
   landing: {
     heroTitle: 'Identify your biggest AI wins in minutes',
