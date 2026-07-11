@@ -11,18 +11,24 @@ function rich(html: string) {
   return { dangerouslySetInnerHTML: { __html: sanitizeRichText(html) } };
 }
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams?: { chrome?: string };
+}) {
   const config = await getConfig();
   const { landing, leadForm } = config;
   const heroLeft = landing.imagePosition === 'left';
   const perRow = landing.categoriesPerRow === 1 ? 'md:grid-cols-1' : 'md:grid-cols-2';
+  // ?chrome=0 is used by the website embeds to hide the header and footer.
+  const hideChrome = searchParams?.chrome === '0';
 
   return (
     <StartScorecard leadForm={leadForm}>
       <main>
         <VisitBeacon />
         {/* Header */}
-        {landing.showHeader !== false && (
+        {landing.showHeader !== false && !hideChrome && (
           <header className="flex justify-center py-6">
             <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
           </header>
@@ -89,7 +95,7 @@ export default async function LandingPage() {
           <p className="mt-10 text-lg text-muted" {...rich(landing.bottomNote)} />
         </section>
 
-        {landing.showFooter !== false && (
+        {landing.showFooter !== false && !hideChrome && (
           <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} />
         )}
       </main>

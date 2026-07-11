@@ -26,6 +26,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/settings/branding', label: 'Branding', icon: 'branding' },
       { href: '/admin/settings/score-tiers', label: 'Score Tiers', icon: 'tiers' },
       { href: '/admin/settings/lead-form', label: 'Lead Form', icon: 'form' },
+      { href: '/admin/settings/embed', label: 'Embed', icon: 'embed' },
     ],
   },
 ];

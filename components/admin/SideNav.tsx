@@ -84,6 +84,13 @@ function Icon({ name, className = 'h-[18px] w-[18px]' }: { name: string; classNa
           <path d="M8 8h8M8 12h8M8 16h5" />
         </svg>
       );
+    case 'embed':
+      return (
+        <svg {...common}>
+          <path d="m9 8-4 4 4 4M15 8l4 4-4 4" />
+          <path d="M13 5l-2 14" />
+        </svg>
+      );
     case 'external':
       return (
         <svg {...common}>
