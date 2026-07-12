@@ -11,6 +11,9 @@ import { stripTags } from '../richtext';
 // sample template so the flow can be tested for free.
 
 const DESIGN_MODEL = 'claude-sonnet-5';
+// Edits are much cheaper on Haiku and usually small, targeted changes.
+// Set AI_EDIT_MODEL=claude-sonnet-5 if you want top design quality on edits too.
+const EDIT_MODEL = process.env.AI_EDIT_MODEL || 'claude-haiku-4-5';
 
 function mockMode(): boolean {
   return process.env.AI_BUILDER_MOCK === '1' || !process.env.ANTHROPIC_API_KEY;
@@ -126,6 +129,86 @@ export async function generateCustomPage(
   if (!text || text.type !== 'text') throw new Error('The model returned no design.');
   const raw = JSON.parse(text.text) as CustomPage;
   return repairPage(sanitizeCustomPage(raw));
+}
+
+// ——— Chat edits ———————————————————————————————————————————————————————
+
+const EDIT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['html', 'css', 'slots', 'changeSummary'],
+  properties: {
+    ...PAGE_SCHEMA.properties,
+    changeSummary: { type: 'string' },
+  },
+} as const;
+
+export interface CustomPageEdit {
+  customPage: CustomPage;
+  changeSummary: string;
+}
+
+// Apply a conversational edit ("make the hero darker", "add a testimonials
+// section") to an existing custom page. The model returns the complete
+// updated page plus a one-line summary for the chat thread.
+export async function editCustomPage(
+  config: ScorecardConfig,
+  page: 'landing' | 'results',
+  current: CustomPage,
+  instruction: string
+): Promise<CustomPageEdit> {
+  if (mockMode()) return mockEdit(current, instruction);
+
+  const prompt =
+    `You are editing an existing custom ${page} page for the scorecard "${config.title}". ` +
+    `Apply ONLY the requested change and keep everything else identical — same structure, same merge tags, same slot keys, and the SAME slot values unless the request is about the copy itself. ` +
+    `You may add new slots (with written copy) if the request adds new content, and remove slots whose tags you remove.\n` +
+    `${SHARED_RULES}\n${page === 'results' ? RESULTS_RULES + '\n' : ''}` +
+    `\nCURRENT CSS:\n${current.css}\n\nCURRENT HTML:\n${current.html}\n\nCURRENT SLOTS (JSON):\n${JSON.stringify(current.slots)}\n\n` +
+    `REQUESTED CHANGE: ${instruction}\n\n` +
+    `Return the complete updated page (full html, full css, full slots array) plus changeSummary: one plain sentence describing what you changed.`;
+
+  const client = new Anthropic();
+  const stream = client.messages.stream({
+    model: EDIT_MODEL,
+    max_tokens: 24000,
+    system:
+      'You are a senior web designer making precise edits to an existing HTML/CSS page that uses a merge-tag content system. You change only what is asked, preserve everything else byte-for-byte where possible, and respond with JSON matching the requested schema.',
+    messages: [{ role: 'user', content: prompt }],
+    output_config: { format: { type: 'json_schema', schema: EDIT_SCHEMA as unknown as Record<string, unknown> } },
+  });
+  const response = await stream.finalMessage();
+  if (response.stop_reason === 'max_tokens') throw new Error('The edit ran out of space — try a smaller change.');
+  const text = response.content.find((b) => b.type === 'text');
+  if (!text || text.type !== 'text') throw new Error('The model returned no edit.');
+  const raw = JSON.parse(text.text) as CustomPage & { changeSummary: string };
+  return {
+    customPage: repairPage(sanitizeCustomPage(raw)),
+    changeSummary: String(raw.changeSummary ?? 'Updated the design.').slice(0, 300),
+  };
+}
+
+// Sample-mode edits: a few keyword-driven demo changes so the chat flow can
+// be exercised without an API key.
+function mockEdit(current: CustomPage, instruction: string): CustomPageEdit {
+  const wants = instruction.toLowerCase();
+  let css = current.css;
+  let summary: string;
+  if (/dark|night|black/.test(wants)) {
+    css += `\n.cp-page{background:#0f172a !important;color:#e2e8f0}.cp-page h1,.cp-page h2,.cp-page h3{color:#f1f5f9 !important}.cp-page p{color:#94a3b8}.cp-page .cp-card{background:#1e293b !important;border-color:#334155 !important}.cp-page .cp-card p{color:#94a3b8 !important}`;
+    summary = 'Sample mode: switched the page to a dark theme.';
+  } else if (/round|pill/.test(wants)) {
+    css += `\n.cp-page .cp-btn{border-radius:999px !important}.cp-page .cp-card{border-radius:28px !important}`;
+    summary = 'Sample mode: rounded off the buttons and cards.';
+  } else if (/big|larger|bold/.test(wants)) {
+    css += `\n.cp-page h1{font-size:clamp(42px,7vw,76px) !important;font-weight:900}`;
+    summary = 'Sample mode: made the headline bigger and bolder.';
+  } else {
+    css += `\n.cp-page .cp-btn{box-shadow:0 10px 28px rgba(0,0,0,.18)}`;
+    summary =
+      'Sample mode can only demo a few changes (try “dark theme”, “rounder buttons”, “bigger headline”). Add ANTHROPIC_API_KEY for real AI edits.';
+  }
+  return { customPage: { ...current, css, updatedAt: new Date().toISOString() }, changeSummary: summary };
 }
 
 // Ensure every merge tag referenced in the HTML has a slot behind it.

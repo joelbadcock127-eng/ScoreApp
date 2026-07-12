@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CustomPage, ScorecardConfig } from '@/lib/types';
@@ -9,13 +9,20 @@ import { ImagePicker } from '@/components/admin/editor/ui';
 
 type PageKey = 'landing' | 'results';
 
+interface ChatMsg {
+  role: 'user' | 'assistant';
+  text: string;
+  error?: boolean;
+}
+
 const INPUT = 'mt-1.5 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary';
 const LABEL = 'block text-xs font-semibold text-ink';
 
 // Custom Design (AI): generate a fully custom HTML/CSS page for the landing
-// and results pages, then edit every text and image through auto-built slot
-// fields. The design shell and the content are stored separately, so editing
-// copy never touches the design and a redesign never loses copy edits.
+// and results pages, edit every text/image through auto-built slot fields,
+// and iterate on the design through the AI chat — with undo across every AI
+// change. Design shell and content are stored separately, so copy edits
+// survive redesigns.
 export default function CustomPagesEditor({ initialConfig }: { initialConfig: ScorecardConfig }) {
   const [cfg, setCfg] = useState<ScorecardConfig>(initialConfig);
   const [page, setPage] = useState<PageKey>('landing');
@@ -27,6 +34,13 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
   const [mock, setMock] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  // AI chat + versions, kept per page.
+  const [chat, setChat] = useState<Record<PageKey, ChatMsg[]>>({ landing: [], results: [] });
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const [history, setHistory] = useState<Record<PageKey, CustomPage[]>>({ landing: [], results: [] });
+  const [future, setFuture] = useState<Record<PageKey, CustomPage[]>>({ landing: [], results: [] });
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const current: CustomPage | undefined = cfg.customPages?.[page];
@@ -36,10 +50,11 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
     () => (page === 'results' ? sampleResultsData(cfg) : { scorecardTitle: cfg.title }),
     [cfg, page]
   );
-  const srcdoc = useMemo(
-    () => (current ? buildPreviewSrcdoc(current, previewData) : ''),
-    [current, previewData]
-  );
+  const srcdoc = useMemo(() => (current ? buildPreviewSrcdoc(current, previewData) : ''), [current, previewData]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat, chatBusy]);
 
   function patch(p: Partial<ScorecardConfig>) {
     setCfg((c) => ({ ...c, ...p }));
@@ -60,10 +75,38 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
     patch({ customPages: { ...cfg.customPages, [page]: updated } });
   }
 
+  // Every AI change (generate or chat edit) goes through here so undo works.
+  function applyAiChange(newPage: CustomPage) {
+    if (current) setHistory((h) => ({ ...h, [page]: [...h[page], current].slice(-20) }));
+    setFuture((f) => ({ ...f, [page]: [] }));
+    setCfg((c) => ({
+      ...c,
+      customPages: { ...c.customPages, [page]: newPage },
+      ...(page === 'landing' ? { landingMode: 'custom' as const } : { resultsMode: 'custom' as const }),
+    }));
+    setDirty(true);
+    setMessage('');
+  }
+
+  function undo() {
+    const prev = history[page].at(-1);
+    if (!prev || !current) return;
+    setHistory((h) => ({ ...h, [page]: h[page].slice(0, -1) }));
+    setFuture((f) => ({ ...f, [page]: [...f[page], current] }));
+    patch({ customPages: { ...cfg.customPages, [page]: prev } });
+  }
+
+  function redo() {
+    const next = future[page].at(-1);
+    if (!next || !current) return;
+    setFuture((f) => ({ ...f, [page]: f[page].slice(0, -1) }));
+    setHistory((h) => ({ ...h, [page]: [...h[page], current] }));
+    patch({ customPages: { ...cfg.customPages, [page]: next } });
+  }
+
   async function generate() {
     setGenerating(true);
     setError('');
-    setMessage('');
     try {
       const res = await fetch('/api/admin/custom-page', {
         method: 'POST',
@@ -73,16 +116,42 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Generation failed.');
       setMock(Boolean(json.mock));
-      setCfg((c) => ({
-        ...c,
-        customPages: { ...c.customPages, [page]: json.customPage },
-        ...(page === 'landing' ? { landingMode: 'custom' as const } : { resultsMode: 'custom' as const }),
-      }));
-      setDirty(true);
+      applyAiChange(json.customPage);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Generation failed.');
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function sendChat(e: React.FormEvent) {
+    e.preventDefault();
+    const instruction = chatInput.trim();
+    if (!instruction || !current || chatBusy) return;
+    setChat((c) => ({ ...c, [page]: [...c[page], { role: 'user', text: instruction }] }));
+    setChatInput('');
+    setChatBusy(true);
+    try {
+      const res = await fetch('/api/admin/custom-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page, action: 'edit', instruction, customPage: current }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || 'Edit failed.');
+      setMock(Boolean(json.mock));
+      applyAiChange(json.customPage);
+      setChat((c) => ({ ...c, [page]: [...c[page], { role: 'assistant', text: json.changeSummary || 'Done.' }] }));
+    } catch (err) {
+      setChat((c) => ({
+        ...c,
+        [page]: [
+          ...c[page],
+          { role: 'assistant', text: err instanceof Error ? err.message : 'Edit failed.', error: true },
+        ],
+      }));
+    } finally {
+      setChatBusy(false);
     }
   }
 
@@ -101,7 +170,7 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
     setSaving(false);
     if (res.ok) {
       setDirty(false);
-      setMessage('Saved — the live page now uses this design.');
+      setMessage('Saved');
       router.refresh();
     } else {
       const json = await res.json().catch(() => ({}));
@@ -134,7 +203,26 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Undo / redo across AI changes */}
+          <div className="flex rounded-lg border border-gray-200 p-0.5">
+            <button
+              onClick={undo}
+              disabled={!history[page].length}
+              className="rounded-md px-2.5 py-1 text-sm hover:bg-gray-50 disabled:opacity-30"
+              title="Undo AI change"
+            >
+              ↩
+            </button>
+            <button
+              onClick={redo}
+              disabled={!future[page].length}
+              className="rounded-md px-2.5 py-1 text-sm hover:bg-gray-50 disabled:opacity-30"
+              title="Redo"
+            >
+              ↪
+            </button>
+          </div>
           <div className="flex rounded-lg bg-gray-100 p-1">
             <button onClick={() => setDevice('desktop')} className={tabClass(device === 'desktop')} title="Desktop preview">
               Desktop
@@ -157,15 +245,14 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
       {error && <p className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-sm text-red-700">{error}</p>}
       {mock && (
         <p className="border-b border-amber-100 bg-amber-50 px-5 py-2.5 text-sm text-amber-800">
-          Sample mode — no Claude API key configured, so this is a built-in sample design. Add ANTHROPIC_API_KEY for
-          real AI designs.
+          Sample mode — no Claude API key configured, so designs and chat edits are canned demos. Add
+          ANTHROPIC_API_KEY for the real thing.
         </p>
       )}
 
       <div className="flex min-h-0 flex-1">
-        {/* Left rail */}
-        <div className="w-[340px] flex-none overflow-y-auto border-r border-gray-200 bg-white p-5">
-          {/* Mode */}
+        {/* Left rail: mode, generate, content slots */}
+        <div className="w-[320px] flex-none overflow-y-auto border-r border-gray-200 bg-white p-5">
           <p className={LABEL}>This page is currently using</p>
           <div className="mt-2 flex rounded-lg bg-gray-100 p-1">
             <button onClick={() => setMode('components')} className={`flex-1 ${tabClass(mode === 'components')}`}>
@@ -187,11 +274,11 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
                 : 'Generate a design to get started. The standard page keeps working until you switch.'}
           </p>
 
-          {/* Generate */}
           <div className="mt-6 rounded-xl border border-gray-200 p-4">
-            <p className="text-sm font-semibold">{current ? 'Redesign with AI' : '✨ Design this page with AI'}</p>
+            <p className="text-sm font-semibold">{current ? 'Redesign from scratch' : '✨ Design this page with AI'}</p>
             <p className="mt-1 text-xs text-muted">
-              Uses your scorecard’s content and brand colours. Your text edits below survive a redesign.
+              Uses your scorecard’s content and brand colours. Your text edits below survive a redesign; for tweaks to
+              the current design, use the chat instead.
             </p>
             <textarea
               value={instructions}
@@ -209,7 +296,6 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
             </button>
           </div>
 
-          {/* Slot fields */}
           {current && (
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted">Content</p>
@@ -265,11 +351,73 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
               <p className="mt-2 text-sm text-muted">
                 The AI designs a completely custom {page === 'landing' ? 'landing' : 'results'} page from your
                 scorecard’s content and brand — every word and image stays editable here, and{' '}
-                {page === 'results' ? 'live scores, tier copy and charts flow through automatically' : 'the start button opens your normal lead form'}
+                {page === 'results'
+                  ? 'live scores, tier copy and charts flow through automatically'
+                  : 'the start button opens your normal lead form'}
                 . It’s mobile-ready out of the box.
               </p>
             </div>
           )}
+        </div>
+
+        {/* AI chat */}
+        <div className="flex w-[300px] flex-none flex-col border-l border-gray-200 bg-white">
+          <div className="border-b border-gray-100 px-4 py-3">
+            <p className="text-sm font-semibold">AI design chat</p>
+            <p className="mt-0.5 text-xs text-muted">Describe a change — colours, layout, new sections, wording…</p>
+          </div>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+            {!chat[page].length && (
+              <div className="rounded-lg bg-gray-50 p-3 text-xs text-muted">
+                {current
+                  ? 'Try: “Make the hero darker and more dramatic” · “Add a testimonials section” · “Rounder buttons” · “Tighten the spacing on mobile”'
+                  : 'Generate a design first, then chat here to refine it.'}
+              </div>
+            )}
+            {chat[page].map((m, i) => (
+              <div
+                key={i}
+                className={`max-w-[95%] rounded-xl px-3 py-2 text-sm leading-relaxed ${
+                  m.role === 'user'
+                    ? 'ml-auto bg-primary text-white'
+                    : m.error
+                      ? 'bg-red-50 text-red-700'
+                      : 'bg-gray-100 text-ink'
+                }`}
+              >
+                {m.text}
+              </div>
+            ))}
+            {chatBusy && (
+              <div className="flex w-fit items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm text-muted">
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                Making the change…
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          <form onSubmit={sendChat} className="border-t border-gray-100 p-3">
+            <textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  sendChat(e);
+                }
+              }}
+              rows={2}
+              disabled={!current || chatBusy}
+              placeholder={current ? 'What should change?' : 'Generate a design first'}
+              className="w-full resize-none rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary disabled:bg-gray-50"
+            />
+            <button
+              disabled={!current || chatBusy || !chatInput.trim()}
+              className="mt-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-50"
+            >
+              Send
+            </button>
+          </form>
         </div>
       </div>
     </div>
