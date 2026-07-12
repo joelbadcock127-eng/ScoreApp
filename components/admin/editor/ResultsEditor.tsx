@@ -3,15 +3,21 @@
 /* eslint-disable @next/next/no-img-element */
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ResultsPageConfig, ResultsSectionKey, ScorecardConfig } from '@/lib/types';
+import { ExtraSection, ResultsPageConfig, ResultsSectionKey, ScorecardConfig } from '@/lib/types';
 import { tierFor } from '@/lib/scoring';
 import SpeedChart from '@/components/SpeedChart';
+import { SECTION_LIBRARY } from '@/lib/sectionLibrary';
+import { OVERALL_SCORE_DESIGNS, TAILORED_TABS } from '@/lib/resultsSectionLibrary';
+import { isResultsChartType } from '@/components/ResultsExtraView';
+import ExtraSectionEditable from './ExtraSectionEditable';
+import ResultsExtraEditable from './ResultsExtraEditable';
 import {
   ActionField,
   ColorField,
   EyeIcon,
   FieldLabel,
   FieldRow,
+  ImagePicker,
   RailButton,
   RichText,
   SelectInput,
@@ -22,11 +28,11 @@ import {
 import ThemePanel from './ThemePanel';
 import TopBar from './TopBar';
 
-type Rail = 'sections' | 'theme' | 'page';
-type SectionKey = 'header' | 'changeDetails' | ResultsSectionKey | 'footer';
+type Rail = 'sections' | 'add' | 'theme' | 'page';
+type SectionKey = string; // 'header' | 'changeDetails' | ResultsSectionKey | 'footer' | extra ids
 type Selection = { section: SectionKey; child?: string };
 
-const SECTION_LABELS: Record<SectionKey, string> = {
+const SECTION_LABELS: Record<string, string> = {
   header: 'Header',
   changeDetails: 'Change Details Form Popup',
   speedChart: 'Speed Chart',
@@ -34,6 +40,24 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   cta: 'Call to Action',
   share: 'Share with Friends',
   footer: 'Footer',
+};
+
+const EXTRA_LABELS: Record<string, string> = {
+  'overall-score': 'Overall Score',
+  radar: 'Radar Chart',
+  thermometer: 'Thermometer Chart',
+  'traffic-light': 'Traffic Light Chart',
+  speed: 'Speed Chart',
+  donut: 'Donut Chart',
+  banner2: 'Banner',
+  form: 'On Page Form',
+  cta2: 'Call to Action',
+  testimonials: 'Testimonials',
+  categories2: 'Categories',
+  video: 'Video',
+  html: 'Custom HTML',
+  content: 'Content',
+  faq: 'FAQ',
 };
 
 const DEFAULT_RESULTS_PAGE: ResultsPageConfig = {
@@ -58,6 +82,10 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [galleryTab, setGalleryTab] = useState('overall-score');
+  const [gallerySearch, setGallerySearch] = useState('');
+  const [insertAt, setInsertAt] = useState<number | null>(null);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
   const sortedTiers = useMemo(
     () => [...config.tiers].sort((a, b) => a.from - b.from),
     [config.tiers]
@@ -114,9 +142,33 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
   function toggleHidden(k: SectionKey) {
     patchPage({ hidden: isHidden(k) ? page.hidden.filter((x) => x !== k) : [...page.hidden, k] });
   }
-  function removeSection(k: ResultsSectionKey) {
-    if (!confirm(`Delete the ${SECTION_LABELS[k]} section? You can re-add it with “Add Section”.`)) return;
-    patchPage({ order: page.order.filter((x) => x !== k) });
+  const extras = page.extraSections ?? [];
+  const selExtra = extras.find((x) => x.id === sel.section);
+  function sectionLabel(k: string): string {
+    if (SECTION_LABELS[k]) return SECTION_LABELS[k];
+    const x = extras.find((e) => e.id === k);
+    return x ? EXTRA_LABELS[x.type] ?? 'Section' : 'Section';
+  }
+  function addExtra(preset: Omit<ExtraSection, 'id'>) {
+    const id = `x${Date.now().toString(36)}`;
+    const order = [...page.order];
+    order.splice(insertAt ?? order.length, 0, id);
+    patchPage({ extraSections: [...extras, { id, ...preset }], order });
+    setInsertAt(null);
+    setRail('sections');
+    setSel({ section: id });
+    setJustAdded(id);
+    setTimeout(() => setJustAdded(null), 700);
+  }
+  function patchExtra(id: string, p: Partial<ExtraSection>) {
+    patchPage({ extraSections: extras.map((x) => (x.id === id ? { ...x, ...p } : x)) });
+  }
+  function removeSection(k: string) {
+    if (!confirm(`Delete the ${sectionLabel(k)} section? You can re-add it with “Add section”.`)) return;
+    patchPage({
+      order: page.order.filter((x) => x !== k),
+      extraSections: extras.filter((x) => x.id !== k),
+    });
     setSel({ section: 'header' });
   }
   function moveSection(from: number, to: number) {
@@ -198,8 +250,49 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
   const gridCols = page.categories.itemsPerRow === 1 || device === 'mobile' ? '' : 'md:grid-cols-2';
   const chartLeft = page.speedChart.chartPosition === 'left';
 
-  function renderSection(k: ResultsSectionKey) {
+  // Blue plus circle between sections: click to insert a new section there.
+  function PlusZone({ index }: { index: number }) {
+    return (
+      <div className="group/plus relative z-10 -my-3 flex h-6 items-center justify-center">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setInsertAt(index);
+            setRail('add');
+          }}
+          title="Add a section here"
+          aria-label="Add a section here"
+          className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white opacity-0 shadow-card transition group-hover/plus:opacity-100"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="h-3.5 w-3.5">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      </div>
+    );
+  }
+
+  function renderSection(k: string) {
     if (isHidden(k)) return null;
+    const extra = extras.find((x) => x.id === k);
+    if (extra) {
+      return (
+        <div
+          key={k}
+          onClick={() => select(k)}
+          ref={(el) => {
+            if (el && justAdded === k) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }}
+          className={`${outline(k)} ${justAdded === k ? 'section-insert' : ''}`}
+        >
+          {isResultsChartType(extra.type) ? (
+            <ResultsExtraEditable section={extra} config={config} sample={sample} onPatch={(p) => patchExtra(k, p)} />
+          ) : (
+            <ExtraSectionEditable section={extra} config={config} onPatch={(p) => patchExtra(k, p)} />
+          )}
+        </div>
+      );
+    }
     if (k === 'speedChart') {
       return (
         <section
@@ -419,7 +512,7 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
       <div className="flex min-h-0 flex-1">
         {/* Icon rail */}
         <div className="flex w-[72px] flex-none flex-col items-center gap-1 border-r border-gray-200 bg-white py-3">
-          <RailButton label="Add section" onClick={() => alert('Re-add deleted sections with “Add Section” in the Sections panel.')}>
+          <RailButton label="Add section" active={rail === 'add'} onClick={() => { setInsertAt(null); setRail('add'); }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-5 w-5">
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -446,7 +539,24 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
         </div>
 
         {/* Panel column */}
-        <div className="flex w-[300px] flex-none flex-col border-r border-gray-200 bg-white">
+        <div className={`flex flex-none flex-col border-r border-gray-200 bg-white ${rail === 'add' ? 'w-[560px]' : 'w-[300px]'}`}>
+          {rail === 'add' && (
+            <AddSectionGallery
+              tab={galleryTab}
+              setTab={setGalleryTab}
+              search={gallerySearch}
+              setSearch={setGallerySearch}
+              scorecardTitle={config.title}
+              order={page.order}
+              onClose={() => setRail('sections')}
+              onAddExtra={addExtra}
+              onAddCore={(core) => {
+                if (!page.order.includes(core)) patchPage({ order: [...page.order, core] });
+                setRail('sections');
+                setSel({ section: core });
+              }}
+            />
+          )}
           {rail === 'sections' && (
             <>
               <p className="flex-none px-5 pb-2 pt-4 text-lg font-semibold">Sections</p>
@@ -499,7 +609,7 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                         <span className="flex-none cursor-grab text-muted" aria-hidden>
                           ⠿
                         </span>
-                        {SECTION_LABELS[k]}
+                        {sectionLabel(k)}
                         {k === 'categoryScores' && ` ${config.categories.length}`}
                       </span>
                       <span className="flex flex-none items-center gap-1.5">
@@ -509,7 +619,7 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                             toggleHidden(k);
                           }}
                           className="text-muted hover:text-ink"
-                          aria-label={isHidden(k) ? `Show ${SECTION_LABELS[k]}` : `Hide ${SECTION_LABELS[k]}`}
+                          aria-label={isHidden(k) ? `Show ${sectionLabel(k)}` : `Hide ${sectionLabel(k)}`}
                         >
                           <EyeIcon off={isHidden(k)} />
                         </button>
@@ -519,7 +629,7 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                             removeSection(k);
                           }}
                           className="hidden text-muted hover:text-tier-low group-hover:block"
-                          aria-label={`Delete ${SECTION_LABELS[k]}`}
+                          aria-label={`Delete ${sectionLabel(k)}`}
                         >
                           <TrashIcon />
                         </button>
@@ -573,7 +683,7 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                         onClick={() => patchPage({ order: [...page.order, k] })}
                         className="block py-1.5 text-sm font-medium text-primary hover:underline"
                       >
-                        ⊕ {SECTION_LABELS[k]}
+                        ⊕ {sectionLabel(k)}
                       </button>
                     ))}
                   </div>
@@ -622,7 +732,13 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                 <img src={config.branding.logoUrl} alt="" className="h-20 w-auto object-contain" />
               </div>
             )}
-            {page.order.map((k) => renderSection(k))}
+            <PlusZone index={0} />
+            {page.order.map((k, i) => (
+              <div key={`wrap-${k}`}>
+                {renderSection(k)}
+                <PlusZone index={i + 1} />
+              </div>
+            ))}
             {!isHidden('footer') && (
               <div
                 onClick={() => select('footer')}
@@ -644,8 +760,126 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                   ? config.categories.find((c) => c.key === sel.child)?.label ?? 'Category'
                   : sel.section === 'cta' && sel.child
                     ? 'Item'
-                    : SECTION_LABELS[sel.section]}
+                    : sectionLabel(sel.section)}
               </p>
+
+              {selExtra && isResultsChartType(selExtra.type) && (
+                <>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-muted">Display options</p>
+                  {(selExtra.type === 'overall-score' || selExtra.type === 'speed') && (
+                    <>
+                      <FieldLabel>Chart position</FieldLabel>
+                      <SelectInput
+                        value={selExtra.chartPosition ?? 'right'}
+                        onChange={(e) => patchExtra(selExtra.id, { chartPosition: e.target.value as 'left' | 'right' })}
+                      >
+                        <option value="right">Right</option>
+                        <option value="left">Left</option>
+                      </SelectInput>
+                    </>
+                  )}
+                  <FieldLabel>Overall score format</FieldLabel>
+                  <SelectInput
+                    value={selExtra.format ?? 'percent'}
+                    onChange={(e) => patchExtra(selExtra.id, { format: e.target.value as 'percent' | 'outof100' })}
+                  >
+                    <option value="percent">Percent</option>
+                    <option value="outof100">Score out of 100</option>
+                  </SelectInput>
+                  {selExtra.type !== 'radar' && selExtra.type !== 'donut' && (
+                    <FieldRow label="Show tiers">
+                      <Toggle
+                        on={selExtra.showTiers !== false}
+                        onChange={(on) => patchExtra(selExtra.id, { showTiers: on })}
+                        label="Show tiers"
+                      />
+                    </FieldRow>
+                  )}
+                  {(selExtra.type === 'radar' || selExtra.type === 'donut') && (
+                    <ColorField
+                      label="Chart colour"
+                      sub={selExtra.color || 'Primary colour'}
+                      value={selExtra.color || config.branding.primaryColor}
+                      onChange={(v) => patchExtra(selExtra.id, { color: v })}
+                    />
+                  )}
+                  <FieldRow label="Show emailed-report note">
+                    <Toggle
+                      on={selExtra.showEmailNote !== false}
+                      onChange={(on) => patchExtra(selExtra.id, { showEmailNote: on })}
+                      label="Show emailed-report note"
+                    />
+                  </FieldRow>
+                  <p className="mt-4 text-xs leading-relaxed text-muted">
+                    The heading and text are edited inline — click them in the preview. The chart shows a sample score
+                    from the tier selected under “dynamic content”; visitors see their real score.
+                  </p>
+                  <button
+                    onClick={() => removeSection(selExtra.id)}
+                    className="mt-8 flex w-full items-center justify-center gap-2 rounded-lg border border-tier-low py-2.5 text-sm font-medium text-tier-low hover:bg-red-50"
+                  >
+                    <TrashIcon /> Remove Section
+                  </button>
+                </>
+              )}
+
+              {selExtra && !isResultsChartType(selExtra.type) && (
+                <>
+                  {selExtra.type !== 'html' && (
+                    <p className="mt-3 text-xs leading-relaxed text-muted">
+                      All text in this section is edited inline — click it in the preview.
+                    </p>
+                  )}
+                  {(selExtra.type === 'banner2' || selExtra.type === 'cta2' || selExtra.type === 'video') && (
+                    <>
+                      <FieldRow label="Show button">
+                        <Toggle
+                          on={!!selExtra.button}
+                          onChange={(on) => patchExtra(selExtra.id, { button: on ? 'Get Started' : '' })}
+                          label="Show button"
+                        />
+                      </FieldRow>
+                      {selExtra.button && (
+                        <ActionField value={selExtra.action} onChange={(a) => patchExtra(selExtra.id, { action: a })} />
+                      )}
+                    </>
+                  )}
+                  {(selExtra.type === 'banner2' || selExtra.type === 'content' || selExtra.type === 'form') && (
+                    <ImagePicker
+                      label="Image (empty = text only)"
+                      value={selExtra.image ?? ''}
+                      onChange={(v) => patchExtra(selExtra.id, { image: v })}
+                    />
+                  )}
+                  {selExtra.type === 'video' && (
+                    <>
+                      <FieldLabel>Video URL (YouTube or Vimeo)</FieldLabel>
+                      <TextInput
+                        value={selExtra.url ?? ''}
+                        placeholder="https://youtube.com/watch?v=…"
+                        onChange={(e) => patchExtra(selExtra.id, { url: e.target.value })}
+                      />
+                    </>
+                  )}
+                  {selExtra.type === 'html' && (
+                    <>
+                      <FieldLabel>Custom HTML</FieldLabel>
+                      <textarea
+                        value={selExtra.html ?? ''}
+                        onChange={(e) => patchExtra(selExtra.id, { html: e.target.value })}
+                        rows={10}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-xs outline-none focus:border-primary"
+                      />
+                    </>
+                  )}
+                  <button
+                    onClick={() => removeSection(selExtra.id)}
+                    className="mt-8 flex w-full items-center justify-center gap-2 rounded-lg border border-tier-low py-2.5 text-sm font-medium text-tier-low hover:bg-red-50"
+                  >
+                    <TrashIcon /> Remove Section
+                  </button>
+                </>
+              )}
 
               {sel.section === 'header' && (
                 <FieldRow label="Show header">
@@ -890,6 +1124,259 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
             </p>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ——— Add-section gallery ————————————————————————————————————————————
+// Tabs: TAILORED FOR RESULTS (Overall score designs, core re-adds, roadmap
+// items) + STANDARD SECTIONS (the landing-page section library).
+function DesignThumb({ type }: { type: string }) {
+  if (type === 'overall-score')
+    return (
+      <div className="flex items-center gap-3 p-4">
+        <div className="flex-1 space-y-1.5">
+          <div className="h-2 w-3/4 rounded-full bg-gray-700/80" />
+          <div className="h-1.5 rounded-full bg-gray-300" />
+          <div className="h-1.5 w-4/5 rounded-full bg-gray-300" />
+        </div>
+        <div className="w-24 flex-none rounded-lg border border-gray-200 bg-white p-2 text-center shadow-sm">
+          <div className="text-[7px] font-bold uppercase tracking-wide text-gray-500">Your overall score</div>
+          <div className="text-xl font-extrabold text-tier-medium">84%</div>
+          <div className="mx-auto mt-0.5 h-1 w-12 rounded-full bg-gray-200">
+            <div className="h-1 w-9 rounded-full bg-tier-medium" />
+          </div>
+          <div className="mt-0.5 text-[9px] font-bold text-tier-medium">High</div>
+        </div>
+      </div>
+    );
+  if (type === 'radar')
+    return (
+      <svg viewBox="0 0 120 90" className="mx-auto h-24 w-full p-2">
+        {[1, 0.66, 0.33].map((f) => (
+          <polygon
+            key={f}
+            points={`60,${45 - 38 * f} ${60 + 44 * f},45 60,${45 + 38 * f} ${60 - 44 * f},45`}
+            fill="none"
+            stroke="#d7dae0"
+          />
+        ))}
+        <polygon points="60,14 92,45 60,68 30,45" fill="#1c78fe" fillOpacity="0.35" stroke="#1c78fe" strokeWidth="1.5" />
+      </svg>
+    );
+  if (type === 'thermometer')
+    return (
+      <svg viewBox="0 0 120 90" className="mx-auto h-24 w-full p-2">
+        <rect x="52" y="8" width="16" height="52" rx="8" fill="#fff" stroke="#505070" strokeWidth="5" />
+        <circle cx="60" cy="68" r="15" fill="#f26527" />
+        <rect x="56" y="34" width="8" height="30" rx="4" fill="#f26527" />
+        <text x="60" y="72" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff">53%</text>
+      </svg>
+    );
+  if (type === 'traffic-light')
+    return (
+      <svg viewBox="0 0 120 90" className="mx-auto h-24 w-full p-2">
+        <rect x="42" y="6" width="36" height="78" rx="10" fill="#28325d" />
+        <circle cx="60" cy="21" r="9" fill="#d41f34" opacity="0.35" />
+        <circle cx="60" cy="45" r="9" fill="#f26527" />
+        <text x="60" y="48.5" textAnchor="middle" fontSize="7" fontWeight="700" fill="#fff">53%</text>
+        <circle cx="60" cy="69" r="9" fill="#66bc46" opacity="0.35" />
+      </svg>
+    );
+  if (type === 'speed')
+    return (
+      <svg viewBox="0 0 120 90" className="mx-auto h-24 w-full p-2">
+        <path d="M 20 70 A 40 40 0 0 1 45 33" fill="none" stroke="#d41f34" strokeWidth="13" />
+        <path d="M 49 30 A 40 40 0 0 1 74 31" fill="none" stroke="#f26527" strokeWidth="13" />
+        <path d="M 78 34 A 40 40 0 0 1 100 70" fill="none" stroke="#e4e6ea" strokeWidth="13" />
+        <circle cx="60" cy="70" r="6" fill="#0c0d0d" />
+        <line x1="60" y1="70" x2="74" y2="44" stroke="#0c0d0d" strokeWidth="3" strokeLinecap="round" />
+      </svg>
+    );
+  // donut
+  return (
+    <svg viewBox="0 0 120 90" className="mx-auto h-24 w-full p-2">
+      <circle cx="60" cy="45" r="28" fill="none" stroke="#1c78fe" strokeWidth="13" strokeDasharray="60 8 40 8 25 8 20 8" opacity="0.9" />
+      <text x="60" y="49" textAnchor="middle" fontSize="12" fontWeight="800" fill="#1c78fe">53%</text>
+    </svg>
+  );
+}
+
+function AddSectionGallery({
+  tab,
+  setTab,
+  search,
+  setSearch,
+  scorecardTitle,
+  order,
+  onClose,
+  onAddExtra,
+  onAddCore,
+}: {
+  tab: string;
+  setTab: (t: string) => void;
+  search: string;
+  setSearch: (s: string) => void;
+  scorecardTitle: string;
+  order: string[];
+  onClose: () => void;
+  onAddExtra: (preset: Omit<ExtraSection, 'id'>) => void;
+  onAddCore: (core: 'categoryScores' | 'share') => void;
+}) {
+  const q = search.trim().toLowerCase();
+  const tailored = TAILORED_TABS.filter((t) => !q || t.label.toLowerCase().includes(q));
+  const standard = SECTION_LIBRARY.filter((c) => !q || c.label.toLowerCase().includes(q));
+  const activeTailored = TAILORED_TABS.find((t) => t.key === tab);
+  const activeStandard = SECTION_LIBRARY.find((c) => c.key === tab);
+
+  return (
+    <div className="flex min-h-0 flex-1">
+      <div className="flex w-64 flex-none flex-col border-r border-gray-100">
+        <div className="flex items-center justify-between px-4 pb-2 pt-4">
+          <p className="text-lg font-semibold">Add a section</p>
+          <button onClick={onClose} className="text-muted hover:text-ink" aria-label="Close">
+            ✕
+          </button>
+        </div>
+        <div className="px-4 pb-2">
+          <div className="relative">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+            >
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m20 20-3.8-3.8" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search sections"
+              className="w-full rounded-md border border-gray-300 py-2 pl-8 pr-3 text-sm outline-none focus:border-primary"
+            />
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+          {tailored.length > 0 && (
+            <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Tailored for results
+            </p>
+          )}
+          {tailored.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`block w-full rounded-md px-3 py-2.5 text-left text-sm ${
+                tab === t.key ? 'bg-gray-200/70 font-medium' : 'hover:bg-gray-100'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+          {standard.length > 0 && (
+            <p className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-widest text-muted">
+              Standard sections
+            </p>
+          )}
+          {standard.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setTab(c.key)}
+              className={`block w-full rounded-md px-3 py-2.5 text-left text-sm ${
+                tab === c.key ? 'bg-gray-200/70 font-medium' : 'hover:bg-gray-100'
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
+        {activeTailored && activeTailored.key === 'overall-score' && (
+          <>
+            <p className="text-sm font-semibold">Overall score</p>
+            <p className="pb-3 pt-1 text-xs leading-relaxed text-muted">
+              Six ways to present the overall result — every heading and paragraph is edited inline after inserting.
+            </p>
+            <div className="space-y-4">
+              {OVERALL_SCORE_DESIGNS.map((d) => (
+                <button
+                  key={d.key}
+                  onClick={() => onAddExtra(d.make(scorecardTitle))}
+                  title={`Add ${d.label}`}
+                  className="group/design block w-full overflow-hidden rounded-lg border border-gray-200 text-left transition hover:-translate-y-0.5 hover:border-primary hover:shadow-card"
+                >
+                  <div className="pointer-events-none bg-white">
+                    <DesignThumb type={d.key} />
+                  </div>
+                  <p className="flex items-center justify-between border-t border-gray-100 px-3 py-2 text-xs font-medium text-muted">
+                    {d.label}
+                    <span className="font-semibold text-primary opacity-0 transition group-hover/design:opacity-100">+ Add</span>
+                  </p>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {activeTailored && activeTailored.core && (
+          <>
+            <p className="text-sm font-semibold">{activeTailored.label}</p>
+            {order.includes(activeTailored.core) ? (
+              <p className="pt-2 text-sm text-muted">This section is already on the page — select it in the Sections panel.</p>
+            ) : (
+              <button
+                onClick={() => onAddCore(activeTailored.core!)}
+                className="mt-3 rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white hover:brightness-110"
+              >
+                ⊕ Add {activeTailored.label}
+              </button>
+            )}
+          </>
+        )}
+
+        {activeTailored && activeTailored.soon && (
+          <>
+            <p className="text-sm font-semibold">{activeTailored.label}</p>
+            <p className="pt-2 text-sm leading-relaxed text-muted">
+              Designs for this tab are on the way — the Overall score tab already has six you can use now.
+            </p>
+          </>
+        )}
+
+        {activeStandard && (
+          <>
+            <p className="text-sm font-semibold">{activeStandard.label}</p>
+            <p className="pb-3 pt-1 text-xs leading-relaxed text-muted">{activeStandard.blurb}</p>
+            {activeStandard.presets.map((preset) => (
+              <button
+                key={preset.key}
+                onClick={() => onAddExtra(preset.make())}
+                title={`Add ${preset.label}`}
+                className="group/design block w-full overflow-hidden rounded-lg border border-gray-200 text-left transition hover:-translate-y-0.5 hover:border-primary hover:shadow-card"
+              >
+                <div className={`pointer-events-none p-4 ${['banner2', 'cta2'].includes(preset.make().type) ? 'bg-navy' : 'bg-white'}`}>
+                  <div className={`mx-auto h-2.5 w-2/3 rounded-full ${['banner2', 'cta2'].includes(preset.make().type) ? 'bg-white/70' : 'bg-gray-700/80'}`} />
+                  <div className={`mx-auto mt-2 h-1.5 w-11/12 rounded-full ${['banner2', 'cta2'].includes(preset.make().type) ? 'bg-white/30' : 'bg-gray-300'}`} />
+                  <div className={`mx-auto mt-1 h-1.5 w-4/5 rounded-full ${['banner2', 'cta2'].includes(preset.make().type) ? 'bg-white/30' : 'bg-gray-300'}`} />
+                  {preset.make().button && <div className="mx-auto mt-3 h-3 w-1/3 rounded-sm bg-primary" />}
+                </div>
+                <p className="flex items-center justify-between border-t border-gray-100 px-3 py-2 text-xs font-medium text-muted">
+                  {preset.label}
+                  <span className="font-semibold text-primary opacity-0 transition group-hover/design:opacity-100">+ Add</span>
+                </p>
+              </button>
+            ))}
+            <p className="pt-3 text-[11px] leading-relaxed text-muted">
+              Everything inside is editable — click any text in the preview to change it.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

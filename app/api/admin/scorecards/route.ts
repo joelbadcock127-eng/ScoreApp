@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/server/auth';
 import {
+  BASE_DOMAIN,
   createScorecard,
   deleteScorecard,
   listScorecards,
   setDefaultScorecard,
+  setScorecardCustomDomain,
   setScorecardDomain,
   SCORECARD_COOKIE,
 } from '@/lib/server/config';
@@ -84,6 +86,35 @@ export async function POST(req: NextRequest) {
     if (taken) return NextResponse.json({ error: 'That subdomain is already used by another scorecard.' }, { status: 409 });
     await setScorecardDomain(id, raw);
     return NextResponse.json({ ok: true, domain: raw });
+  }
+
+  if (body.action === 'set-custom-domain') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    const raw = String(body.domain ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .replace(/^www\./, '');
+    if (raw === '') {
+      await setScorecardCustomDomain(id, null);
+      return NextResponse.json({ ok: true, customDomain: null });
+    }
+    // Must be a real hostname with at least one dot, and not one of ours.
+    if (!/^(?=.{4,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/.test(raw)) {
+      return NextResponse.json({ error: 'Enter a valid domain, e.g. scorecard.yourbusiness.com' }, { status: 400 });
+    }
+    if (raw === BASE_DOMAIN || raw.endsWith(`.${BASE_DOMAIN}`)) {
+      return NextResponse.json(
+        { error: `That is a managed ${BASE_DOMAIN} address — use the subdomain field above instead.` },
+        { status: 400 }
+      );
+    }
+    const taken = (await listScorecards()).some((s) => s.custom_domain === raw && s.id !== id);
+    if (taken) return NextResponse.json({ error: 'That domain is already used by another scorecard.' }, { status: 409 });
+    await setScorecardCustomDomain(id, raw);
+    return NextResponse.json({ ok: true, customDomain: raw });
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

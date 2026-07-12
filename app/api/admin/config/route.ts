@@ -10,7 +10,6 @@ import {
   QuestionOption,
   QuestionType,
   QuestionsPageConfig,
-  ResultsSectionKey,
   Tier,
 } from '@/lib/types';
 
@@ -38,6 +37,43 @@ function action(v: unknown, fallback: ButtonAction | undefined): ButtonAction | 
     type: a.type,
     page: ACTION_PAGES.includes(a.page as (typeof ACTION_PAGES)[number]) ? a.page : undefined,
     url: a.url ? String(a.url).slice(0, 500) : undefined,
+  };
+}
+
+const EXTRA_TYPES = [
+  'banner2', 'form', 'cta2', 'testimonials', 'categories2', 'video', 'html', 'content', 'faq',
+  'overall-score', 'radar', 'thermometer', 'traffic-light', 'speed', 'donut',
+];
+
+// Shared sanitiser for gallery-added sections (landing + results pages).
+function sanitizeExtras(v: unknown): ReturnType<typeof mapExtra>[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  return v.slice(0, 20).map(mapExtra).filter((x) => x.id);
+}
+function mapExtra(x: Record<string, unknown>) {
+  return {
+    id: String(x.id ?? '').replace(/[^a-z0-9]/gi, '').slice(0, 30),
+    type: (EXTRA_TYPES.includes(String(x.type)) ? String(x.type) : 'content') as never,
+    style: x.style != null ? String(x.style).slice(0, 30) : undefined,
+    title: x.title != null ? sanitizeRichText(String(x.title)).slice(0, 300) : undefined,
+    body: x.body != null ? sanitizeRichText(String(x.body)).slice(0, 2000) : undefined,
+    button: x.button != null ? sanitizeRichText(String(x.button)).slice(0, 120) : undefined,
+    action: action(x.action, undefined),
+    image: x.image != null ? String(x.image).slice(0, 500) : undefined,
+    url: x.url != null ? String(x.url).slice(0, 500) : undefined,
+    html: x.html != null ? String(x.html).slice(0, 20000) : undefined,
+    items: Array.isArray(x.items)
+      ? (x.items as Record<string, string>[]).slice(0, 12).map((it) => ({
+          title: sanitizeRichText(String(it.title ?? '')).slice(0, 300),
+          body: sanitizeRichText(String(it.body ?? '')).slice(0, 1500),
+          meta: it.meta != null ? sanitizeRichText(String(it.meta)).slice(0, 200) : undefined,
+        }))
+      : undefined,
+    chartPosition: x.chartPosition === 'left' ? ('left' as const) : x.chartPosition === 'right' ? ('right' as const) : undefined,
+    format: x.format === 'outof100' ? ('outof100' as const) : x.format === 'percent' ? ('percent' as const) : undefined,
+    showTiers: x.showTiers != null ? Boolean(x.showTiers) : undefined,
+    showEmailNote: x.showEmailNote != null ? Boolean(x.showEmailNote) : undefined,
+    color: x.color != null && /^#[0-9a-fA-F]{6}$/.test(String(x.color)) ? String(x.color) : undefined,
   };
 }
 
@@ -236,11 +272,15 @@ export async function PUT(req: NextRequest) {
   if (body.resultsPage && typeof body.resultsPage === 'object') {
     const p = body.resultsPage;
     const SECTIONS = ['speedChart', 'categoryScores', 'cta', 'share'];
-    const HIDEABLE = ['header', 'footer', ...SECTIONS];
+    const extras = sanitizeExtras(p.extraSections) ?? config.resultsPage?.extraSections ?? [];
+    const extraIds = extras.map((x: { id: string }) => x.id);
+    const VALID = [...SECTIONS, ...extraIds];
+    const HIDEABLE = ['header', 'footer', ...VALID];
     config.resultsPage = {
-      order: (Array.isArray(p.order)
-        ? p.order.filter((k: string, i: number, a: string[]) => SECTIONS.includes(k) && a.indexOf(k) === i)
-        : SECTIONS) as ResultsSectionKey[],
+      order: Array.isArray(p.order)
+        ? p.order.filter((k: string, i: number, a: string[]) => VALID.includes(k) && a.indexOf(k) === i)
+        : SECTIONS,
+      extraSections: extras,
       hidden: Array.isArray(p.hidden) ? p.hidden.filter((k: string) => HIDEABLE.includes(k)) : [],
       speedChart: {
         chartPosition: p.speedChart?.chartPosition === 'left' ? 'left' : 'right',
@@ -331,34 +371,7 @@ export async function PUT(req: NextRequest) {
       categoriesPerRow: l.categoriesPerRow != null ? num(l.categoriesPerRow, 2, 1, 4) : config.landing.categoriesPerRow,
       showHeader: l.showHeader != null ? Boolean(l.showHeader) : config.landing.showHeader,
       showFooter: l.showFooter != null ? Boolean(l.showFooter) : config.landing.showFooter,
-      extraSections: Array.isArray(l.extraSections)
-        ? l.extraSections
-            .slice(0, 20)
-            .map((x: Record<string, unknown>) => ({
-              id: String(x.id ?? '').replace(/[^a-z0-9]/gi, '').slice(0, 30),
-              type: ([
-                'banner2', 'form', 'cta2', 'testimonials', 'categories2', 'video', 'html', 'content', 'faq',
-              ].includes(String(x.type))
-                ? String(x.type)
-                : 'content') as never,
-              style: x.style != null ? String(x.style).slice(0, 30) : undefined,
-              title: x.title != null ? sanitizeRichText(String(x.title)).slice(0, 300) : undefined,
-              body: x.body != null ? sanitizeRichText(String(x.body)).slice(0, 2000) : undefined,
-              button: x.button != null ? sanitizeRichText(String(x.button)).slice(0, 120) : undefined,
-              action: action(x.action, undefined),
-              image: x.image != null ? String(x.image).slice(0, 500) : undefined,
-              url: x.url != null ? String(x.url).slice(0, 500) : undefined,
-              html: x.html != null ? String(x.html).slice(0, 20000) : undefined,
-              items: Array.isArray(x.items)
-                ? (x.items as Record<string, string>[]).slice(0, 12).map((it) => ({
-                    title: sanitizeRichText(String(it.title ?? '')).slice(0, 300),
-                    body: sanitizeRichText(String(it.body ?? '')).slice(0, 1500),
-                    meta: it.meta != null ? sanitizeRichText(String(it.meta)).slice(0, 200) : undefined,
-                  }))
-                : undefined,
-            }))
-            .filter((x: { id: string }) => x.id)
-        : config.landing.extraSections,
+      extraSections: sanitizeExtras(l.extraSections) ?? config.landing.extraSections,
       sectionOrder: Array.isArray(l.sectionOrder)
         ? l.sectionOrder
             .map((k: string) => String(k).slice(0, 40))

@@ -64,10 +64,12 @@ function Cta({
 export default function ExtraSectionView({
   section: s,
   config,
+  scorecardId,
   editable = false,
 }: {
   section: ExtraSection;
   config: ScorecardConfig;
+  scorecardId?: number;
   editable?: boolean;
 }) {
   const primary = config.branding.primaryColor;
@@ -112,7 +114,7 @@ export default function ExtraSectionView({
             <p className="mt-5 text-lg leading-relaxed text-muted" {...rich(s.body ?? '')} />
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white p-7 shadow-xl">
-            <InlineLeadForm leadForm={config.leadForm} disabled={editable} />
+            <InlineLeadForm leadForm={config.leadForm} scorecardId={scorecardId} disabled={editable} />
           </div>
         </div>
       </section>

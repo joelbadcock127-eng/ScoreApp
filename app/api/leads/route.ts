@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { getActiveOrDefaultId } from '@/lib/server/config';
+import { getActiveOrDefaultId, listScorecards } from '@/lib/server/config';
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -8,6 +8,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
   }
   const sb = supabaseAdmin();
+  // Explicit scorecard (distinct /s/<id> URLs) — must exist; else cookie/host/default.
+  let scorecardId: number | null = null;
+  const wanted = Number(body.scorecard_id);
+  if (Number.isInteger(wanted) && wanted > 0) {
+    const all = await listScorecards();
+    if (all.some((s) => s.id === wanted)) scorecardId = wanted;
+  }
   const { data, error } = await sb
     .from('leads')
     .insert({
@@ -17,7 +24,7 @@ export async function POST(req: NextRequest) {
       business: String(body.business ?? '').slice(0, 300),
       contact_opt_in: Boolean(body.contact_opt_in),
       status: 'started',
-      scorecard_id: await getActiveOrDefaultId(),
+      scorecard_id: scorecardId ?? (await getActiveOrDefaultId()),
     })
     .select('id')
     .single();

@@ -11,24 +11,38 @@ export interface ScorecardSummary {
   name: string;
   is_default: boolean;
   domain?: string | null;
+  custom_domain?: string | null;
   updated_at: string;
   created_at: string;
 }
 
 export const BASE_DOMAIN = process.env.PUBLIC_BASE_DOMAIN || 'accesoai.com.au';
 
-// Custom-domain resolution: www.<sub>.<base> or <sub>.<base> → the scorecard
-// whose `domain` column matches <sub>. Returns null when the host is the bare
-// base domain, localhost, or an unrecognised host.
-export function getHostSubdomain(): string | null {
+function requestHost(): string {
   try {
-    const host = (headers().get('x-forwarded-host') ?? headers().get('host') ?? '').split(':')[0].toLowerCase();
-    if (!host || !host.endsWith(`.${BASE_DOMAIN}`)) return null;
-    const sub = host.slice(0, -(BASE_DOMAIN.length + 1)).replace(/^www\./, '');
-    return /^[a-z0-9-]{1,63}$/.test(sub) && sub !== 'www' ? sub : null;
+    return (headers().get('x-forwarded-host') ?? headers().get('host') ?? '').split(':')[0].toLowerCase();
   } catch {
-    return null;
+    return ''; // outside a request context
   }
+}
+
+// Managed-subdomain resolution: www.<sub>.<base> or <sub>.<base> → the
+// scorecard whose `domain` column matches <sub>. Returns null when the host is
+// the bare base domain, localhost, or an unrecognised host.
+export function getHostSubdomain(): string | null {
+  const host = requestHost();
+  if (!host || !host.endsWith(`.${BASE_DOMAIN}`)) return null;
+  const sub = host.slice(0, -(BASE_DOMAIN.length + 1)).replace(/^www\./, '');
+  return /^[a-z0-9-]{1,63}$/.test(sub) && sub !== 'www' ? sub : null;
+}
+
+// Fully custom domains the customer owns (e.g. scorecard.mybusiness.com):
+// the request host, with any leading www. stripped, matched against the
+// `custom_domain` column.
+export function getHostCustomDomain(): string | null {
+  const host = requestHost();
+  if (!host || host === 'localhost' || host.endsWith(`.${BASE_DOMAIN}`) || host === BASE_DOMAIN) return null;
+  return host.replace(/^www\./, '') || null;
 }
 
 // The scorecard the current request is working with: admins carry a cookie
@@ -47,7 +61,7 @@ export async function listScorecards(): Promise<ScorecardSummary[]> {
   const sb = supabaseAdmin();
   const { data, error } = await sb
     .from('scorecard_config')
-    .select('id, name, is_default, domain, updated_at, created_at')
+    .select('id, name, is_default, domain, custom_domain, updated_at, created_at')
     .order('created_at', { ascending: true })
     .returns<ScorecardSummary[]>();
   if (error) throw error;
@@ -90,6 +104,16 @@ export async function getConfig(id?: number): Promise<ScorecardConfig> {
     if (byDomain) return { ...defaultConfig, ...(byDomain.config as ScorecardConfig) };
   }
 
+  const custom = getHostCustomDomain();
+  if (custom) {
+    const { data: byCustom } = await sb
+      .from('scorecard_config')
+      .select('config')
+      .eq('custom_domain', custom)
+      .maybeSingle();
+    if (byCustom) return { ...defaultConfig, ...(byCustom.config as ScorecardConfig) };
+  }
+
   const { data: def, error: defErr } = await sb
     .from('scorecard_config')
     .select('config')
@@ -116,6 +140,11 @@ export async function getActiveOrDefaultId(): Promise<number> {
     const byDomain = all.find((s) => s.domain === sub);
     if (byDomain) return byDomain.id;
   }
+  const custom = getHostCustomDomain();
+  if (custom) {
+    const byCustom = all.find((s) => s.custom_domain === custom);
+    if (byCustom) return byCustom.id;
+  }
   return all.find((s) => s.is_default)?.id ?? all[0]?.id ?? 1;
 }
 
@@ -136,6 +165,12 @@ export async function deleteScorecard(id: number) {
 export async function setScorecardDomain(id: number, domain: string | null) {
   const sb = supabaseAdmin();
   const { error } = await sb.from('scorecard_config').update({ domain }).eq('id', id);
+  if (error) throw error;
+}
+
+export async function setScorecardCustomDomain(id: number, customDomain: string | null) {
+  const sb = supabaseAdmin();
+  const { error } = await sb.from('scorecard_config').update({ custom_domain: customDomain }).eq('id', id);
   if (error) throw error;
 }
 

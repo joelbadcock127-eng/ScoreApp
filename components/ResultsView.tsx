@@ -1,11 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 import { tierFor } from '@/lib/scoring';
 import { sanitizeRichText } from '@/lib/richtext';
-import { ButtonAction, CategoryScore, ResultsPageConfig, ResultsSectionKey, ScorecardConfig } from '@/lib/types';
+import { ButtonAction, CategoryScore, ResultsPageConfig, ScorecardConfig } from '@/lib/types';
 import SpeedChart from '@/components/SpeedChart';
 import Footer from '@/components/Footer';
 import ChangeDetails from '@/components/ChangeDetails';
 import ShareBar from '@/components/ShareBar';
+import ExtraSectionView from '@/components/ExtraSectionView';
+import ResultsExtraView, { isResultsChartType } from '@/components/ResultsExtraView';
 
 export interface ResultsData {
   id: string;
@@ -68,8 +70,26 @@ export default function ResultsView({
   const gridCols = page.categories.itemsPerRow === 1 ? '' : 'md:grid-cols-2';
   const sortedTiers = [...config.tiers].sort((a, b) => a.from - b.from);
 
-  function renderSection(k: ResultsSectionKey) {
+  function renderSection(k: string) {
     if (hidden(k)) return null;
+    const extra = (page.extraSections ?? []).find((x) => x.id === k);
+    if (extra) {
+      if (isResultsChartType(extra.type)) {
+        return (
+          <ResultsExtraView
+            key={k}
+            section={extra}
+            config={config}
+            data={{
+              overall,
+              categories: lead.category_scores.map((c) => ({ key: c.key, label: c.label, percent: c.percent })),
+              email: lead.email,
+            }}
+          />
+        );
+      }
+      return <ExtraSectionView key={k} section={extra} config={config} />;
+    }
     if (k === 'speedChart') {
       return (
         <section key={k} className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-2">
@@ -171,15 +191,18 @@ export default function ResultsView({
         </section>
       );
     }
-    return (
-      <ShareBar
-        key={k}
-        text={sanitizeRichText(r.share)}
-        show={{ facebook: page.share.facebook, x: page.share.twitter, linkedin: page.share.linkedin }}
-        background={page.share.background}
-        linksColor={page.share.linksColor}
-      />
-    );
+    if (k === 'share') {
+      return (
+        <ShareBar
+          key={k}
+          text={sanitizeRichText(r.share)}
+          show={{ facebook: page.share.facebook, x: page.share.twitter, linkedin: page.share.linkedin }}
+          background={page.share.background}
+          linksColor={page.share.linksColor}
+        />
+      );
+    }
+    return null;
   }
 
   return (

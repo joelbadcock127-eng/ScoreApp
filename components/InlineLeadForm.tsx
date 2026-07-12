@@ -10,9 +10,11 @@ import Spinner from './Spinner';
 // same fields and flow as the popup, submits and heads into the questions.
 export default function InlineLeadForm({
   leadForm,
+  scorecardId,
   disabled = false,
 }: {
   leadForm: ScorecardConfig['leadForm'];
+  scorecardId?: number;
   disabled?: boolean;
 }) {
   const [submitting, setSubmitting] = useState(false);
@@ -29,6 +31,7 @@ export default function InlineLeadForm({
     for (const f of leadForm.fields.filter((f) => f.enabled)) {
       payload[f.key] = f.type === 'checkbox' ? form.get(f.key) === 'on' : form.get(f.key) ?? '';
     }
+    if (scorecardId != null) payload.scorecard_id = scorecardId;
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',

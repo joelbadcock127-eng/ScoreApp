@@ -117,7 +117,10 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
                     {r.name}
                   </button>
                   <p className="mt-0.5 text-xs text-muted">
-                    Created {new Date(r.created_at).toLocaleDateString()}
+                    <a href={`/s/${r.id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      /s/{r.id}
+                    </a>
+                    {' · '}Created {new Date(r.created_at).toLocaleDateString()}
                     {r.id === activeId && ' · currently editing'}
                   </p>
                 </td>
@@ -148,7 +151,7 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
                       <button onClick={() => edit(r.id)} disabled={busy} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-gray-50">
                         Edit
                       </button>
-                      <Link href="/" target="_blank" className="block w-full rounded-md px-3 py-2 text-sm hover:bg-gray-50" onClick={() => setMenuFor(null)}>
+                      <Link href={`/s/${r.id}`} target="_blank" className="block w-full rounded-md px-3 py-2 text-sm hover:bg-gray-50" onClick={() => setMenuFor(null)}>
                         Preview
                       </Link>
                       {!r.is_default && (

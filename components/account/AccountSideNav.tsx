@@ -47,6 +47,21 @@ function Icon({ name }: { name: string }) {
           <path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18" />
         </svg>
       );
+    case 'billing':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 9.5h18M6.5 15h4" />
+        </svg>
+      );
+    case 'users':
+      return (
+        <svg {...common}>
+          <circle cx="9" cy="8" r="3" />
+          <path d="M3.8 19.5c.6-3 2.6-4.7 5.2-4.7s4.6 1.7 5.2 4.7" />
+          <path d="M15.5 5.8a3 3 0 0 1 0 4.4M17.5 15.3c1.4.8 2.3 2.2 2.6 4.2" />
+        </svg>
+      );
     case 'help':
       return (
         <svg {...common}>
@@ -87,6 +102,8 @@ const MAIN = [
   { href: '/account/templates', label: 'Templates', icon: 'templates' },
   { href: '/account/ai-builder', label: 'AI Builder', icon: 'ai', badge: 'New' },
   { href: '/account/settings', label: 'Account settings', icon: 'settings' },
+  { href: '/account/billing', label: 'Billing', icon: 'billing' },
+  { href: '/account/users', label: 'Users and Permissions', icon: 'users' },
 ];
 
 const HELP = [

@@ -10,9 +10,11 @@ import Spinner from './Spinner';
 // Wraps the landing page; any element with [data-start-scorecard] opens the lead form modal.
 export default function StartScorecard({
   leadForm,
+  scorecardId,
   children,
 }: {
   leadForm: ScorecardConfig['leadForm'];
+  scorecardId?: number;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -38,6 +40,7 @@ export default function StartScorecard({
     for (const f of leadForm.fields.filter((f) => f.enabled)) {
       payload[f.key] = f.type === 'checkbox' ? form.get(f.key) === 'on' : form.get(f.key) ?? '';
     }
+    if (scorecardId != null) payload.scorecard_id = scorecardId;
     try {
       const res = await fetch('/api/leads', {
         method: 'POST',

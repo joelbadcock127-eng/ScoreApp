@@ -80,7 +80,9 @@ export interface ButtonAction {
   url?: string;
 }
 
-// Custom landing-page sections added via the "Add a section" gallery.
+// Custom sections added via the "Add a section" gallery. The first group works
+// on any page; the chart types are results-page sections that render the
+// lead's real score.
 export type ExtraSectionType =
   | 'banner2'
   | 'form'
@@ -90,7 +92,13 @@ export type ExtraSectionType =
   | 'video'
   | 'html'
   | 'content'
-  | 'faq';
+  | 'faq'
+  | 'overall-score'
+  | 'radar'
+  | 'thermometer'
+  | 'traffic-light'
+  | 'speed'
+  | 'donut';
 
 export interface ExtraSectionItem {
   title: string;
@@ -110,6 +118,12 @@ export interface ExtraSection {
   url?: string; // video URL
   html?: string; // advanced custom HTML
   items?: ExtraSectionItem[]; // testimonials / faq entries
+  // Results chart options (overall-score / radar / thermometer / …)
+  chartPosition?: 'left' | 'right';
+  format?: 'percent' | 'outof100';
+  showTiers?: boolean;
+  showEmailNote?: boolean;
+  color?: string; // chart colour override (defaults to the primary colour)
 }
 
 export interface ShareAppearanceConfig {
@@ -256,8 +270,9 @@ export interface ScorecardConfig {
 export type ResultsSectionKey = 'speedChart' | 'categoryScores' | 'cta' | 'share';
 
 export interface ResultsPageConfig {
-  order: ResultsSectionKey[]; // middle sections, in render order (removed = deleted)
+  order: string[]; // core ResultsSectionKeys + extra section ids, in render order
   hidden: string[]; // section keys currently hidden (header/footer included)
+  extraSections?: ExtraSection[]; // gallery-added sections (charts + standard)
   speedChart: {
     chartPosition: 'left' | 'right';
     showOverall: boolean;
