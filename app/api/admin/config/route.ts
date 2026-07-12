@@ -3,6 +3,7 @@ import { isAdmin } from '@/lib/server/auth';
 import { getConfig, saveConfig } from '@/lib/server/config';
 import { sanitizeRichText } from '@/lib/richtext';
 import {
+  ButtonAction,
   Category,
   LeadFormField,
   Question,
@@ -25,6 +26,19 @@ function align(v: unknown, fallback: 'left' | 'center' | 'right') {
 function num(v: unknown, fallback: number, min: number, max: number) {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
+}
+
+const ACTION_TYPES = ['lead-form', 'page', 'url', 'report', 'details'] as const;
+const ACTION_PAGES = ['landing', 'quiz', 'results'] as const;
+function action(v: unknown, fallback: ButtonAction | undefined): ButtonAction | undefined {
+  if (!v || typeof v !== 'object') return fallback;
+  const a = v as ButtonAction;
+  if (!ACTION_TYPES.includes(a.type)) return fallback;
+  return {
+    type: a.type,
+    page: ACTION_PAGES.includes(a.page as (typeof ACTION_PAGES)[number]) ? a.page : undefined,
+    url: a.url ? String(a.url).slice(0, 500) : undefined,
+  };
 }
 
 // PUT accepts any of: tiers, leadForm, title, copyright, branding, landing,
@@ -201,9 +215,11 @@ export async function PUT(req: NextRequest) {
             leftTitle: str(res.cta.leftTitle, cur.cta.leftTitle, 300),
             leftBody: str(res.cta.leftBody, cur.cta.leftBody),
             leftButton: str(res.cta.leftButton, cur.cta.leftButton, 120),
+            leftAction: action(res.cta.leftAction, cur.cta.leftAction),
             rightTitle: str(res.cta.rightTitle, cur.cta.rightTitle, 300),
             rightBody: str(res.cta.rightBody, cur.cta.rightBody),
             rightButton: str(res.cta.rightButton, cur.cta.rightButton, 120),
+            rightAction: action(res.cta.rightAction, cur.cta.rightAction),
           }
         : cur.cta,
       share: str(res.share, cur.share, 600),
@@ -315,6 +331,14 @@ export async function PUT(req: NextRequest) {
       categoriesPerRow: l.categoriesPerRow != null ? num(l.categoriesPerRow, 2, 1, 4) : config.landing.categoriesPerRow,
       showHeader: l.showHeader != null ? Boolean(l.showHeader) : config.landing.showHeader,
       showFooter: l.showFooter != null ? Boolean(l.showFooter) : config.landing.showFooter,
+      sectionOrder: Array.isArray(l.sectionOrder)
+        ? (l.sectionOrder.filter(
+            (k: string, i: number, a: string[]) =>
+              ['banner', 'categories', 'cta'].includes(k) && a.indexOf(k) === i
+          ) as ('banner' | 'categories' | 'cta')[])
+        : config.landing.sectionOrder,
+      heroCtaAction: action(l.heroCtaAction, config.landing.heroCtaAction),
+      bottomCtaAction: action(l.bottomCtaAction, config.landing.bottomCtaAction),
       heroTitle: str(l.heroTitle, config.landing.heroTitle),
       heroSubtitle: str(l.heroSubtitle, config.landing.heroSubtitle),
       heroBody: str(l.heroBody, config.landing.heroBody),
@@ -339,6 +363,37 @@ export async function PUT(req: NextRequest) {
       bottomBody: str(l.bottomBody, config.landing.bottomBody),
       bottomCta: str(l.bottomCta, config.landing.bottomCta, 120),
       bottomNote: str(l.bottomNote, config.landing.bottomNote, 300),
+    };
+  }
+
+  if (body.shareAppearance && typeof body.shareAppearance === 'object') {
+    const sa = body.shareAppearance;
+    config.shareAppearance = {
+      title: String(sa.title ?? '').slice(0, 200),
+      description: String(sa.description ?? '').slice(0, 600),
+      image: String(sa.image ?? '').slice(0, 500),
+    };
+  }
+
+  if (body.notifications && typeof body.notifications === 'object') {
+    const n = body.notifications;
+    config.notifications = {
+      enabled: Boolean(n.enabled),
+      recipients: String(n.recipients ?? '').slice(0, 1000),
+      subject: String(n.subject ?? '').slice(0, 300),
+      content: sanitizeRichText(String(n.content ?? '')).slice(0, 8000),
+    };
+  }
+
+  if (body.resultEmail && typeof body.resultEmail === 'object') {
+    const r = body.resultEmail;
+    config.resultEmail = {
+      enabled: Boolean(r.enabled),
+      fromAddress: String(r.fromAddress ?? '').slice(0, 320),
+      fromName: String(r.fromName ?? '').slice(0, 120),
+      replyTo: String(r.replyTo ?? '').slice(0, 320),
+      subject: String(r.subject ?? '').slice(0, 300),
+      content: sanitizeRichText(String(r.content ?? '')).slice(0, 8000),
     };
   }
 

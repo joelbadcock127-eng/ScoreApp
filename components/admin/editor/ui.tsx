@@ -233,6 +233,145 @@ export function RailButton({
   );
 }
 
+// Image slot with real file upload (stored via /api/admin/upload) plus a URL field.
+export function ImagePicker({
+  label = 'Image',
+  value,
+  onChange,
+}: {
+  label?: string;
+  value: string;
+  onChange: (url: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function upload(file: File) {
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.url) throw new Error(json.error || 'Upload failed');
+      onChange(json.url);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  return (
+    <div className="py-2">
+      <p className="mb-1.5 text-sm text-ink">{label}</p>
+      <div className="rounded-lg border border-gray-200 p-2">
+        <div className="flex items-center gap-2">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt="" className="h-10 w-14 flex-none rounded object-cover" />
+          ) : (
+            <span className="flex h-10 w-14 flex-none items-center justify-center rounded bg-gray-100 text-[10px] text-muted">
+              none
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="flex-1 rounded-md border border-gray-300 px-2 py-1.5 text-sm font-medium text-primary hover:bg-blue-50 disabled:opacity-60"
+          >
+            {uploading ? 'Uploading…' : '⬆ Upload image'}
+          </button>
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="flex-none text-muted hover:text-tier-low"
+              aria-label="Remove image"
+            >
+              <TrashIcon />
+            </button>
+          )}
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) upload(f);
+          }}
+        />
+        <TextInput
+          className="mt-2"
+          value={value}
+          placeholder="…or paste an image URL"
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+}
+
+export type ButtonActionValue = {
+  type: 'lead-form' | 'page' | 'url' | 'report' | 'details';
+  page?: 'landing' | 'quiz' | 'results';
+  url?: string;
+};
+
+// Button action picker: open the lead form, jump to a page, or an external URL.
+export function ActionField({
+  value,
+  onChange,
+  options = ['lead-form', 'page', 'url'],
+}: {
+  value: ButtonActionValue | undefined;
+  onChange: (v: ButtonActionValue) => void;
+  options?: ButtonActionValue['type'][];
+}) {
+  const v: ButtonActionValue = value ?? { type: options[0] };
+  const LABELS: Record<ButtonActionValue['type'], string> = {
+    'lead-form': 'Open Lead Form',
+    page: 'Go to Page',
+    url: 'Open URL',
+    report: 'Open PDF Report',
+    details: 'Open Details Form',
+  };
+  return (
+    <div className="py-2">
+      <p className="mb-1.5 text-sm text-ink">Button action</p>
+      <SelectInput value={v.type} onChange={(e) => onChange({ ...v, type: e.target.value as ButtonActionValue['type'] })}>
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {LABELS[o]}
+          </option>
+        ))}
+      </SelectInput>
+      {v.type === 'page' && (
+        <>
+          <p className="mb-1.5 mt-3 text-sm text-ink">Page</p>
+          <SelectInput value={v.page ?? 'landing'} onChange={(e) => onChange({ ...v, page: e.target.value as ButtonActionValue['page'] })}>
+            <option value="landing">Landing page</option>
+            <option value="quiz">Questions</option>
+            <option value="results">Result page</option>
+          </SelectInput>
+        </>
+      )}
+      {v.type === 'url' && (
+        <TextInput
+          className="mt-3"
+          value={v.url ?? ''}
+          placeholder="https://example.com"
+          onChange={(e) => onChange({ ...v, url: e.target.value })}
+        />
+      )}
+    </div>
+  );
+}
+
 export function EyeIcon({ off = false, className = 'h-4 w-4' }: { off?: boolean; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={className}>

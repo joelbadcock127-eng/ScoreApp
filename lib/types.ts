@@ -73,6 +73,35 @@ export interface TierContent {
   body: string[];
 }
 
+// Where a call-to-action button takes the visitor.
+export interface ButtonAction {
+  type: 'lead-form' | 'page' | 'url' | 'report' | 'details';
+  page?: 'landing' | 'quiz' | 'results';
+  url?: string;
+}
+
+export interface ShareAppearanceConfig {
+  title: string;
+  description: string;
+  image: string;
+}
+
+export interface NotificationsConfig {
+  enabled: boolean;
+  recipients: string; // comma separated
+  subject: string;
+  content: string; // rich html with {merge_fields}
+}
+
+export interface ResultEmailConfig {
+  enabled: boolean;
+  fromAddress: string;
+  fromName: string;
+  replyTo: string;
+  subject: string;
+  content: string; // rich html with {merge_fields}
+}
+
 export interface Branding {
   logoUrl: string;
   iconUrl: string;
@@ -125,12 +154,18 @@ export interface ScorecardConfig {
   pdf: PdfConfig;
   questionsPage?: QuestionsPageConfig;
   resultsPage?: ResultsPageConfig;
+  shareAppearance?: ShareAppearanceConfig;
+  notifications?: NotificationsConfig;
+  resultEmail?: ResultEmailConfig;
   landing: {
     heroImage?: string;
     imagePosition?: 'left' | 'right';
     categoriesPerRow?: number;
     showHeader?: boolean;
     showFooter?: boolean;
+    sectionOrder?: ('banner' | 'categories' | 'cta')[];
+    heroCtaAction?: ButtonAction;
+    bottomCtaAction?: ButtonAction;
     heroTitle: string;
     heroSubtitle: string;
     heroBody: string;
@@ -168,9 +203,11 @@ export interface ScorecardConfig {
       leftTitle: string;
       leftBody: string;
       leftButton: string;
+      leftAction?: ButtonAction;
       rightTitle: string;
       rightBody: string;
       rightButton: string;
+      rightAction?: ButtonAction;
     };
     share: string;
     changeDetails: {

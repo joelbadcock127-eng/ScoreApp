@@ -10,6 +10,7 @@ import {
   EyeIcon,
   FieldLabel,
   FieldRow,
+  ImagePicker,
   RailButton,
   RichText,
   SelectInput,
@@ -169,24 +170,6 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
               </option>
             ))}
           </SelectInput>
-        </div>
-      </>
-    );
-  }
-
-  function ImageField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-    return (
-      <>
-        <FieldLabel>Image</FieldLabel>
-        <div className="flex items-center gap-2 rounded-lg border border-gray-200 p-2">
-          {value ? (
-            <img src={value} alt="" className="h-10 w-14 flex-none rounded object-cover" />
-          ) : (
-            <span className="flex h-10 w-14 flex-none items-center justify-center rounded bg-gray-100 text-xs text-muted">
-              none
-            </span>
-          )}
-          <TextInput value={value} placeholder="Image URL (https://… or /images/…)" onChange={(e) => onChange(e.target.value)} />
         </div>
       </>
     );
@@ -773,7 +756,7 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
                   <p className="mt-4 border-t border-gray-200 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">
                     Content
                   </p>
-                  <ImageField value={images.cover ?? ''} onChange={(v) => setImage('cover', v)} />
+                  <ImagePicker value={images.cover ?? ''} onChange={(v) => setImage('cover', v)} />
                   <OverrideRows />
                   <RemovePageButton k="cover" />
                 </>
@@ -798,7 +781,7 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
                   <p className="mt-4 border-t border-gray-200 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">
                     Content
                   </p>
-                  <ImageField value={images.howToRead ?? ''} onChange={(v) => setImage('howToRead', v)} />
+                  <ImagePicker value={images.howToRead ?? ''} onChange={(v) => setImage('howToRead', v)} />
                   <OverrideRows />
                   <RemovePageButton k="howToRead" />
                 </>
@@ -849,7 +832,7 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
                   <p className="mt-4 border-t border-gray-200 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">
                     Content
                   </p>
-                  <ImageField
+                  <ImagePicker
                     value={images.categories?.[sel.page.slice(4)] ?? ''}
                     onChange={(v) => setCategoryImage(sel.page.slice(4), v)}
                   />
@@ -867,7 +850,7 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
                   <p className="mt-4 border-t border-gray-200 pt-3 text-xs font-semibold uppercase tracking-wide text-muted">
                     Content
                   </p>
-                  <ImageField value={images.closing ?? ''} onChange={(v) => setImage('closing', v)} />
+                  <ImagePicker value={images.closing ?? ''} onChange={(v) => setImage('closing', v)} />
                   <OverrideRows />
                   <RemovePageButton k="closing" />
                 </>
@@ -879,7 +862,7 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
                   <FieldRow label="Dynamic content">
                     <Toggle on={false} onChange={() => alert('Dynamic panel content is on the roadmap.')} label="Dynamic content" />
                   </FieldRow>
-                  <ImageField value={images.closing ?? ''} onChange={(v) => setImage('closing', v)} />
+                  <ImagePicker value={images.closing ?? ''} onChange={(v) => setImage('closing', v)} />
                   <FieldLabel>Panel image position</FieldLabel>
                   <SelectInput
                     value={panel.imagePosition}

@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ScorecardConfig } from '@/lib/types';
 import {
+  ActionField,
   EyeIcon,
   FieldLabel,
   FieldRow,
+  ImagePicker,
   RailButton,
   RichText,
   SelectInput,
@@ -33,8 +35,19 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   const landing = config.landing;
+  const sectionOrder: ('banner' | 'categories' | 'cta')[] =
+    landing.sectionOrder && landing.sectionOrder.length ? landing.sectionOrder : ['banner', 'categories', 'cta'];
+
+  function moveSection(from: number, to: number) {
+    if (to < 0 || to >= sectionOrder.length || from === to) return;
+    const order = [...sectionOrder];
+    const [item] = order.splice(from, 1);
+    order.splice(to, 0, item);
+    patchLanding({ sectionOrder: order });
+  }
 
   function patch(p: Partial<ScorecardConfig>) {
     setConfig((c) => ({ ...c, ...p }));
@@ -87,12 +100,15 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
   const perRow = landing.categoriesPerRow === 1 ? 'md:grid-cols-1' : 'md:grid-cols-2';
   const heroLeft = landing.imagePosition === 'left';
 
-  const SECTION_ROWS: { key: Section; label: string; hideable?: boolean; shown?: boolean }[] = [
+  const MIDDLE_LABELS: Record<'banner' | 'categories' | 'cta', string> = {
+    banner: 'Banner',
+    categories: `Categories ${landing.categoryCards.length}`,
+    cta: 'Call to Action',
+  };
+  const SECTION_ROWS: { key: Section; label: string; hideable?: boolean; shown?: boolean; draggable?: boolean }[] = [
     { key: 'header', label: 'Header', hideable: true, shown: landing.showHeader !== false },
     { key: 'leadform', label: 'Lead Form Popup' },
-    { key: 'banner', label: 'Banner' },
-    { key: 'categories', label: `Categories ${landing.categoryCards.length}` },
-    { key: 'cta', label: 'Call to Action' },
+    ...sectionOrder.map((k) => ({ key: k as Section, label: MIDDLE_LABELS[k], draggable: true })),
     { key: 'footer', label: 'Footer', hideable: true, shown: landing.showFooter !== false },
   ];
 
@@ -146,12 +162,27 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                 {SECTION_ROWS.map((s) => (
                   <div key={s.key}>
                     <div
+                      draggable={s.draggable}
+                      onDragStart={() => setDragIdx(sectionOrder.indexOf(s.key as 'banner' | 'categories' | 'cta'))}
+                      onDragOver={(e) => s.draggable && e.preventDefault()}
+                      onDrop={() => {
+                        if (s.draggable && dragIdx != null)
+                          moveSection(dragIdx, sectionOrder.indexOf(s.key as 'banner' | 'categories' | 'cta'));
+                        setDragIdx(null);
+                      }}
                       onClick={() => select(s.key)}
                       className={`flex cursor-pointer items-center justify-between rounded-md px-3 py-2.5 text-sm ${
                         selSection === s.key && selCard == null ? 'bg-gray-200/70' : 'hover:bg-gray-100'
                       } ${s.hideable && !s.shown ? 'text-muted' : ''}`}
                     >
-                      <span>{s.label}</span>
+                      <span className="flex items-center gap-2">
+                        {s.draggable && (
+                          <span className="cursor-grab text-muted" aria-hidden>
+                            ⠿
+                          </span>
+                        )}
+                        {s.label}
+                      </span>
                       {s.hideable && (
                         <button
                           onClick={(e) => {
@@ -223,8 +254,11 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
               </div>
             )}
 
-            {/* Banner / hero */}
+            {sectionOrder.map((sk) => {
+              if (sk === 'banner')
+                return (
             <div
+              key="banner"
               onClick={() => select('banner')}
               className={`grid items-center gap-10 px-8 pb-16 pt-6 ${device === 'mobile' ? '' : 'md:grid-cols-2'} ${outline('banner')}`}
             >
@@ -297,9 +331,10 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                 />
               </div>
             </div>
-
-            {/* Categories */}
-            <div onClick={() => select('categories')} className={`px-8 py-12 ${outline('categories')}`}>
+                );
+              if (sk === 'categories')
+                return (
+            <div key="categories" onClick={() => select('categories')} className={`px-8 py-12 ${outline('categories')}`}>
               <RichText
                 value={landing.howItWorksLabel}
                 onChange={(v) => patchLanding({ howItWorksLabel: v })}
@@ -343,9 +378,9 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                 ))}
               </div>
             </div>
-
-            {/* Call to action */}
-            <div onClick={() => select('cta')} className={`px-8 py-16 text-center ${outline('cta')}`}>
+                );
+              return (
+            <div key="cta" onClick={() => select('cta')} className={`px-8 py-16 text-center ${outline('cta')}`}>
               <RichText
                 value={landing.bottomTitle}
                 onChange={(v) => patchLanding({ bottomTitle: v })}
@@ -371,6 +406,8 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                 className="mt-7 text-base text-muted"
               />
             </div>
+              );
+            })}
 
             {/* Footer */}
             {landing.showFooter !== false && (
@@ -432,14 +469,13 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
 
               {selSection === 'banner' && (
                 <>
-                  <FieldLabel>Button action</FieldLabel>
-                  <SelectInput value="lead-form" onChange={() => {}}>
-                    <option value="lead-form">Open Lead Form</option>
-                  </SelectInput>
-                  <FieldLabel>Image URL</FieldLabel>
-                  <TextInput
+                  <ActionField
+                    value={landing.heroCtaAction}
+                    onChange={(a) => patchLanding({ heroCtaAction: a })}
+                  />
+                  <ImagePicker
                     value={landing.heroImage ?? '/images/hero-report.png'}
-                    onChange={(e) => patchLanding({ heroImage: e.target.value })}
+                    onChange={(v) => patchLanding({ heroImage: v })}
                   />
                   <p className="mt-6 border-t border-gray-200 pt-4 text-xs font-semibold uppercase tracking-wide text-muted">
                     Section style
@@ -472,10 +508,10 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
 
               {selSection === 'categories' && selCard != null && landing.categoryCards[selCard] && (
                 <>
-                  <FieldLabel>Category image URL</FieldLabel>
-                  <TextInput
+                  <ImagePicker
+                    label="Category image"
                     value={landing.categoryCards[selCard].image}
-                    onChange={(e) => patchCard(selCard, { image: e.target.value })}
+                    onChange={(v) => patchCard(selCard, { image: v })}
                   />
                   <button
                     onClick={() => {
@@ -492,10 +528,10 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
 
               {selSection === 'cta' && (
                 <>
-                  <FieldLabel>Button action</FieldLabel>
-                  <SelectInput value="lead-form" onChange={() => {}}>
-                    <option value="lead-form">Open Lead Form</option>
-                  </SelectInput>
+                  <ActionField
+                    value={landing.bottomCtaAction}
+                    onChange={(a) => patchLanding({ bottomCtaAction: a })}
+                  />
                   <p className="mt-4 text-xs text-muted">Edit the heading, body and button text directly in the preview.</p>
                 </>
               )}

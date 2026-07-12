@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { tierFor } from '@/lib/scoring';
 import { sanitizeRichText } from '@/lib/richtext';
-import { CategoryScore, ResultsPageConfig, ResultsSectionKey, ScorecardConfig } from '@/lib/types';
+import { ButtonAction, CategoryScore, ResultsPageConfig, ResultsSectionKey, ScorecardConfig } from '@/lib/types';
 import SpeedChart from '@/components/SpeedChart';
 import Footer from '@/components/Footer';
 import ChangeDetails from '@/components/ChangeDetails';
@@ -28,6 +28,25 @@ const DEFAULT_PAGE: ResultsPageConfig = {
 
 function rich(html: string) {
   return { dangerouslySetInnerHTML: { __html: sanitizeRichText(html) } };
+}
+
+const CTA_CLASS =
+  'mt-8 inline-block rounded-md bg-primary px-10 py-3.5 text-lg font-medium text-white transition hover:brightness-110';
+
+// Results CTA button honouring its configured action.
+function CtaButton({ label, action, reportHref }: { label: string; action: ButtonAction; reportHref: string }) {
+  if (action.type === 'url' && action.url) {
+    return <a href={action.url} className={CTA_CLASS} {...rich(label)} />;
+  }
+  if (action.type === 'page') {
+    const href = action.page === 'quiz' ? '/quiz?preview=1' : action.page === 'results' ? '#' : '/';
+    return <a href={href} className={CTA_CLASS} {...rich(label)} />;
+  }
+  if (action.type === 'report') {
+    return <a href={reportHref} target="_blank" rel="noopener noreferrer" className={CTA_CLASS} {...rich(label)} />;
+  }
+  // 'details' and 'lead-form' both open the change-details popup on this page.
+  return <button data-change-details className={CTA_CLASS} {...rich(label)} />;
 }
 
 export default function ResultsView({
@@ -141,22 +160,12 @@ export default function ResultsView({
             <div className="text-center md:px-10">
               <h3 className="text-3xl font-medium md:text-4xl" {...rich(r.cta.leftTitle)} />
               <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted" {...rich(r.cta.leftBody)} />
-              <a
-                href={reportHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-8 inline-block rounded-md bg-primary px-10 py-3.5 text-lg font-medium text-white transition hover:brightness-110"
-                {...rich(r.cta.leftButton)}
-              />
+              <CtaButton label={r.cta.leftButton} action={r.cta.leftAction ?? { type: 'report' }} reportHref={reportHref} />
             </div>
             <div className="text-center md:px-10">
               <h3 className="text-3xl font-medium md:text-4xl" {...rich(r.cta.rightTitle)} />
               <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted" {...rich(r.cta.rightBody)} />
-              <button
-                data-change-details
-                className="mt-8 rounded-md bg-primary px-10 py-3.5 text-lg font-medium text-white transition hover:brightness-110"
-                {...rich(r.cta.rightButton)}
-              />
+              <CtaButton label={r.cta.rightButton} action={r.cta.rightAction ?? { type: 'details' }} reportHref={reportHref} />
             </div>
           </div>
         </section>

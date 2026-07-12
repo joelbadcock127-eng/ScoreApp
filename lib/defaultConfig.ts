@@ -216,8 +216,33 @@ export const defaultConfig: ScorecardConfig = {
     categories: { itemsPerRow: 2, showScores: true, showTier: true },
     share: { facebook: true, twitter: true, linkedin: true, background: '#152042', linksColor: '#ffffff' },
   },
+  shareAppearance: {
+    title: 'The AI Opportunity Assessment for Small Business Owners',
+    description:
+      'Discover where AI and automation could save time, reduce repetitive work, improve sales, strengthen systems, and reduce owner dependency in your small business.',
+    image: '/images/hero-report.png',
+  },
+  notifications: {
+    enabled: true,
+    recipients: '',
+    subject: '{first_name} {last_name} started the {scorecard_name}',
+    content:
+      '<p><b>Congratulations!</b></p><p>You just got a new lead.</p><p>Name: {first_name} {last_name}<br>Email: {email}<br>Status: {status}<br>Score: {score}%</p>',
+  },
+  resultEmail: {
+    enabled: true,
+    fromAddress: '',
+    fromName: '',
+    replyTo: '',
+    subject: '{scorecard_name} Report',
+    content:
+      '<p>Dear {first_name},</p><p>Thank you for completing {scorecard_name}. You scored {score}%.</p><p>You can view your results and download your full PDF report here: {results_link}</p>',
+  },
   landing: {
     heroImage: '/images/hero-report.png',
+    sectionOrder: ['banner', 'categories', 'cta'],
+    heroCtaAction: { type: 'lead-form' },
+    bottomCtaAction: { type: 'lead-form' },
     imagePosition: 'right',
     categoriesPerRow: 2,
     showHeader: true,

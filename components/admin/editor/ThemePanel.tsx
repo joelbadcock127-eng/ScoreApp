@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import { Branding } from '@/lib/types';
-import { ColorField, FieldLabel, TextInput } from './ui';
+import { ColorField, ImagePicker, TextInput } from './ui';
 
 type Accordion = 'logos' | 'colours' | 'typography' | null;
 
@@ -44,27 +44,11 @@ export default function ThemePanel({
       <Header id="logos" label="Logos" />
       {open === 'logos' && (
         <div className="pb-4">
-          <FieldLabel>Main logo</FieldLabel>
           <div className="rounded-lg border border-gray-200 p-3">
             <img src={branding.logoUrl} alt="Main logo" className="mx-auto h-14 w-auto object-contain" />
           </div>
-          <TextInput
-            className="mt-2"
-            value={branding.logoUrl}
-            placeholder="Logo image URL"
-            onChange={(e) => patch({ logoUrl: e.target.value })}
-          />
-
-          <FieldLabel>Square icon</FieldLabel>
-          <div className="rounded-lg border border-gray-200 p-3">
-            <img src={branding.iconUrl} alt="Square icon" className="mx-auto h-12 w-12 object-contain" />
-          </div>
-          <TextInput
-            className="mt-2"
-            value={branding.iconUrl}
-            placeholder="Icon image URL"
-            onChange={(e) => patch({ iconUrl: e.target.value })}
-          />
+          <ImagePicker label="Main logo" value={branding.logoUrl} onChange={(v) => patch({ logoUrl: v })} />
+          <ImagePicker label="Square icon" value={branding.iconUrl} onChange={(v) => patch({ iconUrl: v })} />
         </div>
       )}
 

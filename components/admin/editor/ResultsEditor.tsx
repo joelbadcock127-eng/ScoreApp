@@ -7,6 +7,7 @@ import { ResultsPageConfig, ResultsSectionKey, ScorecardConfig } from '@/lib/typ
 import { tierFor } from '@/lib/scoring';
 import SpeedChart from '@/components/SpeedChart';
 import {
+  ActionField,
   ColorField,
   EyeIcon,
   FieldLabel,
@@ -786,10 +787,15 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
                   <FieldRow label="Dynamic content">
                     <Toggle on={false} onChange={() => alert('Dynamic CTA content is on the roadmap.')} label="Dynamic content" />
                   </FieldRow>
-                  <FieldLabel>Button action</FieldLabel>
-                  <SelectInput value={sel.child === 'left' ? 'report' : 'details'} onChange={() => {}}>
-                    {sel.child === 'left' ? <option value="report">Open PDF Report</option> : <option value="details">Open Details Form</option>}
-                  </SelectInput>
+                  <ActionField
+                    options={['report', 'details', 'lead-form', 'page', 'url']}
+                    value={
+                      sel.child === 'left'
+                        ? (r.cta.leftAction ?? { type: 'report' })
+                        : (r.cta.rightAction ?? { type: 'details' })
+                    }
+                    onChange={(a) => patchCta(sel.child === 'left' ? { leftAction: a } : { rightAction: a })}
+                  />
                   <FieldLabel>Item image</FieldLabel>
                   <button
                     onClick={() => alert('Item images are on the roadmap.')}

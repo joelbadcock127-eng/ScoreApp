@@ -84,6 +84,29 @@ function Icon({ name, className = 'h-[18px] w-[18px]' }: { name: string; classNa
           <path d="M8 8h8M8 12h8M8 16h5" />
         </svg>
       );
+    case 'share':
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="12" r="2.6" />
+          <circle cx="17.5" cy="5.5" r="2.6" />
+          <circle cx="17.5" cy="18.5" r="2.6" />
+          <path d="M8.3 10.8 15.2 6.8M8.3 13.2l6.9 4" />
+        </svg>
+      );
+    case 'bell':
+      return (
+        <svg {...common}>
+          <path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z" />
+          <path d="M10 19a2 2 0 0 0 4 0" />
+        </svg>
+      );
+    case 'mail':
+      return (
+        <svg {...common}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="m3.5 7 8.5 6 8.5-6" />
+        </svg>
+      );
     case 'embed':
       return (
         <svg {...common}>
