@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ExtraSection, ScorecardConfig } from '@/lib/types';
 import { SECTION_LIBRARY } from '@/lib/sectionLibrary';
-import ExtraSectionView from '@/components/ExtraSectionView';
+import ExtraSectionEditable from './ExtraSectionEditable';
 import {
   ActionField,
   EyeIcon,
@@ -41,6 +41,7 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [galleryCat, setGalleryCat] = useState(SECTION_LIBRARY[0].key);
   const [insertAt, setInsertAt] = useState<number | null>(null);
+  const [justAdded, setJustAdded] = useState<string | null>(null);
 
   const landing = config.landing;
   const extras = landing.extraSections ?? [];
@@ -57,6 +58,8 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
     setRail('sections');
     setSelSection(id);
     setSelCard(null);
+    setJustAdded(id);
+    setTimeout(() => setJustAdded(null), 700);
   }
   function patchExtra(id: string, p: Partial<ExtraSection>) {
     patchLanding({ extraSections: extras.map((x) => (x.id === id ? { ...x, ...p } : x)) });
@@ -244,56 +247,65 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                 </div>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4">
-                <p className="pb-3 text-sm font-semibold">
-                  {SECTION_LIBRARY.find((c) => c.key === galleryCat)?.label}
-                </p>
-                <div className="space-y-4">
-                  {SECTION_LIBRARY.find((c) => c.key === galleryCat)?.presets.map((preset) => {
-                    const sample = preset.make();
-                    const dark = sample.style?.includes('dark') || sample.style === 'boxed';
-                    return (
+                {(() => {
+                  const cat = SECTION_LIBRARY.find((c) => c.key === galleryCat) ?? SECTION_LIBRARY[0];
+                  const preset = cat.presets[0];
+                  const sample = preset.make();
+                  const dark = sample.type === 'banner2' || sample.type === 'cta2';
+                  return (
+                    <>
+                      <p className="text-sm font-semibold">{cat.label}</p>
+                      <p className="pb-3 pt-1 text-xs leading-relaxed text-muted">{cat.blurb}</p>
                       <button
-                        key={preset.key}
                         onClick={() => addExtra(preset.make())}
                         title={`Add ${preset.label}`}
-                        className="block w-full overflow-hidden rounded-lg border border-gray-200 text-left transition hover:border-primary hover:shadow-card"
+                        className="group/design block w-full overflow-hidden rounded-lg border border-gray-200 text-left transition hover:-translate-y-0.5 hover:border-primary hover:shadow-card"
                       >
                         {/* Mini design preview */}
-                        <div className={`pointer-events-none p-4 ${dark ? 'bg-navy' : 'bg-white'}`}>
+                        <div className={`pointer-events-none p-4 ${dark ? 'bg-navy' : 'bg-white'} ${sample.type === 'cta2' ? 'm-2 rounded-lg' : ''}`}>
                           <div className={`mx-auto h-2.5 w-2/3 rounded-full ${dark ? 'bg-white/70' : 'bg-gray-700/80'}`} />
                           <div className={`mx-auto mt-2 h-1.5 w-11/12 rounded-full ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
                           <div className={`mx-auto mt-1 h-1.5 w-4/5 rounded-full ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
                           {sample.type === 'form' && (
-                            <div className="mx-auto mt-3 w-3/4 space-y-1.5 rounded bg-white p-2 shadow-sm">
+                            <div className="mx-auto mt-3 w-3/4 space-y-1.5 rounded bg-white p-2 shadow-sm ring-1 ring-gray-200">
                               <div className="h-2 rounded-sm border border-gray-300" />
                               <div className="h-2 rounded-sm border border-gray-300" />
                               <div className="h-2.5 rounded-sm bg-primary" />
                             </div>
                           )}
                           {(sample.type === 'banner2' || sample.type === 'content') && sample.image && (
-                            <div className={`mt-3 flex gap-2 ${sample.style === 'image-left' ? 'flex-row-reverse' : ''}`}>
+                            <div className="mt-3 flex gap-2">
                               <div className="flex-1 space-y-1.5">
                                 <div className={`h-1.5 rounded-full ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
                                 <div className={`h-1.5 w-3/4 rounded-full ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
                                 {sample.button && <div className="mt-1 h-2.5 w-1/2 rounded-sm bg-primary" />}
                               </div>
-                              <div className="h-12 w-16 flex-none rounded bg-gray-400/60" />
+                              <div className={`h-12 w-16 flex-none rounded ${dark ? 'bg-white/25' : 'bg-gray-400/60'}`} />
                             </div>
                           )}
-                          {(sample.type === 'cta2' || (sample.type === 'banner2' && !sample.image)) && (
-                            <div className="mx-auto mt-3 h-3 w-1/3 rounded-sm bg-primary" />
-                          )}
+                          {sample.type === 'cta2' && <div className="mx-auto mt-3 h-3 w-1/3 rounded-sm bg-primary" />}
                           {sample.type === 'testimonials' && (
                             <div className="mt-3 flex justify-center gap-2">
-                              {(sample.items ?? []).slice(0, 3).map((_, i) => (
-                                <div key={i} className={`h-10 w-16 rounded ${dark ? 'bg-white/15' : 'border border-gray-200 bg-gray-50'}`} />
+                              {[0, 1, 2].map((i) => (
+                                <div key={i} className="w-16 rounded border border-gray-200 bg-gray-50 p-1.5">
+                                  <div className="text-[7px] leading-none text-amber-400">★★★★★</div>
+                                  <div className="mt-1 h-1 rounded-full bg-gray-300" />
+                                  <div className="mt-0.5 h-1 w-3/4 rounded-full bg-gray-300" />
+                                  <div className="mt-1.5 flex items-center gap-1">
+                                    <div className="h-2.5 w-2.5 rounded-full bg-primary/30" />
+                                    <div className="h-1 w-6 rounded-full bg-gray-300" />
+                                  </div>
+                                </div>
                               ))}
                             </div>
                           )}
                           {sample.type === 'categories2' && (
                             <div className="mt-3 flex justify-center gap-2">
                               {[0, 1, 2, 3].map((i) => (
-                                <div key={i} className={`h-10 w-12 rounded ${dark ? 'bg-white/15' : 'border border-gray-200 bg-gray-50'}`} />
+                                <div key={i} className="flex h-10 w-12 flex-col items-center justify-center gap-1 rounded border border-gray-200 bg-gray-50">
+                                  <div className="h-3 w-3 rounded-full bg-primary/25" />
+                                  <div className="h-1 w-7 rounded-full bg-gray-300" />
+                                </div>
                               ))}
                             </div>
                           )}
@@ -305,9 +317,9 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                           {sample.type === 'faq' && (
                             <div className="mt-3 space-y-1.5">
                               {[0, 1, 2].map((i) => (
-                                <div key={i} className="flex items-center justify-between border-b border-gray-200 pb-1">
+                                <div key={i} className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-1.5 py-1">
                                   <div className="h-1.5 w-2/3 rounded-full bg-gray-300" />
-                                  <span className="text-[9px] text-muted">⌄</span>
+                                  <span className="text-[9px] text-primary">+</span>
                                 </div>
                               ))}
                             </div>
@@ -318,11 +330,19 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                             </div>
                           )}
                         </div>
-                        <p className="border-t border-gray-100 px-3 py-2 text-xs font-medium text-muted">{preset.label}</p>
+                        <p className="flex items-center justify-between border-t border-gray-100 px-3 py-2 text-xs font-medium text-muted">
+                          {preset.label}
+                          <span className="font-semibold text-primary opacity-0 transition group-hover/design:opacity-100">
+                            + Add
+                          </span>
+                        </p>
                       </button>
-                    );
-                  })}
-                </div>
+                      <p className="pt-3 text-[11px] leading-relaxed text-muted">
+                        Everything inside is editable — click any text in the preview to change it.
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -445,9 +465,12 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                   <div key={sk}>
                     <div
                       onClick={() => select(sk)}
-                      className={outline(sk)}
+                      ref={(el) => {
+                        if (el && justAdded === sk) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className={`${outline(sk)} ${justAdded === sk ? 'section-insert' : ''}`}
                     >
-                      <ExtraSectionView section={extra} config={config} editable />
+                      <ExtraSectionEditable section={extra} config={config} onPatch={(p) => patchExtra(sk, p)} />
                     </div>
                     {after}
                   </div>
@@ -646,38 +669,21 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
 
               {selExtra && (
                 <>
-                  {selExtra.type !== 'html' && selExtra.type !== 'form' && (
-                    <>
-                      <FieldLabel>Title</FieldLabel>
-                      <TextInput value={selExtra.title ?? ''} onChange={(e) => patchExtra(selExtra.id, { title: e.target.value })} />
-                    </>
-                  )}
                   {selExtra.type !== 'html' && (
-                    <>
-                      {selExtra.type === 'form' && (
-                        <>
-                          <FieldLabel>Title</FieldLabel>
-                          <TextInput value={selExtra.title ?? ''} onChange={(e) => patchExtra(selExtra.id, { title: e.target.value })} />
-                        </>
-                      )}
-                      {selExtra.type !== 'testimonials' && selExtra.type !== 'faq' && (
-                        <>
-                          <FieldLabel>Body</FieldLabel>
-                          <textarea
-                            value={selExtra.body ?? ''}
-                            onChange={(e) => patchExtra(selExtra.id, { body: e.target.value })}
-                            rows={3}
-                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
-                          />
-                        </>
-                      )}
-                    </>
+                    <p className="mt-3 text-xs leading-relaxed text-muted">
+                      All text in this section is edited inline — click it in the preview.
+                    </p>
                   )}
 
                   {(selExtra.type === 'banner2' || selExtra.type === 'cta2' || selExtra.type === 'video') && (
                     <>
-                      <FieldLabel>Button text (empty = no button)</FieldLabel>
-                      <TextInput value={selExtra.button ?? ''} onChange={(e) => patchExtra(selExtra.id, { button: e.target.value })} />
+                      <FieldRow label="Show button">
+                        <Toggle
+                          on={!!selExtra.button}
+                          onChange={(on) => patchExtra(selExtra.id, { button: on ? 'Get Started' : '' })}
+                          label="Show button"
+                        />
+                      </FieldRow>
                       {selExtra.button && (
                         <ActionField value={selExtra.action} onChange={(a) => patchExtra(selExtra.id, { action: a })} />
                       )}
@@ -716,70 +722,10 @@ export default function LandingEditor({ initialConfig }: { initialConfig: Scorec
                   )}
 
                   {(selExtra.type === 'testimonials' || selExtra.type === 'faq') && (
-                    <>
-                      <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted">
-                        {selExtra.type === 'faq' ? 'Questions' : 'Testimonials'}
-                      </p>
-                      {(selExtra.items ?? []).map((item, i) => (
-                        <div key={i} className="mt-3 rounded-lg border border-gray-200 p-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-muted">#{i + 1}</span>
-                            <button
-                              onClick={() =>
-                                patchExtra(selExtra.id, { items: (selExtra.items ?? []).filter((_, j) => j !== i) })
-                              }
-                              className="text-muted hover:text-tier-low"
-                              aria-label="Remove item"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </div>
-                          <TextInput
-                            className="mt-2"
-                            value={item.title}
-                            placeholder={selExtra.type === 'faq' ? 'Question' : 'Name'}
-                            onChange={(e) =>
-                              patchExtra(selExtra.id, {
-                                items: (selExtra.items ?? []).map((x, j) => (j === i ? { ...x, title: e.target.value } : x)),
-                              })
-                            }
-                          />
-                          <textarea
-                            value={item.body}
-                            placeholder={selExtra.type === 'faq' ? 'Answer' : 'Quote'}
-                            onChange={(e) =>
-                              patchExtra(selExtra.id, {
-                                items: (selExtra.items ?? []).map((x, j) => (j === i ? { ...x, body: e.target.value } : x)),
-                              })
-                            }
-                            rows={2}
-                            className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-primary"
-                          />
-                          {selExtra.type === 'testimonials' && (
-                            <TextInput
-                              className="mt-2"
-                              value={item.meta ?? ''}
-                              placeholder="Role / company"
-                              onChange={(e) =>
-                                patchExtra(selExtra.id, {
-                                  items: (selExtra.items ?? []).map((x, j) => (j === i ? { ...x, meta: e.target.value } : x)),
-                                })
-                              }
-                            />
-                          )}
-                        </div>
-                      ))}
-                      <button
-                        onClick={() =>
-                          patchExtra(selExtra.id, {
-                            items: [...(selExtra.items ?? []), { title: '', body: '', meta: '' }],
-                          })
-                        }
-                        className="mt-3 text-sm font-medium text-primary hover:underline"
-                      >
-                        + Add item
-                      </button>
-                    </>
+                    <p className="mt-4 text-xs leading-relaxed text-muted">
+                      Add or remove {selExtra.type === 'faq' ? 'questions' : 'testimonials'} directly in the preview —
+                      hover a card for the delete button, or use “+ Add” below the list.
+                    </p>
                   )}
 
                   <button

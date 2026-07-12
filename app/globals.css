@@ -15,3 +15,40 @@
   color: #9ca3af;
   pointer-events: none;
 }
+
+/* Gallery sections: scroll-reveal on the public page… */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.reveal-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* …and a pop-in when a section is inserted in the editor. */
+@keyframes section-insert {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+.section-insert {
+  animation: section-insert 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .section-insert {
+    animation: none;
+  }
+}

@@ -68,8 +68,6 @@ export default function AccountBar({
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  const roadmap = () => alert('Multiple accounts are coming soon.');
-
   return (
     <div ref={ref} className="relative z-30 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2">
       <div className="flex items-center gap-1">
@@ -100,14 +98,65 @@ export default function AccountBar({
           </svg>
         </Link>
 
-        {/* Account menu */}
+        {/* Account menu — Account settings / Billing / Users and Permissions, like ScoreApp */}
         {open === 'account' && (
-          <div className="absolute left-12 top-full mt-1 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-card">
-            <p className="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-widest text-muted">Account</p>
-            <div className="rounded-md px-2 py-2 text-sm font-medium">{accountName}</div>
-            <button onClick={roadmap} className="block w-full rounded-md px-2 py-2 text-left text-sm text-muted hover:bg-gray-50">
-              ⊕ Add account
-            </button>
+          <div className="absolute left-12 top-full mt-1 w-64 rounded-xl border border-gray-200 bg-white p-2 shadow-card">
+            <p className="truncate px-2 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
+              {accountName}
+            </p>
+            {[
+              {
+                href: '/account/settings',
+                label: 'Account settings',
+                icon: (
+                  <>
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18" />
+                  </>
+                ),
+              },
+              {
+                href: '/account/billing',
+                label: 'Billing',
+                icon: (
+                  <>
+                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                    <path d="M3 9.5h18M6.5 15h4" />
+                  </>
+                ),
+              },
+              {
+                href: '/account/users',
+                label: 'Users and Permissions',
+                icon: (
+                  <>
+                    <circle cx="9" cy="8" r="3" />
+                    <path d="M3.8 19.5c.6-3 2.6-4.7 5.2-4.7s4.6 1.7 5.2 4.7" />
+                    <path d="M15.5 5.8a3 3 0 0 1 0 4.4M17.5 15.3c1.4.8 2.3 2.2 2.6 4.2" />
+                  </>
+                ),
+              },
+            ].map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(null)}
+                className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm text-ink hover:bg-gray-50"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-[18px] w-[18px] text-muted"
+                >
+                  {item.icon}
+                </svg>
+                {item.label}
+              </Link>
+            ))}
           </div>
         )}
 
@@ -151,7 +200,7 @@ export default function AccountBar({
             </div>
             <div className="border-t border-gray-100 px-4 py-2.5">
               <Link
-                href="/admin/scorecards"
+                href="/account/scorecards"
                 onClick={() => setOpen(null)}
                 className="flex items-center gap-2 py-1.5 text-sm font-medium text-primary hover:underline"
               >

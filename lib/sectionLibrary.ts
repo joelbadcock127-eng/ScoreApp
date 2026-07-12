@@ -9,53 +9,27 @@ export interface SectionPreset {
 export interface SectionCategory {
   key: string;
   label: string;
+  blurb: string;
   presets: SectionPreset[];
 }
 
-const LOREM =
-  'Use this space to tell visitors more about your business, your scorecard and the value they’ll get from completing it.';
-
-// The "Add a section" gallery: categories and design variants, mirroring the
-// ScoreApp section library.
+// The "Add a section" gallery: one carefully designed, fully editable section
+// per type. Every piece of text inside is edited inline in the preview; images,
+// button actions and video URLs live in the right-hand panel.
 export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'banners',
     label: 'Banners',
+    blurb: 'A bold, dark hero band with a headline, supporting copy, call to action and image.',
     presets: [
       {
-        key: 'banner-image-right',
-        label: 'Image right',
+        key: 'banner',
+        label: 'Spotlight banner',
         make: () => ({
           type: 'banner2',
-          style: 'image-right',
-          title: 'Take your business to the next level',
-          body: LOREM,
-          button: 'Get Started',
-          action: { type: 'lead-form' },
-          image: '/images/hero-report.png',
-        }),
-      },
-      {
-        key: 'banner-dark',
-        label: 'Dark',
-        make: () => ({
-          type: 'banner2',
-          style: 'dark',
-          title: 'Take your business to the next level',
-          body: LOREM,
-          button: 'Get Started',
-          action: { type: 'lead-form' },
-        }),
-      },
-      {
-        key: 'banner-image-left',
-        label: 'Image left',
-        make: () => ({
-          type: 'banner2',
-          style: 'image-left',
-          title: 'Take your business to the next level',
-          body: LOREM,
-          button: 'Get Started',
+          title: 'Discover what’s holding your business back',
+          body: 'Benchmark yourself against businesses like yours and get a personalised report with the exact next steps to grow — in under four minutes.',
+          button: 'Start the Scorecard',
           action: { type: 'lead-form' },
           image: '/images/hero-report.png',
         }),
@@ -65,36 +39,15 @@ export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'forms',
     label: 'On page forms',
+    blurb: 'Capture leads right on the page — no popup needed.',
     presets: [
       {
-        key: 'form-light',
-        label: 'Simple form',
+        key: 'form',
+        label: 'Inline lead form',
         make: () => ({
           type: 'form',
-          style: 'light',
-          title: 'Enter your details to get started',
-          body: 'Start the scorecard right here — it only takes a few minutes.',
-        }),
-      },
-      {
-        key: 'form-dark',
-        label: 'Dark form',
-        make: () => ({
-          type: 'form',
-          style: 'dark',
-          title: 'Enter your details to get started',
-          body: 'Start the scorecard right here — it only takes a few minutes.',
-        }),
-      },
-      {
-        key: 'form-image',
-        label: 'Form with image',
-        make: () => ({
-          type: 'form',
-          style: 'image-right',
-          title: 'Take your business to the next level',
-          body: 'Enter your details below to start the scorecard.',
-          image: '/images/hero-report.png',
+          title: 'Get your personalised report',
+          body: 'Enter your details and start the scorecard right here. Your results and tailored recommendations arrive the moment you finish.',
         }),
       },
     ],
@@ -102,39 +55,15 @@ export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'ctas',
     label: 'Call to actions',
+    blurb: 'A boxed, high-contrast prompt that moves visitors to start.',
     presets: [
       {
-        key: 'cta-light',
-        label: 'Light',
+        key: 'cta',
+        label: 'Boxed call to action',
         make: () => ({
           type: 'cta2',
-          style: 'light',
-          title: 'Uncover your strengths and weaknesses',
-          body: 'Answer the questions and instantly see how you can improve.',
-          button: 'Get Started',
-          action: { type: 'lead-form' },
-        }),
-      },
-      {
-        key: 'cta-dark',
-        label: 'Dark',
-        make: () => ({
-          type: 'cta2',
-          style: 'dark',
-          title: 'Uncover your strengths and weaknesses',
-          body: 'Answer the questions and instantly see how you can improve.',
-          button: 'Get Started',
-          action: { type: 'lead-form' },
-        }),
-      },
-      {
-        key: 'cta-boxed',
-        label: 'Boxed',
-        make: () => ({
-          type: 'cta2',
-          style: 'boxed',
-          title: 'Uncover your strengths and weaknesses',
-          body: 'Answer the questions and instantly see how you can improve.',
+          title: 'Ready to see your score?',
+          body: 'Take the free 4-minute assessment and get a personalised action plan, instantly.',
           button: 'Get Started',
           action: { type: 'lead-form' },
         }),
@@ -144,43 +73,31 @@ export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'testimonials',
     label: 'Testimonials',
+    blurb: 'Three five-star cards with quote, name and role — all editable.',
     presets: [
       {
-        key: 'testimonials-cards',
-        label: 'Cards',
+        key: 'testimonials',
+        label: 'Five-star cards',
         make: () => ({
           type: 'testimonials',
-          style: 'cards',
-          title: 'Don’t just take our word for it — see what others have to say',
+          title: 'Loved by business owners',
+          body: 'Here’s what people say after taking the scorecard.',
           items: [
-            { title: 'Harriette Bedell', meta: 'CEO, The Ridge Company', body: 'This scorecard was eye-opening. In minutes I knew exactly where to focus next.' },
-            { title: 'Marcus Chen', meta: 'Founder, Northbeam', body: 'Simple, fast and surprisingly accurate. The report alone is worth it.' },
-          ],
-        }),
-      },
-      {
-        key: 'testimonials-dark',
-        label: 'Dark quote',
-        make: () => ({
-          type: 'testimonials',
-          style: 'dark',
-          title: '',
-          items: [
-            { title: 'Harriette Bedell', meta: 'CEO, The Ridge Company', body: 'The scorecard puts it in perspective. If you want to become more visible, valuable and connected in your industry, this will give you your baseline.' },
-          ],
-        }),
-      },
-      {
-        key: 'testimonials-grid',
-        label: 'Grid',
-        make: () => ({
-          type: 'testimonials',
-          style: 'grid',
-          title: 'Customer testimonials',
-          items: [
-            { title: 'Jane Sanders', meta: 'Poolshop Co.', body: 'Loved how quick it was — and the recommendations were spot on.' },
-            { title: 'Amir Patel', meta: 'Fieldworks', body: 'We found two quick wins in the first week after taking it.' },
-            { title: 'Sofia Reyes', meta: 'Brightside Studio', body: 'A great conversation starter with my team about where to improve.' },
+            {
+              title: 'Harriette Bedell',
+              meta: 'CEO, The Ridge Company',
+              body: 'Eye-opening. In four minutes I knew exactly where to focus next — the report alone is worth it.',
+            },
+            {
+              title: 'Marcus Chen',
+              meta: 'Founder, Northbeam',
+              body: 'Simple, fast and surprisingly accurate. We found two quick wins in the first week.',
+            },
+            {
+              title: 'Sofia Reyes',
+              meta: 'Director, Brightside Studio',
+              body: 'A brilliant conversation starter with my team about where to improve. Highly recommended.',
+            },
           ],
         }),
       },
@@ -189,25 +106,15 @@ export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'categories',
     label: 'Categories',
+    blurb: 'Show the key areas visitors will be scored against.',
     presets: [
       {
-        key: 'categories-light',
-        label: 'Light grid',
+        key: 'categories',
+        label: 'Score areas grid',
         make: () => ({
           type: 'categories2',
-          style: 'light',
-          title: 'You’ll be scored against the following key areas:',
-          body: '',
-        }),
-      },
-      {
-        key: 'categories-dark',
-        label: 'Dark grid',
-        make: () => ({
-          type: 'categories2',
-          style: 'dark',
-          title: 'You’ll be scored against the following key areas:',
-          body: '',
+          title: 'You’ll be scored across these key areas',
+          body: 'Every question maps to one of the areas below, so your report shows exactly where to focus first.',
         }),
       },
     ],
@@ -215,26 +122,15 @@ export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'videos',
     label: 'Videos',
+    blurb: 'A YouTube or Vimeo video beside your pitch and call to action.',
     presets: [
       {
-        key: 'video-full',
-        label: 'Full width',
-        make: () => ({
-          type: 'video',
-          style: 'full',
-          title: 'Want to know more?',
-          body: 'Take a look at our latest video.',
-          url: '',
-        }),
-      },
-      {
-        key: 'video-side',
+        key: 'video',
         label: 'Video with text',
         make: () => ({
           type: 'video',
-          style: 'side',
-          title: 'Take your business to the next level',
-          body: LOREM,
+          title: 'See how it works',
+          body: 'Watch a quick walkthrough of the scorecard and the personalised report you’ll receive at the end.',
           button: 'Get Started',
           action: { type: 'lead-form' },
           url: '',
@@ -243,42 +139,18 @@ export const SECTION_LIBRARY: SectionCategory[] = [
     ],
   },
   {
-    key: 'advanced',
-    label: 'Advanced',
-    presets: [
-      {
-        key: 'custom-html',
-        label: 'Custom HTML',
-        make: () => ({
-          type: 'html',
-          html: '<div style="padding:40px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;">Your custom HTML here</div>',
-        }),
-      },
-    ],
-  },
-  {
     key: 'content',
     label: 'Content',
+    blurb: 'A classic text-and-image block for telling your story.',
     presets: [
       {
-        key: 'content-image',
+        key: 'content',
         label: 'Text with image',
         make: () => ({
           type: 'content',
-          style: 'image-right',
-          title: 'How it works',
-          body: LOREM,
+          title: 'Why take the scorecard?',
+          body: 'Most businesses guess at what to improve next. The scorecard replaces guesswork with data: you’ll see how you compare on the things that actually drive growth, and leave with a clear, prioritised list of next steps.',
           image: '/images/card-1.png',
-        }),
-      },
-      {
-        key: 'content-centered',
-        label: 'Centered text',
-        make: () => ({
-          type: 'content',
-          style: 'centered',
-          title: '4 minutes is all you get',
-          body: LOREM,
         }),
       },
     ],
@@ -286,34 +158,47 @@ export const SECTION_LIBRARY: SectionCategory[] = [
   {
     key: 'faq',
     label: 'FAQ',
+    blurb: 'An accordion of the questions visitors ask before starting.',
     presets: [
       {
-        key: 'faq-list',
+        key: 'faq',
         label: 'Accordion',
         make: () => ({
           type: 'faq',
-          style: 'list',
-          title: 'FAQs',
+          title: 'Frequently asked questions',
           items: [
-            { title: 'How is my score calculated?', body: 'Your score is calculated from your answers across each category, weighted equally.' },
-            { title: 'How long does it take to complete?', body: 'Most people finish in under four minutes.' },
-            { title: 'Can I retake the quiz?', body: 'Yes — you can retake it at any time and compare your results.' },
+            {
+              title: 'How long does it take?',
+              body: 'Most people finish in under four minutes — and your results appear instantly.',
+            },
+            {
+              title: 'How is my score calculated?',
+              body: 'Your answers are scored across each category and combined into an overall percentage, so you can see both the big picture and the detail.',
+            },
+            {
+              title: 'What do I get at the end?',
+              body: 'A personalised results page and a downloadable PDF report with recommendations tailored to your answers.',
+            },
+            {
+              title: 'Is my data safe?',
+              body: 'Yes — your answers are only used to build your report and are never shared with third parties.',
+            },
           ],
         }),
       },
+    ],
+  },
+  {
+    key: 'advanced',
+    label: 'Advanced',
+    blurb: 'Drop in your own HTML for anything the gallery doesn’t cover.',
+    presets: [
       {
-        key: 'faq-two-col',
-        label: 'Two columns',
+        key: 'html',
+        label: 'Custom HTML',
         make: () => ({
-          type: 'faq',
-          style: 'two-col',
-          title: 'FAQs',
-          items: [
-            { title: 'How is my score calculated?', body: 'Your score is calculated from your answers across each category, weighted equally.' },
-            { title: 'How long does it take to complete?', body: 'Most people finish in under four minutes.' },
-            { title: 'Are there any penalties for wrong answers?', body: 'No — there are no wrong answers, only honest ones.' },
-            { title: 'Can I share my results?', body: 'Yes, your results page has share buttons built in.' },
-          ],
+          type: 'html',
+          html: '<div style="padding:40px;text-align:center;border:1px dashed #cbd5e1;border-radius:12px;">Your custom HTML here</div>',
         }),
       },
     ],

@@ -143,9 +143,16 @@ export function NotificationsEditor({ initial }: { initial: NotificationsConfig 
 }
 
 // ——— Result Email ————————————————————————————————————————————————————
-export function ResultEmailEditor({ initial }: { initial: ResultEmailConfig }) {
+export function ResultEmailEditor({
+  initial,
+  initialApiKey = '',
+}: {
+  initial: ResultEmailConfig;
+  initialApiKey?: string;
+}) {
   const [v, setV] = useState(initial);
-  const { save, saving, message } = useSave(() => ({ resultEmail: v }));
+  const [apiKey, setApiKey] = useState(initialApiKey);
+  const { save, saving, message } = useSave(() => ({ resultEmail: v, email: { provider: 'resend', apiKey } }));
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold">Result Email Settings</h1>
@@ -194,6 +201,23 @@ export function ResultEmailEditor({ initial }: { initial: ResultEmailConfig }) {
         />
         <p className={HINT}>
           Merge fields: {'{first_name} {last_name} {email} {score} {scorecard_name} {results_link} {report_link}'}
+        </p>
+        <SaveBar onSave={save} saving={saving} message={message} />
+      </div>
+
+      <p className={`${SECTION_LABEL} mt-8`}>Sending provider</p>
+      <p className={HINT}>Each account can use its own email service. Paste your Resend API key here.</p>
+      <div className={`${CARD} mt-3`}>
+        <p className={SECTION_LABEL}>Resend API key</p>
+        <TextInput
+          className="mt-2"
+          type="password"
+          value={apiKey}
+          placeholder="re_…"
+          onChange={(e) => setApiKey(e.target.value)}
+        />
+        <p className={HINT}>
+          Get one free at resend.com (3,000 emails/month). With no key set, emails are logged instead of sent.
         </p>
         <SaveBar onSave={save} saving={saving} message={message} />
       </div>

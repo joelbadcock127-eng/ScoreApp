@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/server/auth';
-import { createScorecard, listScorecards, SCORECARD_COOKIE } from '@/lib/server/config';
+import {
+  createScorecard,
+  deleteScorecard,
+  listScorecards,
+  setDefaultScorecard,
+  setScorecardDomain,
+  SCORECARD_COOKIE,
+} from '@/lib/server/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +39,51 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({ ok: true, id });
     res.cookies.set(SCORECARD_COOKIE, String(id), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
     return res;
+  }
+
+  if (body.action === 'set-default') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    const exists = (await listScorecards()).some((s) => s.id === id);
+    if (!exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    await setDefaultScorecard(id);
+    return NextResponse.json({ ok: true, id });
+  }
+
+  if (body.action === 'delete') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    const all = await listScorecards();
+    const target = all.find((s) => s.id === id);
+    if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (target.is_default) return NextResponse.json({ error: 'The live (default) scorecard cannot be deleted.' }, { status: 400 });
+    if (all.length <= 1) return NextResponse.json({ error: 'You need at least one scorecard.' }, { status: 400 });
+    await deleteScorecard(id);
+    const res = NextResponse.json({ ok: true });
+    // If the deleted scorecard was the one being edited, point the cookie back at the default.
+    const fallback = all.find((s) => s.is_default && s.id !== id) ?? all.find((s) => s.id !== id);
+    if (fallback) res.cookies.set(SCORECARD_COOKIE, String(fallback.id), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
+    return res;
+  }
+
+  if (body.action === 'set-domain') {
+    const id = Number(body.id);
+    if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    const raw = String(body.domain ?? '').trim().toLowerCase();
+    if (raw === '') {
+      await setScorecardDomain(id, null);
+      return NextResponse.json({ ok: true, domain: null });
+    }
+    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(raw) || raw === 'www') {
+      return NextResponse.json(
+        { error: 'Use only lowercase letters, numbers and hyphens (not starting or ending with a hyphen).' },
+        { status: 400 }
+      );
+    }
+    const taken = (await listScorecards()).some((s) => s.domain === raw && s.id !== id);
+    if (taken) return NextResponse.json({ error: 'That subdomain is already used by another scorecard.' }, { status: 409 });
+    await setScorecardDomain(id, raw);
+    return NextResponse.json({ ok: true, domain: raw });
   }
 
   return NextResponse.json({ error: 'Unknown action' }, { status: 400 });

@@ -412,6 +412,13 @@ export async function PUT(req: NextRequest) {
     };
   }
 
+  if (body.email && typeof body.email === 'object') {
+    config.email = {
+      provider: String(body.email.provider ?? 'resend').slice(0, 40),
+      apiKey: String(body.email.apiKey ?? '').slice(0, 200),
+    };
+  }
+
   if (body.resultEmail && typeof body.resultEmail === 'object') {
     const r = body.resultEmail;
     config.resultEmail = {

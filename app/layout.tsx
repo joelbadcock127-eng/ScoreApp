@@ -13,6 +13,14 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+// "28 120 254" form so Tailwind opacity modifiers (bg-primary/10 …) work.
+function hexToRgbTriple(hex: string, fallback: string): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return fallback;
+  const n = parseInt(m[1], 16);
+  return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
+}
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   let primary = '#1c78fe';
   let secondary = '#152042';
@@ -27,7 +35,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en">
       <body
         className={`${inter.className} bg-white text-ink antialiased`}
-        style={{ ['--primary' as string]: primary, ['--secondary' as string]: secondary }}
+        style={{
+          ['--primary' as string]: primary,
+          ['--secondary' as string]: secondary,
+          ['--primary-rgb' as string]: hexToRgbTriple(primary, '28 120 254'),
+          ['--secondary-rgb' as string]: hexToRgbTriple(secondary, '21 32 66'),
+        }}
       >
         {children}
       </body>

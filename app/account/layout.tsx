@@ -1,15 +1,19 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isAdmin } from '@/lib/server/auth';
 import { getAccount, getActiveOrDefaultId, getConfig, listScorecards } from '@/lib/server/config';
-import SideNav from '@/components/admin/SideNav';
 import AccountBar from '@/components/admin/AccountBar';
-import { NAV_GROUPS } from '@/components/admin/nav';
+import AccountSideNav from '@/components/account/AccountSideNav';
 
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+// Account-level dashboard: same top bar as the scorecard admin, but its own
+// sidebar (Scorecards / Templates / AI Builder / Account settings / Help).
+export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   if (!isAdmin()) redirect('/admin/login');
-  const config = await getConfig();
-  const [scorecards, activeId, account] = await Promise.all([listScorecards(), getActiveOrDefaultId(), getAccount()]);
+  const [config, scorecards, activeId, account] = await Promise.all([
+    getConfig(),
+    listScorecards(),
+    getActiveOrDefaultId(),
+    getAccount(),
+  ]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <AccountBar
@@ -22,18 +26,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       />
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-60 flex-none border-r border-gray-200 bg-white px-4 py-5 md:block">
-          <SideNav />
+          <AccountSideNav />
         </aside>
         <div className="min-w-0 flex-1">
-          <div className="overflow-x-auto border-b border-gray-200 bg-white px-6 py-3 md:hidden">
-            <nav className="flex gap-4 whitespace-nowrap text-sm">
-              {NAV_GROUPS.flatMap((g) => g.items).map((n) => (
-                <Link key={n.href} href={n.href} className="text-ink hover:text-primary">
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
           <div className="p-6 md:p-10">{children}</div>
         </div>
       </div>

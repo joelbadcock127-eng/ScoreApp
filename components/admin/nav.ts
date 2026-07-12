@@ -29,6 +29,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/settings/notifications', label: 'Notifications', icon: 'bell' },
       { href: '/admin/settings/score-tiers', label: 'Score Tiers', icon: 'tiers' },
       { href: '/admin/settings/result-email', label: 'Result Email', icon: 'mail' },
+      { href: '/admin/settings/domain', label: 'Domain', icon: 'globe' },
       { href: '/admin/settings/embed', label: 'Embed', icon: 'embed' },
     ],
   },
