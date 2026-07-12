@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getConfig, getHostCustomDomain, getHostSubdomain } from '@/lib/server/config';
 import { isAdmin } from '@/lib/server/auth';
 import LandingView from '@/components/LandingView';
-import AuthLanding from '@/components/AuthLanding';
+import MarketingPage from '@/components/marketing/MarketingPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,8 +30,9 @@ export async function generateMetadata() {
   };
 }
 
-// The base domain lands on login/signup; scorecard subdomains and custom
-// domains still land straight on their scorecard.
+// The base domain lands on the marketing page (Log in / Get started lead to
+// /login); scorecard subdomains and custom domains land straight on their
+// scorecard.
 export default async function RootPage({
   searchParams,
 }: {
@@ -42,5 +43,5 @@ export default async function RootPage({
     return <LandingView config={config} hideChrome={searchParams?.chrome === '0'} />;
   }
   if (isAdmin()) redirect('/account');
-  return <AuthLanding />;
+  return <MarketingPage />;
 }

@@ -5,9 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// Top account bar copied from ScoreApp: square icon, account dropdown, a
-// scorecard switcher listing recent scorecards with Go to Scorecards /
-// Create Scorecard, an open-in-new-tab link, help and avatar.
+// Top account bar: square icon, account dropdown, a scorecard switcher
+// listing recent scorecards with Go to Scorecards / Create Scorecard, an
+// open-in-new-tab link, help, log out and avatar.
 export interface ScorecardEntry {
   id: number;
   name: string;
@@ -111,7 +111,7 @@ export default function AccountBar({
           </svg>
         </Link>
 
-        {/* Account menu — Account settings / Billing / Users and Permissions, like ScoreApp */}
+        {/* Account menu — Account settings / Billing / Users and Permissions */}
         {open === 'account' && (
           <div className="absolute left-12 top-full mt-1 w-64 rounded-xl border border-gray-200 bg-white p-2 shadow-card">
             <p className="truncate px-2 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-widest text-muted">
@@ -268,15 +268,23 @@ export default function AccountBar({
 
       <div className="flex items-center gap-3">
         <a
-          href="https://github.com/joelbadcock127-eng/ScoreApp"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="mailto:support@accesoai.com.au"
           className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-muted hover:bg-gray-50"
           aria-label="Help"
-          title="Help"
+          title="Contact support"
         >
           ?
         </a>
+        <button
+          onClick={logout}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-muted hover:bg-gray-50"
+          aria-label="Log out"
+          title="Log out"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+            <path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9" />
+          </svg>
+        </button>
         <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-200 text-sm font-semibold text-muted" aria-label="Account avatar">
           {accountName.slice(0, 1).toUpperCase()}
         </span>

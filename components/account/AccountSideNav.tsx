@@ -3,9 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// Sidebar for the account-level dashboard, mirroring ScoreApp's:
-// Scorecards / Templates / AI Builder (New) / Account settings, then a HELP
-// group and Referrals.
+// Sidebar for the account-level dashboard: Scorecards / Templates / AI
+// Builder (New) / Account settings, then a HELP group and Referrals.
 function Icon({ name }: { name: string }) {
   const common = {
     viewBox: '0 0 24 24',
@@ -115,8 +114,6 @@ const MAIN = [
 ];
 
 const HELP = [
-  { href: 'https://help.scoreapp.com', label: 'Help Center', icon: 'help', external: true },
-  { href: 'https://www.scoreapp.com/learn', label: 'Learning Hub', icon: 'learning', external: true },
   { href: 'mailto:support@accesoai.com.au', label: 'Contact support', icon: 'support', external: true },
 ];
 

@@ -8,7 +8,7 @@ import AccountSideNav from '@/components/account/AccountSideNav';
 // sidebar (Scorecards / Templates / AI Builder / Account settings / Help).
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const account = await getSessionAccount();
-  if (!account) redirect('/');
+  if (!account) redirect('/login');
   const [config, scorecards, activeId] = await Promise.all([getConfig(), listMyScorecards(), getActiveOrDefaultId()]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">

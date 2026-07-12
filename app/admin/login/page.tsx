@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-// Login now lives on the base-domain landing page.
+// Login now lives at /login.
 export default function AdminLoginPage() {
-  redirect('/');
+  redirect('/login');
 }

@@ -1,7 +1,6 @@
 import { ScorecardConfig } from './types';
 
-// All copy transcribed from the live ScoreApp scorecard (accesoai.scoreapp.com)
-// and the reference screenshots in docs/reference-screenshots.
+// Default scorecard content for the AI Opportunity Assessment.
 export const defaultConfig: ScorecardConfig = {
   title: 'The AI Opportunity Assessment',
   copyright: '© Copyright',

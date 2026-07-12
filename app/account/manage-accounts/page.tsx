@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ManageAccountsPage() {
   const account = await getSessionAccount();
-  if (!account) redirect('/');
+  if (!account) redirect('/login');
   if (account.role !== 'owner') redirect('/account');
 
   const sb = supabaseAdmin();
