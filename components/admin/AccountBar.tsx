@@ -7,19 +7,58 @@ import Link from 'next/link';
 // Top account bar copied from ScoreApp: square icon, account dropdown, a
 // scorecard switcher listing recent scorecards with Go to Scorecards /
 // Create Scorecard, an open-in-new-tab link, help and avatar.
+export interface ScorecardEntry {
+  id: number;
+  name: string;
+  is_default: boolean;
+  updated_at: string;
+}
+
 export default function AccountBar({
   accountName,
   scorecardTitle,
   iconUrl,
   thumbUrl,
+  scorecards = [],
+  activeId,
 }: {
   accountName: string;
   scorecardTitle: string;
   iconUrl: string;
   thumbUrl: string;
+  scorecards?: ScorecardEntry[];
+  activeId?: number;
 }) {
   const [open, setOpen] = useState<'account' | 'scorecards' | null>(null);
+  const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  async function activate(id: number) {
+    if (id === activeId) return setOpen(null);
+    setBusy(true);
+    await fetch('/api/admin/scorecards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'activate', id }),
+    });
+    window.location.reload();
+  }
+
+  async function createScorecard() {
+    const name = prompt('Name your new scorecard');
+    if (!name?.trim()) return;
+    setBusy(true);
+    const res = await fetch('/api/admin/scorecards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', name: name.trim() }),
+    });
+    if (!res.ok) {
+      setBusy(false);
+      return alert('Could not create the scorecard.');
+    }
+    window.location.href = '/admin';
+  }
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -29,7 +68,7 @@ export default function AccountBar({
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  const roadmap = () => alert('Multiple scorecards and accounts are coming soon.');
+  const roadmap = () => alert('Multiple accounts are coming soon.');
 
   return (
     <div ref={ref} className="relative z-30 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2">
@@ -82,28 +121,46 @@ export default function AccountBar({
                 <path d="m20 20-3.8-3.8" />
               </svg>
             </div>
-            <div className="px-2 pb-1">
-              <div className="flex items-center gap-3 rounded-lg px-2 py-2.5 hover:bg-gray-50">
-                <div className="relative h-11 w-14 flex-none overflow-hidden rounded border border-gray-200 bg-white">
-                  <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="flex items-center gap-2 truncate text-sm font-medium">
-                    {scorecardTitle}
-                    <span className="h-2 w-2 flex-none rounded-full bg-green-500" aria-hidden />
-                  </p>
-                  <p className="text-xs text-muted">Live</p>
-                </div>
-              </div>
+            <div className="max-h-72 overflow-y-auto px-2 pb-1">
+              {(scorecards.length ? scorecards : [{ id: activeId ?? 1, name: scorecardTitle, is_default: true, updated_at: '' }]).map((sc) => (
+                <button
+                  key={sc.id}
+                  onClick={() => activate(sc.id)}
+                  disabled={busy}
+                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-gray-50 disabled:opacity-60"
+                >
+                  <div className="relative flex h-11 w-14 flex-none items-center justify-center overflow-hidden rounded border border-gray-200 bg-white">
+                    {sc.id === activeId ? (
+                      <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-semibold text-muted">{sc.name.slice(0, 2).toUpperCase()}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-2 truncate text-sm font-medium">
+                      {sc.name}
+                      <span
+                        className={`h-2 w-2 flex-none rounded-full ${sc.id === activeId ? 'bg-green-500' : 'bg-gray-300'}`}
+                        aria-hidden
+                      />
+                    </p>
+                    <p className="text-xs text-muted">{sc.id === activeId ? 'Currently editing' : sc.is_default ? 'Live · default' : 'Live'}</p>
+                  </div>
+                </button>
+              ))}
             </div>
             <div className="border-t border-gray-100 px-4 py-2.5">
-              <button onClick={roadmap} className="flex items-center gap-2 py-1.5 text-sm font-medium text-primary hover:underline">
+              <Link
+                href="/admin/scorecards"
+                onClick={() => setOpen(null)}
+                className="flex items-center gap-2 py-1.5 text-sm font-medium text-primary hover:underline"
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-4 w-4">
                   <path d="M4 6h16M7 12h10M10 18h4" />
                 </svg>
                 Go to Scorecards
-              </button>
-              <button onClick={roadmap} className="flex items-center gap-2 py-1.5 text-sm font-medium text-primary hover:underline">
+              </Link>
+              <button onClick={createScorecard} disabled={busy} className="flex items-center gap-2 py-1.5 text-sm font-medium text-primary hover:underline disabled:opacity-60">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="h-4 w-4">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 8v8M8 12h8" />

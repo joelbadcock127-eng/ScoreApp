@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/server/auth';
 import { supabaseAdmin } from '@/lib/server/supabase';
+import { getActiveOrDefaultId } from '@/lib/server/config';
 import { Lead } from '@/lib/types';
 
 export async function GET() {
@@ -8,6 +9,7 @@ export async function GET() {
   const { data, error } = await supabaseAdmin()
     .from('leads')
     .select('*')
+    .eq('scorecard_id', await getActiveOrDefaultId())
     .order('created_at', { ascending: false })
     .returns<Lead[]>();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

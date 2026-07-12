@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { getConfig } from '@/lib/server/config';
+import { getActiveOrDefaultId, getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { Lead } from '@/lib/types';
 import Donut from '@/components/Donut';
@@ -18,6 +18,7 @@ function greeting() {
 
 export default async function OverviewPage() {
   const config = await getConfig();
+  const scorecardId = await getActiveOrDefaultId();
   const sb = supabaseAdmin();
   const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
 
@@ -28,13 +29,15 @@ export default async function OverviewPage() {
     sb
       .from('leads')
       .select('id, first_name, last_name, email, overall_percent, status, created_at')
+      .eq('scorecard_id', scorecardId)
       .gte('created_at', since)
       .order('created_at', { ascending: false })
       .returns<Lead[]>(),
-    sb.from('visits').select('*', { count: 'exact', head: true }).gte('created_at', since),
+    sb.from('visits').select('*', { count: 'exact', head: true }).eq('scorecard_id', scorecardId).gte('created_at', since),
     sb
       .from('leads')
       .select('created_at')
+      .eq('scorecard_id', scorecardId)
       .gte('created_at', chartSince)
       .returns<{ created_at: string }[]>(),
   ]);

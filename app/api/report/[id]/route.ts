@@ -28,7 +28,7 @@ async function loadImage(url: string | undefined, origin: string): Promise<Buffe
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  const config = await getConfig();
+  let config = await getConfig();
 
   let data: ReportData;
   if (params.id === 'preview') {
@@ -54,6 +54,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     if (!lead || lead.status !== 'completed' || lead.overall_percent == null) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
+    if (lead.scorecard_id) config = await getConfig(lead.scorecard_id);
     data = {
       firstName: lead.first_name,
       lastName: lead.last_name,

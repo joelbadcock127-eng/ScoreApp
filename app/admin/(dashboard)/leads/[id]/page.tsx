@@ -28,10 +28,12 @@ export default async function LeadDetailPage({
   params: { id: string };
   searchParams: { tab?: string };
 }) {
-  const [config, { data: lead }] = await Promise.all([
-    getConfig(),
-    supabaseAdmin().from('leads').select('*').eq('id', params.id).maybeSingle<Lead>(),
-  ]);
+  const { data: lead } = await supabaseAdmin()
+    .from('leads')
+    .select('*')
+    .eq('id', params.id)
+    .maybeSingle<Lead>();
+  const config = await getConfig(lead?.scorecard_id);
   if (!lead) notFound();
 
   const tab = searchParams.tab === 'answers' ? 'answers' : 'overview';

@@ -80,6 +80,38 @@ export interface ButtonAction {
   url?: string;
 }
 
+// Custom landing-page sections added via the "Add a section" gallery.
+export type ExtraSectionType =
+  | 'banner2'
+  | 'form'
+  | 'cta2'
+  | 'testimonials'
+  | 'categories2'
+  | 'video'
+  | 'html'
+  | 'content'
+  | 'faq';
+
+export interface ExtraSectionItem {
+  title: string;
+  body: string;
+  meta?: string;
+}
+
+export interface ExtraSection {
+  id: string;
+  type: ExtraSectionType;
+  style?: string; // design variant, e.g. 'light' | 'dark' | 'image-left'
+  title?: string;
+  body?: string;
+  button?: string;
+  action?: ButtonAction;
+  image?: string;
+  url?: string; // video URL
+  html?: string; // advanced custom HTML
+  items?: ExtraSectionItem[]; // testimonials / faq entries
+}
+
 export interface ShareAppearanceConfig {
   title: string;
   description: string;
@@ -155,6 +187,7 @@ export interface ScorecardConfig {
   questionsPage?: QuestionsPageConfig;
   resultsPage?: ResultsPageConfig;
   shareAppearance?: ShareAppearanceConfig;
+  email?: { provider?: string; apiKey?: string };
   notifications?: NotificationsConfig;
   resultEmail?: ResultEmailConfig;
   landing: {
@@ -163,7 +196,8 @@ export interface ScorecardConfig {
     categoriesPerRow?: number;
     showHeader?: boolean;
     showFooter?: boolean;
-    sectionOrder?: ('banner' | 'categories' | 'cta')[];
+    sectionOrder?: string[]; // 'banner' | 'categories' | 'cta' | extra section ids
+    extraSections?: ExtraSection[];
     heroCtaAction?: ButtonAction;
     bottomCtaAction?: ButtonAction;
     heroTitle: string;
@@ -254,6 +288,7 @@ export interface CategoryScore {
 
 export interface Lead {
   id: string;
+  scorecard_id?: number;
   first_name: string;
   last_name: string;
   email: string;

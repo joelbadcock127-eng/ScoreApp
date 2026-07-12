@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { getConfig } from '@/lib/server/config';
+import { getActiveOrDefaultId, getConfig } from '@/lib/server/config';
 import { Lead } from '@/lib/types';
 import LeadRow from '@/components/admin/LeadRow';
 
@@ -11,6 +11,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: { q?: 
   let query = sb
     .from('leads')
     .select('*')
+    .eq('scorecard_id', await getActiveOrDefaultId())
     .eq('status', 'completed')
     .order('created_at', { ascending: false })
     .limit(500);

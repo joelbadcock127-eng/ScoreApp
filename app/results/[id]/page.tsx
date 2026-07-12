@@ -8,10 +8,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function ResultsPage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();
-  const [config, { data: lead }] = await Promise.all([
-    getConfig(),
-    supabaseAdmin().from('leads').select('*').eq('id', params.id).maybeSingle<Lead>(),
-  ]);
+  const { data: lead } = await supabaseAdmin()
+    .from('leads')
+    .select('*')
+    .eq('id', params.id)
+    .maybeSingle<Lead>();
+  const config = await getConfig(lead?.scorecard_id);
   if (!lead || lead.status !== 'completed' || lead.overall_percent == null) notFound();
 
   return (

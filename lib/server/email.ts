@@ -16,7 +16,14 @@ export interface EmailMessage {
   fromAddress?: string;
   fromName?: string;
   replyTo?: string;
+  /** Provider API key from the scorecard config (falls back to env vars). */
+  apiKey?: string;
 }
+
+// Free-mail domains can't be verified as senders, so mail from them would be
+// rejected. Send from the provider's shared address and keep the owner's
+// address as the reply-to instead.
+const FREE_MAIL = /@(gmail|googlemail|outlook|hotmail|live|yahoo|icloud|me|aol)\./i;
 
 export function mergeFields(template: string, fields: Record<string, string | number>): string {
   return template.replace(/\{([a-z_]+)\}/g, (m, key) => {
@@ -26,16 +33,21 @@ export function mergeFields(template: string, fields: Record<string, string | nu
 }
 
 export async function sendEmail(msg: EmailMessage): Promise<{ sent: boolean; provider: string; error?: string }> {
-  const from = msg.fromName
-    ? `${msg.fromName} <${msg.fromAddress || 'onboarding@resend.dev'}>`
-    : msg.fromAddress || 'onboarding@resend.dev';
+  let fromAddress = msg.fromAddress || 'onboarding@resend.dev';
+  let replyTo = msg.replyTo;
+  if (FREE_MAIL.test(fromAddress)) {
+    replyTo = replyTo || fromAddress;
+    fromAddress = 'onboarding@resend.dev';
+  }
+  const from = msg.fromName ? `${msg.fromName} <${fromAddress}>` : fromAddress;
+  const resendKey = msg.apiKey || process.env.RESEND_API_KEY;
 
-  if (process.env.RESEND_API_KEY) {
+  if (resendKey) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          Authorization: `Bearer ${resendKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -43,7 +55,7 @@ export async function sendEmail(msg: EmailMessage): Promise<{ sent: boolean; pro
           to: msg.to,
           subject: msg.subject,
           html: msg.html,
-          ...(msg.replyTo ? { reply_to: msg.replyTo } : {}),
+          ...(replyTo ? { reply_to: replyTo } : {}),
         }),
       });
       if (!res.ok) return { sent: false, provider: 'resend', error: await res.text() };
@@ -59,11 +71,11 @@ export async function sendEmail(msg: EmailMessage): Promise<{ sent: boolean; pro
         method: 'POST',
         headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender: { email: msg.fromAddress || 'no-reply@example.com', name: msg.fromName || undefined },
+          sender: { email: fromAddress, name: msg.fromName || undefined },
           to: msg.to.map((email) => ({ email })),
           subject: msg.subject,
           htmlContent: msg.html,
-          ...(msg.replyTo ? { replyTo: { email: msg.replyTo } } : {}),
+          ...(replyTo ? { replyTo: { email: replyTo } } : {}),
         }),
       });
       if (!res.ok) return { sent: false, provider: 'brevo', error: await res.text() };

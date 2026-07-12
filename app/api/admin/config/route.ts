@@ -331,11 +331,38 @@ export async function PUT(req: NextRequest) {
       categoriesPerRow: l.categoriesPerRow != null ? num(l.categoriesPerRow, 2, 1, 4) : config.landing.categoriesPerRow,
       showHeader: l.showHeader != null ? Boolean(l.showHeader) : config.landing.showHeader,
       showFooter: l.showFooter != null ? Boolean(l.showFooter) : config.landing.showFooter,
+      extraSections: Array.isArray(l.extraSections)
+        ? l.extraSections
+            .slice(0, 20)
+            .map((x: Record<string, unknown>) => ({
+              id: String(x.id ?? '').replace(/[^a-z0-9]/gi, '').slice(0, 30),
+              type: ([
+                'banner2', 'form', 'cta2', 'testimonials', 'categories2', 'video', 'html', 'content', 'faq',
+              ].includes(String(x.type))
+                ? String(x.type)
+                : 'content') as never,
+              style: x.style != null ? String(x.style).slice(0, 30) : undefined,
+              title: x.title != null ? sanitizeRichText(String(x.title)).slice(0, 300) : undefined,
+              body: x.body != null ? sanitizeRichText(String(x.body)).slice(0, 2000) : undefined,
+              button: x.button != null ? sanitizeRichText(String(x.button)).slice(0, 120) : undefined,
+              action: action(x.action, undefined),
+              image: x.image != null ? String(x.image).slice(0, 500) : undefined,
+              url: x.url != null ? String(x.url).slice(0, 500) : undefined,
+              html: x.html != null ? String(x.html).slice(0, 20000) : undefined,
+              items: Array.isArray(x.items)
+                ? (x.items as Record<string, string>[]).slice(0, 12).map((it) => ({
+                    title: sanitizeRichText(String(it.title ?? '')).slice(0, 300),
+                    body: sanitizeRichText(String(it.body ?? '')).slice(0, 1500),
+                    meta: it.meta != null ? sanitizeRichText(String(it.meta)).slice(0, 200) : undefined,
+                  }))
+                : undefined,
+            }))
+            .filter((x: { id: string }) => x.id)
+        : config.landing.extraSections,
       sectionOrder: Array.isArray(l.sectionOrder)
-        ? (l.sectionOrder.filter(
-            (k: string, i: number, a: string[]) =>
-              ['banner', 'categories', 'cta'].includes(k) && a.indexOf(k) === i
-          ) as ('banner' | 'categories' | 'cta')[])
+        ? l.sectionOrder
+            .map((k: string) => String(k).slice(0, 40))
+            .filter((k: string, i: number, a: string[]) => a.indexOf(k) === i)
         : config.landing.sectionOrder,
       heroCtaAction: action(l.heroCtaAction, config.landing.heroCtaAction),
       bottomCtaAction: action(l.bottomCtaAction, config.landing.bottomCtaAction),

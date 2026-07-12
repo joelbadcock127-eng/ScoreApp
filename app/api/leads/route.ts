@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/server/supabase';
+import { getActiveOrDefaultId } from '@/lib/server/config';
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
       business: String(body.business ?? '').slice(0, 300),
       contact_opt_in: Boolean(body.contact_opt_in),
       status: 'started',
+      scorecard_id: await getActiveOrDefaultId(),
     })
     .select('id')
     .single();

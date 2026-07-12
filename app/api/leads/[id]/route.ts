@@ -36,6 +36,7 @@ async function sendCompletionEmails(
         fromAddress: re.fromAddress || undefined,
         fromName: re.fromName || undefined,
         replyTo: re.replyTo || undefined,
+        apiKey: config.email?.apiKey,
       })
     );
   }
@@ -51,6 +52,7 @@ async function sendCompletionEmails(
         to: recipients,
         subject: stripTags(mergeFields(n.subject, fields)),
         html: mergeFields(n.content, fields),
+        apiKey: config.email?.apiKey,
       })
     );
   }
@@ -76,7 +78,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const sb = supabaseAdmin();
 
   if (body.action === 'complete') {
-    const config = await getConfig();
+    // Validate and score against the scorecard this lead belongs to.
+    const { data: leadRow } = await sb.from('leads').select('scorecard_id').eq('id', params.id).maybeSingle();
+    const config = await getConfig(leadRow?.scorecard_id ?? undefined);
     const answers: Record<string, number> = {};
     for (const q of config.questions) {
       const type = q.type ?? 'scale';
