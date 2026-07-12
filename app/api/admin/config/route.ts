@@ -247,6 +247,63 @@ export async function PUT(req: NextRequest) {
     };
   }
 
+  if (body.pdf && typeof body.pdf === 'object') {
+    const p = body.pdf;
+    const cur = config.pdf;
+    const str = (v: unknown, fallback: string, len = 4000) =>
+      v != null ? sanitizeRichText(String(v)).slice(0, len) : fallback;
+    const strArr = (v: unknown, fallback: string[], len = 4000) =>
+      Array.isArray(v) ? v.map((x) => sanitizeRichText(String(x)).slice(0, len)).slice(0, 20) : fallback;
+    const url = (v: unknown) => String(v ?? '').slice(0, 500);
+    const catContent = (v: unknown, fallback: typeof cur.categories) => {
+      if (!v || typeof v !== 'object') return fallback;
+      const out: typeof cur.categories = {};
+      for (const [cat, tiers] of Object.entries(v as Record<string, Record<string, { intro?: string[]; exampleTitle?: string; example?: string[] }>>)) {
+        out[cat.slice(0, 60)] = {};
+        for (const [t, content] of Object.entries(tiers ?? {})) {
+          out[cat.slice(0, 60)][t.slice(0, 60)] = {
+            intro: strArr(content?.intro, []),
+            exampleTitle: str(content?.exampleTitle, '', 500),
+            example: strArr(content?.example, []),
+          };
+        }
+      }
+      return out;
+    };
+    const PAGE_KEY = /^(cover|howToRead|keys|closing|cat:[a-z0-9-]+)$/;
+    config.pdf = {
+      coverTitle: str(p.coverTitle, cur.coverTitle, 300),
+      howToReadTitle: str(p.howToReadTitle, cur.howToReadTitle, 300),
+      howToRead: strArr(p.howToRead, cur.howToRead),
+      keysHeading: str(p.keysHeading, cur.keysHeading, 300),
+      categories: catContent(p.categories, cur.categories),
+      closingTitle: str(p.closingTitle, cur.closingTitle, 300),
+      closing: strArr(p.closing, cur.closing),
+      images: p.images
+        ? {
+            cover: url(p.images.cover),
+            howToRead: url(p.images.howToRead),
+            closing: url(p.images.closing),
+            categories: Object.fromEntries(
+              Object.entries((p.images.categories ?? {}) as Record<string, string>).map(([k, v]) => [
+                k.slice(0, 60),
+                url(v),
+              ])
+            ),
+          }
+        : cur.images,
+      panel: p.panel
+        ? {
+            background: color(p.panel.background, '#152042'),
+            buttonColor: color(p.panel.buttonColor, '#1c78fe'),
+            imagePosition: p.panel.imagePosition === 'right' ? 'right' : 'left',
+          }
+        : cur.panel,
+      footerText: p.footerText != null ? str(p.footerText, '', 200) : cur.footerText,
+      hidden: Array.isArray(p.hidden) ? p.hidden.filter((k: string) => PAGE_KEY.test(k)).slice(0, 20) : cur.hidden,
+    };
+  }
+
   if (body.landing && typeof body.landing === 'object') {
     const l = body.landing;
     const str = (v: unknown, fallback: string, len = 2000) =>

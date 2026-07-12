@@ -190,6 +190,10 @@ export const defaultConfig: ScorecardConfig = {
       'Your report has identified where AI and automation could create the greatest value in your business. The next step is determining which opportunity is practical, commercially worthwhile and capable of producing a measurable return.',
       'I personally review selected assessments where the results indicate a strong opportunity. To register your interest, reply to the email that delivered this report with “Personal review”. I will examine your answers and, if I believe there is a strong fit, contact you with an initial observation and an invitation to discuss the opportunity further.',
     ],
+    images: {},
+    panel: { background: '#152042', buttonColor: '#1c78fe', imagePosition: 'left' },
+    footerText: '',
+    hidden: [],
   },
   questionsPage: {
     header: { show: true, align: 'center', maxWidth: 250, topMargin: 13, bottomMargin: 13 },

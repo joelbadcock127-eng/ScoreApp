@@ -4,7 +4,7 @@ import { renderToBuffer } from '@react-pdf/renderer';
 import { getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { CategoryScore, Lead } from '@/lib/types';
-import { ReportDocument, ReportData } from '@/lib/pdf/ReportDocument';
+import { ReportDocument, ReportData, PdfImages } from '@/lib/pdf/ReportDocument';
 import { sampleResults } from '@/lib/sampleData';
 import { readFile } from 'fs/promises';
 import path from 'path';
@@ -12,13 +12,14 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
-async function loadLogo(logoUrl: string, origin: string): Promise<Buffer | null> {
+async function loadImage(url: string | undefined, origin: string): Promise<Buffer | null> {
+  if (!url) return null;
   try {
-    if (logoUrl.startsWith('/')) {
+    if (url.startsWith('/')) {
       // Local public asset: read straight from disk.
-      return await readFile(path.join(process.cwd(), 'public', logoUrl));
+      return await readFile(path.join(process.cwd(), 'public', url));
     }
-    const res = await fetch(logoUrl.startsWith('http') ? logoUrl : `${origin}${logoUrl}`);
+    const res = await fetch(url.startsWith('http') ? url : `${origin}${url}`);
     if (!res.ok) return null;
     return Buffer.from(await res.arrayBuffer());
   } catch {
@@ -67,9 +68,23 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     };
   }
 
-  const logo = await loadLogo(config.branding.logoUrl, req.nextUrl.origin);
+  const origin = req.nextUrl.origin;
+  const imgCfg = config.pdf.images ?? {};
+  const categoryImages: Record<string, Buffer | null> = {};
+  await Promise.all(
+    config.categories.map(async (c) => {
+      categoryImages[c.key] = await loadImage(imgCfg.categories?.[c.key], origin);
+    })
+  );
+  const images: PdfImages = {
+    logo: await loadImage(config.branding.logoUrl, origin),
+    cover: await loadImage(imgCfg.cover, origin),
+    howToRead: await loadImage(imgCfg.howToRead, origin),
+    categories: categoryImages,
+    closing: await loadImage(imgCfg.closing, origin),
+  };
   const pdf = await renderToBuffer(
-    React.createElement(ReportDocument, { config, data, logo }) as never
+    React.createElement(ReportDocument, { config, data, images }) as never
   );
 
   return new NextResponse(new Uint8Array(pdf), {

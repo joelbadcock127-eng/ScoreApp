@@ -102,6 +102,20 @@ export interface PdfConfig {
   categories: Record<string, Record<TierKey, PdfCategoryContent>>;
   closingTitle: string;
   closing: string[];
+  // Editor-managed extras (all optional so existing configs keep working)
+  images?: {
+    cover?: string;
+    howToRead?: string;
+    categories?: Record<string, string>;
+    closing?: string;
+  };
+  panel?: {
+    background: string;
+    buttonColor: string;
+    imagePosition: 'left' | 'right';
+  };
+  footerText?: string;
+  hidden?: string[]; // page keys: cover | howToRead | keys | cat:<key> | closing
 }
 
 export interface ScorecardConfig {
