@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Top account bar copied from ScoreApp: square icon, account dropdown, a
 // scorecard switcher listing recent scorecards with Go to Scorecards /
@@ -16,6 +17,7 @@ export interface ScorecardEntry {
 
 export default function AccountBar({
   accountName,
+  isOwner = false,
   scorecardTitle,
   iconUrl,
   thumbUrl,
@@ -23,6 +25,7 @@ export default function AccountBar({
   activeId,
 }: {
   accountName: string;
+  isOwner?: boolean;
   scorecardTitle: string;
   iconUrl: string;
   thumbUrl: string;
@@ -32,6 +35,7 @@ export default function AccountBar({
   const [open, setOpen] = useState<'account' | 'scorecards' | null>(null);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   async function activate(id: number) {
     if (id === activeId) return setOpen(null);
@@ -41,7 +45,9 @@ export default function AccountBar({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'activate', id }),
     });
-    window.location.reload();
+    setOpen(null);
+    setBusy(false);
+    router.refresh();
   }
 
   async function createScorecard() {
@@ -57,7 +63,14 @@ export default function AccountBar({
       setBusy(false);
       return alert('Could not create the scorecard.');
     }
-    window.location.href = '/admin';
+    router.push('/admin');
+    router.refresh();
+  }
+
+  async function logout() {
+    await fetch('/api/auth', { method: 'DELETE' });
+    router.push('/');
+    router.refresh();
   }
 
   useEffect(() => {
@@ -92,7 +105,7 @@ export default function AccountBar({
           <span aria-hidden className={`text-muted transition-transform ${open === 'scorecards' ? 'rotate-180' : ''}`}>⌄</span>
         </button>
 
-        <Link href="/" target="_blank" className="ml-1 text-primary hover:opacity-70" aria-label="Open scorecard" title="Open scorecard">
+        <Link href={activeId != null ? `/s/${activeId}` : '/'} target="_blank" className="ml-1 text-primary hover:opacity-70" aria-label="Open scorecard" title="Open scorecard">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4.5 w-4.5 h-[18px] w-[18px]">
             <path d="M14 5h5v5M19 5 10.5 13.5M19 14v5H5V5h5" />
           </svg>
@@ -136,6 +149,21 @@ export default function AccountBar({
                   </>
                 ),
               },
+              ...(isOwner
+                ? [
+                    {
+                      href: '/account/manage-accounts',
+                      label: 'Manage accounts',
+                      icon: (
+                        <>
+                          <rect x="3" y="4" width="18" height="16" rx="2" />
+                          <circle cx="9" cy="10" r="2" />
+                          <path d="M5.8 16.5c.5-1.8 1.7-2.8 3.2-2.8s2.7 1 3.2 2.8M15 9.5h4M15 13h4" />
+                        </>
+                      ),
+                    },
+                  ]
+                : []),
             ].map((item) => (
               <Link
                 key={item.href}
@@ -157,6 +185,23 @@ export default function AccountBar({
                 {item.label}
               </Link>
             ))}
+            <button
+              onClick={logout}
+              className="mt-1 flex w-full items-center gap-2.5 rounded-md border-t border-gray-100 px-2 pb-2 pt-2.5 text-left text-sm text-ink hover:bg-gray-50"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-[18px] w-[18px] text-muted"
+              >
+                <path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9" />
+              </svg>
+              Log out
+            </button>
           </div>
         )}
 

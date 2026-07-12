@@ -1,10 +1,23 @@
-import { getConfig } from '@/lib/server/config';
+import { redirect } from 'next/navigation';
+import { getConfig, getHostCustomDomain, getHostSubdomain } from '@/lib/server/config';
+import { isAdmin } from '@/lib/server/auth';
 import LandingView from '@/components/LandingView';
+import AuthLanding from '@/components/AuthLanding';
 
 export const dynamic = 'force-dynamic';
 
+function isScorecardHost() {
+  return getHostSubdomain() != null || getHostCustomDomain() != null;
+}
+
 // Social share (Open Graph / Twitter) metadata from Settings → Share Appearance.
 export async function generateMetadata() {
+  if (!isScorecardHost()) {
+    return {
+      title: 'Acceso AI Scorecards',
+      description: 'Build branded lead-generation scorecards with AI-drafted questions, results and PDF reports.',
+    };
+  }
   const config = await getConfig();
   const sa = config.shareAppearance;
   if (!sa) return { title: config.title };
@@ -17,12 +30,17 @@ export async function generateMetadata() {
   };
 }
 
-export default async function LandingPage({
+// The base domain lands on login/signup; scorecard subdomains and custom
+// domains still land straight on their scorecard.
+export default async function RootPage({
   searchParams,
 }: {
   searchParams?: { chrome?: string };
 }) {
-  const config = await getConfig();
-  // ?chrome=0 is used by the website embeds to hide the header and footer.
-  return <LandingView config={config} hideChrome={searchParams?.chrome === '0'} />;
+  if (isScorecardHost()) {
+    const config = await getConfig();
+    return <LandingView config={config} hideChrome={searchParams?.chrome === '0'} />;
+  }
+  if (isAdmin()) redirect('/account');
+  return <AuthLanding />;
 }

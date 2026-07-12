@@ -1,48 +1,44 @@
-# The AI Opportunity Assessment — ScoreApp rebuild
+# Acceso AI Scorecards
 
-A standalone rebuild of the Acceso AI scorecard originally built on ScoreApp
-(https://accesoai.scoreapp.com/). Next.js + Tailwind on the front, Supabase for storage.
+A multi-account scorecard platform (originally a rebuild of the Acceso AI ScoreApp scorecard).
+Next.js + Tailwind on the front, Supabase for storage, the Claude API (Haiku) for the AI Builder.
 
-## What's included
+## How it fits together
 
-- **Landing page** (`/`) — hero, "Assess Your Business in Four Key Areas" cards, bottom CTA,
-  lead-capture popup. Fully responsive.
-- **Quiz** (`/quiz`) — 23 linear-scale questions (1–5) with left/centre/right labels,
-  back navigation and a completion bar, one question per screen.
-- **Results** (`/results/[id]`) — speed-chart gauge, overall score, and **dynamic content on
-  three score tiers** (Low 0–50, Medium 51–79, High 80–100): tier-specific intro plus
-  tier-specific text for each of the four categories, "Next steps?" CTA, share bar,
-  "Update your details" popup.
-- **Admin** (`/admin`, password-gated) —
-  - **Leads**: searchable list (name, email, date, completion time, score), CSV export,
-    per-lead detail with overall/category donuts and an Answers tab.
-  - **Settings → Score Tiers**: edit tier colours, labels and score ranges.
-  - **Settings → Lead Form**: edit the signup form fields (label, type, required, enabled).
-
-Scoring: each answer scores its position (1–5). Category % = points / max points;
-overall % = total points / 115, matching ScoreApp's numbers exactly.
+- **Base domain `/`** — product landing page with **log in / create account** (email + password).
+  Logged-in users land on their account dashboard.
+- **Accounts** — every user has their own account and their own scorecards. The **owner**
+  account can additionally manage all accounts at *Account → Manage accounts* (create,
+  rename, reset passwords, delete). Passwords are scrypt-hashed; sessions are signed
+  HMAC cookies.
+- **Scorecards** — each account can create any number. Public URLs: `/s/<id>`, a managed
+  subdomain (`<sub>.accesoai.com.au`) or a fully custom domain. New scorecards start from
+  a *generic* blank template (`lib/blankConfig.ts`) — nothing from the AI Opportunity
+  scorecard leaks into them; that content lives only in scorecard #1 (`lib/defaultConfig.ts`).
+- **AI Builder** (`/account/ai-builder`) — describe branding + the scorecard idea; Claude
+  (`claude-haiku-4-5`) generates the landing page, categories, questions, results pages and
+  PDF report as **schema-constrained JSON** (never code), in four steps: strategy → landing +
+  questions → results → PDF. A review screen shows the outline with warnings, then saving
+  creates a normal scorecard you edit in the existing editors. The scoring engine is fixed:
+  1–5 scale questions, high = good, low/medium/high tiers.
+  - Without `ANTHROPIC_API_KEY` (or with `AI_BUILDER_MOCK=1`) the builder runs in **sample
+    mode** — placeholder content, zero API calls — so the flow can be tested for free.
+  - A full generation is 4 Haiku calls, roughly 15–25k output tokens ≈ **US$0.08–0.15**.
+- **Admin** (`/admin`) — per-scorecard dashboard: leads, visual editors for landing /
+  questions / results / PDF, branding, domains, emails, embeds.
 
 ## Setup
 
-1. Create a Supabase project and run the migration in `supabase/migrations`
-   (already applied to the "ScoreApp" project) — tables `scorecard_config` and `leads`
-   with RLS enabled and **no** anon policies; all access goes through the app server
-   with the service role key.
-2. Copy `.env.example` to `.env.local` and fill in:
-   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (Supabase dashboard -> Settings -> API)
-   - `ADMIN_PASSWORD` (protects `/admin`)
+1. Supabase project with the migrations in `supabase/migrations` applied (already applied to
+   the "ScoreApp" project). All tables have RLS on with **no** anon policies; all access goes
+   through the app server with the service role key.
+2. Environment variables (see `.env.example`):
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`
+   - `SESSION_SECRET` — signs login cookies (falls back to `ADMIN_PASSWORD`)
+   - `ANTHROPIC_API_KEY` — enables real AI Builder generation (keep it in the deployment's
+     env settings only; never commit it)
+   - `AI_BUILDER_MOCK=1` — force sample mode even with a key
 3. `npm install && npm run dev`
 
-All scorecard content (questions, tier texts, landing copy) is seeded from
-`lib/defaultConfig.ts` into the `scorecard_config` table on first load; tiers and the
-lead form are then editable from the admin settings.
-
-## Not wired up (yet)
-
-- **Result / abandon emails** — the results page says "Your full report has been emailed…"
-  to match the original, but no email is sent. Needs an email provider (e.g. Resend/Postmark).
-- **PDF report** — "Open my Report" is a placeholder; ScoreApp's PDF report builder is a
-  separate feature.
-
-Reference screenshots of the original ScoreApp scorecard live in
-`docs/reference-screenshots/` (see `docs/screenshot-map.md`).
+Scoring: each answer scores its position (1–5). Category % = points / max points;
+overall % = total points / max total.

@@ -1,10 +1,10 @@
-import { BASE_DOMAIN, getActiveOrDefaultId, listScorecards } from '@/lib/server/config';
+import { BASE_DOMAIN, getActiveOrDefaultId, listMyScorecards } from '@/lib/server/config';
 import DomainEditor from '@/components/admin/DomainEditor';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DomainPage() {
-  const [scorecards, activeId] = await Promise.all([listScorecards(), getActiveOrDefaultId()]);
+  const [scorecards, activeId] = await Promise.all([listMyScorecards(), getActiveOrDefaultId()]);
   const active = scorecards.find((s) => s.id === activeId);
   return (
     <DomainEditor

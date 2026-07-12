@@ -84,6 +84,14 @@ function Icon({ name }: { name: string }) {
           <path d="M8.5 10.5h7M8.5 13h4.5" />
         </svg>
       );
+    case 'accounts':
+      return (
+        <svg {...common}>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <circle cx="9" cy="10" r="2" />
+          <path d="M5.8 16.5c.5-1.8 1.7-2.8 3.2-2.8s2.7 1 3.2 2.8M15 9.5h4M15 13h4" />
+        </svg>
+      );
     case 'referrals':
       return (
         <svg {...common}>
@@ -112,16 +120,19 @@ const HELP = [
   { href: 'mailto:support@accesoai.com.au', label: 'Contact support', icon: 'support', external: true },
 ];
 
-export default function AccountSideNav() {
+export default function AccountSideNav({ isOwner = false }: { isOwner?: boolean }) {
   const pathname = usePathname();
   const linkClass = (active: boolean) =>
     `flex items-center gap-2.5 rounded-md px-3 py-2 text-[15px] ${
       active ? 'bg-gray-200/70 font-medium text-ink' : 'text-ink hover:bg-gray-100'
     }`;
+  const items = isOwner
+    ? [...MAIN, { href: '/account/manage-accounts', label: 'Manage accounts', icon: 'accounts' }]
+    : MAIN;
   return (
     <nav className="mt-6 flex h-[calc(100%-1.5rem)] flex-col">
       <div className="space-y-0.5">
-        {MAIN.map((n) => (
+        {items.map((n) => (
           <Link key={n.href} href={n.href} className={linkClass(pathname.startsWith(n.href))}>
             <Icon name={n.icon} />
             {n.label}

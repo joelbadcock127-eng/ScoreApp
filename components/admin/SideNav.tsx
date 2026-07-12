@@ -139,7 +139,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export default function SideNav() {
+export default function SideNav({ scorecardId }: { scorecardId?: number }) {
   const pathname = usePathname();
   return (
     <>
@@ -173,7 +173,7 @@ export default function SideNav() {
       </nav>
       <div className="mt-8 border-t border-gray-200 pt-4">
         <Link
-          href="/"
+          href={scorecardId != null ? `/s/${scorecardId}` : '/'}
           target="_blank"
           className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[15px] text-muted hover:bg-gray-100"
         >

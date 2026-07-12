@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // "Your Scorecards" table on the account dashboard: search, NAME / STATUS /
 // VISITED columns, a ⋯ row menu and the Featured Template card.
@@ -18,6 +19,7 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -46,19 +48,33 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
   }
 
   async function edit(id: number) {
-    if (await post({ action: 'activate', id })) window.location.href = '/admin';
+    if (await post({ action: 'activate', id })) {
+      router.push('/admin');
+      router.refresh();
+    }
   }
   async function makeLive(id: number) {
-    if (await post({ action: 'set-default', id })) window.location.reload();
+    if (await post({ action: 'set-default', id })) {
+      setBusy(false);
+      setMenuFor(null);
+      router.refresh();
+    }
   }
   async function remove(id: number, name: string) {
     if (!confirm(`Delete “${name}”? Its leads stay but the scorecard is gone for good.`)) return;
-    if (await post({ action: 'delete', id })) window.location.reload();
+    if (await post({ action: 'delete', id })) {
+      setBusy(false);
+      setMenuFor(null);
+      router.refresh();
+    }
   }
   async function create(name?: string) {
     const n = name ?? prompt('Name your new scorecard');
     if (!n?.trim()) return;
-    if (await post({ action: 'create', name: n.trim() })) window.location.href = '/admin';
+    if (await post({ action: 'create', name: n.trim() })) {
+      router.push('/admin');
+      router.refresh();
+    }
   }
 
   return (

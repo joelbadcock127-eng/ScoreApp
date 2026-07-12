@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin } from '@/lib/server/auth';
+import { isAdmin, isOwner } from '@/lib/server/auth';
 import {
   BASE_DOMAIN,
   createScorecard,
   deleteScorecard,
+  listMyScorecards,
   listScorecards,
   setDefaultScorecard,
   setScorecardCustomDomain,
@@ -15,10 +16,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  return NextResponse.json({ scorecards: await listScorecards() });
+  return NextResponse.json({ scorecards: await listMyScorecards() });
 }
 
-// POST { action: 'create', name } | { action: 'activate', id }
+// POST { action: 'create', name } | { action: 'activate', id } | ...
 export async function POST(req: NextRequest) {
   if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const body = await req.json().catch(() => null);
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (body.action === 'activate') {
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
-    const exists = (await listScorecards()).some((s) => s.id === id);
+    const exists = (await listMyScorecards()).some((s) => s.id === id);
     if (!exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const res = NextResponse.json({ ok: true, id });
     res.cookies.set(SCORECARD_COOKIE, String(id), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
@@ -46,7 +47,10 @@ export async function POST(req: NextRequest) {
   if (body.action === 'set-default') {
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
-    const exists = (await listScorecards()).some((s) => s.id === id);
+    if (!(await isOwner())) {
+      return NextResponse.json({ error: 'Only the site owner can change the live default scorecard.' }, { status: 403 });
+    }
+    const exists = (await listMyScorecards()).some((s) => s.id === id);
     if (!exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     await setDefaultScorecard(id);
     return NextResponse.json({ ok: true, id });
@@ -55,15 +59,15 @@ export async function POST(req: NextRequest) {
   if (body.action === 'delete') {
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
-    const all = await listScorecards();
-    const target = all.find((s) => s.id === id);
+    const mine = await listMyScorecards();
+    const target = mine.find((s) => s.id === id);
     if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     if (target.is_default) return NextResponse.json({ error: 'The live (default) scorecard cannot be deleted.' }, { status: 400 });
-    if (all.length <= 1) return NextResponse.json({ error: 'You need at least one scorecard.' }, { status: 400 });
+    if (mine.length <= 1) return NextResponse.json({ error: 'You need at least one scorecard.' }, { status: 400 });
     await deleteScorecard(id);
     const res = NextResponse.json({ ok: true });
-    // If the deleted scorecard was the one being edited, point the cookie back at the default.
-    const fallback = all.find((s) => s.is_default && s.id !== id) ?? all.find((s) => s.id !== id);
+    // If the deleted scorecard was the one being edited, point the cookie back at another of yours.
+    const fallback = mine.find((s) => s.is_default && s.id !== id) ?? mine.find((s) => s.id !== id);
     if (fallback) res.cookies.set(SCORECARD_COOKIE, String(fallback.id), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
     return res;
   }
@@ -71,6 +75,9 @@ export async function POST(req: NextRequest) {
   if (body.action === 'set-domain') {
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    if (!(await listMyScorecards()).some((s) => s.id === id)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const raw = String(body.domain ?? '').trim().toLowerCase();
     if (raw === '') {
       await setScorecardDomain(id, null);
@@ -91,6 +98,9 @@ export async function POST(req: NextRequest) {
   if (body.action === 'set-custom-domain') {
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+    if (!(await listMyScorecards()).some((s) => s.id === id)) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const raw = String(body.domain ?? '')
       .trim()
       .toLowerCase()
