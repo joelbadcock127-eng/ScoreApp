@@ -60,6 +60,13 @@ function Icon({ name, className = 'h-[18px] w-[18px]' }: { name: string; classNa
           <path d="M14 3v4h4M9 12h6M9 16h6" />
         </svg>
       );
+    case 'ai':
+      return (
+        <svg {...common}>
+          <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4L12 3Z" />
+          <path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" />
+        </svg>
+      );
     case 'branding':
       return (
         <svg {...common}>

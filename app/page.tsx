@@ -1,6 +1,6 @@
 import { getConfig, getHostCustomDomain, getHostSubdomain } from '@/lib/server/config';
 import { isAdmin } from '@/lib/server/auth';
-import LandingView from '@/components/LandingView';
+import ScorecardLanding from '@/components/ScorecardLanding';
 import MarketingPage from '@/components/marketing/MarketingPage';
 
 export const dynamic = 'force-dynamic';
@@ -39,7 +39,7 @@ export default async function RootPage({
 }) {
   if (isScorecardHost()) {
     const config = await getConfig();
-    return <LandingView config={config} hideChrome={searchParams?.chrome === '0'} />;
+    return <ScorecardLanding config={config} hideChrome={searchParams?.chrome === '0'} />;
   }
   return <MarketingPage loggedIn={isAdmin()} />;
 }

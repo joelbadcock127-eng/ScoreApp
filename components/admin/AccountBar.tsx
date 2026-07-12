@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import CreateScorecardModal from '@/components/admin/CreateScorecardModal';
 
 // Top account bar: square icon, account dropdown, a scorecard switcher
 // listing recent scorecards with Go to Scorecards / Create Scorecard, an
@@ -33,6 +34,7 @@ export default function AccountBar({
   activeId?: number;
 }) {
   const [open, setOpen] = useState<'account' | 'scorecards' | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -50,21 +52,9 @@ export default function AccountBar({
     router.refresh();
   }
 
-  async function createScorecard() {
-    const name = prompt('Name your new scorecard');
-    if (!name?.trim()) return;
-    setBusy(true);
-    const res = await fetch('/api/admin/scorecards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create', name: name.trim() }),
-    });
-    if (!res.ok) {
-      setBusy(false);
-      return alert('Could not create the scorecard.');
-    }
-    router.push('/admin');
-    router.refresh();
+  function createScorecard() {
+    setOpen(null);
+    setCreateOpen(true);
   }
 
   async function logout() {
@@ -291,6 +281,7 @@ export default function AccountBar({
           {accountName.slice(0, 1).toUpperCase()}
         </span>
       </div>
+      <CreateScorecardModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }

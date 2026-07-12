@@ -17,6 +17,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/build/landing', label: 'Landing Page', icon: 'landing' },
       { href: '/admin/build/questions', label: 'Questions', icon: 'questions' },
       { href: '/admin/build/results', label: 'Result Pages', icon: 'results' },
+      { href: '/admin/build/custom', label: 'Custom Design (AI)', icon: 'ai' },
       { href: '/admin/build/pdf', label: 'PDF Reports', icon: 'pdf' },
     ],
   },

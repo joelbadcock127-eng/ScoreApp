@@ -193,9 +193,38 @@ export interface PdfConfig {
   hidden?: string[]; // page keys: cover | howToRead | keys | cat:<key> | closing
 }
 
+// AI-designed custom pages: the model writes an HTML/CSS "design shell" whose
+// editable content is referenced through merge tags ({{text:key}},
+// {{image:key}}, …) backed by typed slots. Content lives in the slots, so the
+// editor can change any text/image without touching the design, and a
+// redesign never loses copy edits.
+export type CustomPageSlotType = 'text' | 'rich' | 'image';
+
+export interface CustomPageSlot {
+  key: string;
+  type: CustomPageSlotType;
+  label: string;
+  value: string; // text / limited rich HTML / image URL
+}
+
+export interface CustomPage {
+  html: string; // sanitized shell with merge tags
+  css: string; // page stylesheet (sanitized)
+  slots: CustomPageSlot[];
+  updatedAt?: string;
+}
+
 export interface ScorecardConfig {
   title: string;
   copyright: string;
+  // 'custom' renders the AI-designed page from customPages instead of the
+  // component-based views. Absent = 'components'.
+  landingMode?: 'components' | 'custom';
+  resultsMode?: 'components' | 'custom';
+  customPages?: {
+    landing?: CustomPage;
+    results?: CustomPage;
+  };
   branding: Branding;
   pdf: PdfConfig;
   questionsPage?: QuestionsPageConfig;

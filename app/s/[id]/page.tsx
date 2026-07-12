@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getConfig, listScorecards } from '@/lib/server/config';
-import LandingView from '@/components/LandingView';
+import ScorecardLanding from '@/components/ScorecardLanding';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,5 +38,5 @@ export default async function ScorecardLandingPage({
   const id = await resolveId(params.id);
   if (id == null) notFound();
   const config = await getConfig(id);
-  return <LandingView config={config} scorecardId={id} hideChrome={searchParams?.chrome === '0'} />;
+  return <ScorecardLanding config={config} scorecardId={id} hideChrome={searchParams?.chrome === '0'} />;
 }

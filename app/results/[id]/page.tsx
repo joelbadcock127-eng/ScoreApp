@@ -3,6 +3,7 @@ import { getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { CategoryScore, Lead } from '@/lib/types';
 import ResultsView from '@/components/ResultsView';
+import CustomResultsPage from '@/components/CustomResultsPage';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,23 @@ export default async function ResultsPage({ params }: { params: { id: string } }
     .maybeSingle<Lead>();
   const config = await getConfig(lead?.scorecard_id);
   if (!lead || lead.status !== 'completed' || lead.overall_percent == null) notFound();
+
+  if (config.resultsMode === 'custom' && config.customPages?.results) {
+    return (
+      <CustomResultsPage
+        config={config}
+        lead={{
+          id: lead.id,
+          first_name: lead.first_name,
+          last_name: lead.last_name,
+          email: lead.email,
+          business: lead.business,
+          overall_percent: lead.overall_percent,
+          category_scores: (lead.category_scores ?? []) as CategoryScore[],
+        }}
+      />
+    );
+  }
 
   return (
     <ResultsView

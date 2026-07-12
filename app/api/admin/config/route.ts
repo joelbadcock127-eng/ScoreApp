@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/server/auth';
 import { getConfig, saveConfig } from '@/lib/server/config';
 import { sanitizeRichText } from '@/lib/richtext';
+import { sanitizeCustomPage } from '@/lib/customPage';
 import {
   ButtonAction,
   Category,
@@ -442,6 +443,16 @@ export async function PUT(req: NextRequest) {
       subject: String(r.subject ?? '').slice(0, 300),
       content: sanitizeRichText(String(r.content ?? '')).slice(0, 8000),
     };
+  }
+
+  // AI-designed custom pages: which mode each page renders in, plus the
+  // sanitized design shells + content slots.
+  if (body.landingMode === 'components' || body.landingMode === 'custom') config.landingMode = body.landingMode;
+  if (body.resultsMode === 'components' || body.resultsMode === 'custom') config.resultsMode = body.resultsMode;
+  if (body.customPages && typeof body.customPages === 'object') {
+    config.customPages = { ...config.customPages };
+    if (body.customPages.landing) config.customPages.landing = sanitizeCustomPage(body.customPages.landing);
+    if (body.customPages.results) config.customPages.results = sanitizeCustomPage(body.customPages.results);
   }
 
   await saveConfig(config);

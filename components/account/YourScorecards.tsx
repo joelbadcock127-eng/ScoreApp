@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import CreateScorecardModal from '@/components/admin/CreateScorecardModal';
 
 // "Your Scorecards" table on the account dashboard: search, NAME / STATUS /
 // VISITED columns, a ⋯ row menu and the Featured Template card.
@@ -18,6 +19,7 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
   const [query, setQuery] = useState('');
   const [menuFor, setMenuFor] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -68,10 +70,8 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
       router.refresh();
     }
   }
-  async function create(name?: string) {
-    const n = name ?? prompt('Name your new scorecard');
-    if (!n?.trim()) return;
-    if (await post({ action: 'create', name: n.trim() })) {
+  async function createFromTemplate(name: string) {
+    if (await post({ action: 'create', name })) {
       router.push('/admin');
       router.refresh();
     }
@@ -82,7 +82,7 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Your Scorecards</h1>
         <button
-          onClick={() => create()}
+          onClick={() => setCreateOpen(true)}
           disabled={busy}
           className="rounded-md bg-primary px-5 py-2.5 font-medium text-white hover:brightness-110 disabled:opacity-60"
         >
@@ -215,13 +215,14 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
           </p>
         </div>
         <button
-          onClick={() => create('Business Growth Scorecard')}
+          onClick={() => createFromTemplate('Business Growth Scorecard')}
           disabled={busy}
           className="flex-none rounded-md border border-primary px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
         >
           Use this template
         </button>
       </div>
+      <CreateScorecardModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 }
