@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation';
 import { getConfig, getHostCustomDomain, getHostSubdomain } from '@/lib/server/config';
 import { isAdmin } from '@/lib/server/auth';
 import LandingView from '@/components/LandingView';
@@ -31,8 +30,8 @@ export async function generateMetadata() {
 }
 
 // The base domain lands on the marketing page (Log in / Get started lead to
-// /login); scorecard subdomains and custom domains land straight on their
-// scorecard.
+// /login; logged-in visitors get a Dashboard button instead of a redirect);
+// scorecard subdomains and custom domains land straight on their scorecard.
 export default async function RootPage({
   searchParams,
 }: {
@@ -42,6 +41,5 @@ export default async function RootPage({
     const config = await getConfig();
     return <LandingView config={config} hideChrome={searchParams?.chrome === '0'} />;
   }
-  if (isAdmin()) redirect('/account');
-  return <MarketingPage />;
+  return <MarketingPage loggedIn={isAdmin()} />;
 }

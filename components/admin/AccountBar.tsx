@@ -84,7 +84,9 @@ export default function AccountBar({
   return (
     <div ref={ref} className="relative z-30 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2">
       <div className="flex items-center gap-1">
-        <img src={iconUrl} alt="" className="mr-2 h-8 w-8 rounded object-contain" />
+        <Link href="/account/scorecards" title="Your scorecards" className="mr-2 rounded hover:opacity-80">
+          <img src={iconUrl || '/images/icon.png'} alt="Your scorecards" className="h-8 w-8 rounded object-contain" />
+        </Link>
         <span className="h-6 w-px bg-gray-200" aria-hidden />
 
         {/* Account dropdown */}

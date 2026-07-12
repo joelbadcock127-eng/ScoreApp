@@ -66,24 +66,36 @@ function Icon({ children }: { children: React.ReactNode }) {
   );
 }
 
-// The public homepage at the base domain: product pitch + Log in / Sign up.
-// Scorecards themselves live on their own subdomains and /s/<id> URLs.
-export default function MarketingPage() {
+// The public homepage at the base domain: product pitch + Log in / Sign up
+// (or a Dashboard button when already logged in). Scorecards themselves live
+// on their own subdomains, /<slug> and /s/<id> URLs.
+export default function MarketingPage({ loggedIn = false }: { loggedIn?: boolean }) {
   return (
     <main className="min-h-screen bg-white">
       {/* Nav */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <img src="/images/logo.png" alt="Acceso AI" className="h-9 w-auto" />
         <div className="flex items-center gap-3">
-          <Link href="/login" className="rounded-md px-4 py-2 text-sm font-medium text-ink hover:bg-gray-100">
-            Log in
-          </Link>
-          <Link
-            href="/login?mode=signup"
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:brightness-110"
-          >
-            Get started free
-          </Link>
+          {loggedIn ? (
+            <Link
+              href="/account"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:brightness-110"
+            >
+              Go to dashboard
+            </Link>
+          ) : (
+            <>
+              <Link href="/login" className="rounded-md px-4 py-2 text-sm font-medium text-ink hover:bg-gray-100">
+                Log in
+              </Link>
+              <Link
+                href="/login?mode=signup"
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:brightness-110"
+              >
+                Get started free
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
