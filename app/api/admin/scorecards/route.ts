@@ -6,6 +6,7 @@ import {
   deleteScorecard,
   listMyScorecards,
   listScorecards,
+  RESERVED_SUBDOMAINS,
   setDefaultScorecard,
   setScorecardCustomDomain,
   setScorecardDomain,
@@ -83,11 +84,14 @@ export async function POST(req: NextRequest) {
       await setScorecardDomain(id, null);
       return NextResponse.json({ ok: true, domain: null });
     }
-    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(raw) || raw === 'www') {
+    if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(raw)) {
       return NextResponse.json(
         { error: 'Use only lowercase letters, numbers and hyphens (not starting or ending with a hyphen).' },
         { status: 400 }
       );
+    }
+    if (RESERVED_SUBDOMAINS.has(raw)) {
+      return NextResponse.json({ error: 'That subdomain is reserved for the platform.' }, { status: 400 });
     }
     const taken = (await listScorecards()).some((s) => s.domain === raw && s.id !== id);
     if (taken) return NextResponse.json({ error: 'That subdomain is already used by another scorecard.' }, { status: 409 });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { ADMIN_COOKIE, hashPassword, SESSION_COOKIE, sessionToken, verifyPassword } from '@/lib/server/auth';
+import { SCORECARD_COOKIE } from '@/lib/server/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,9 @@ export async function POST(req: NextRequest) {
     if (error) return NextResponse.json({ error: 'Could not create the account.' }, { status: 500 });
     const res = NextResponse.json({ ok: true, id: data.id });
     setSession(res, data.id as number);
+    // A fresh account has no scorecards — make sure no stale editing cookie
+    // from a previous session leaks in.
+    res.cookies.delete(SCORECARD_COOKIE);
     return res;
   }
 
@@ -56,6 +60,20 @@ export async function POST(req: NextRequest) {
   }
   const res = NextResponse.json({ ok: true, id: account.id });
   setSession(res, account.id as number);
+
+  // Point the editor at this account's own scorecard (default, else first),
+  // replacing any stale cookie so editing never targets the wrong scorecard.
+  const { data: owned } = await sb
+    .from('scorecard_config')
+    .select('id, is_default')
+    .eq('account_id', account.id)
+    .order('created_at', { ascending: true });
+  const target = owned?.find((s) => s.is_default) ?? owned?.[0];
+  if (target) {
+    res.cookies.set(SCORECARD_COOKIE, String(target.id), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
+  } else {
+    res.cookies.delete(SCORECARD_COOKIE);
+  }
   return res;
 }
 

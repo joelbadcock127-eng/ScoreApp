@@ -104,10 +104,11 @@ function Icon({ name }: { name: string }) {
   }
 }
 
+// The AI Builder is not listed here — its entry point is Create Scorecard →
+// "Build it with AI", so there's a single way to start a scorecard.
 const MAIN = [
   { href: '/account/scorecards', label: 'Scorecards', icon: 'scorecards' },
   { href: '/account/templates', label: 'Templates', icon: 'templates' },
-  { href: '/account/ai-builder', label: 'AI Builder', icon: 'ai', badge: 'New' },
   { href: '/account/settings', label: 'Account settings', icon: 'settings' },
   { href: '/account/billing', label: 'Billing', icon: 'billing' },
   { href: '/account/users', label: 'Users and Permissions', icon: 'users' },
@@ -133,11 +134,6 @@ export default function AccountSideNav({ isOwner = false }: { isOwner?: boolean 
           <Link key={n.href} href={n.href} className={linkClass(pathname.startsWith(n.href))}>
             <Icon name={n.icon} />
             {n.label}
-            {n.badge && (
-              <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                {n.badge}
-              </span>
-            )}
           </Link>
         ))}
       </div>

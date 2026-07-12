@@ -8,12 +8,32 @@ import CreateScorecardModal from '@/components/admin/CreateScorecardModal';
 
 // Top account bar: square icon, account dropdown, a scorecard switcher
 // listing recent scorecards with Go to Scorecards / Create Scorecard, an
-// open-in-new-tab link, help, log out and avatar.
+// open-in-new-tab link and log out.
 export interface ScorecardEntry {
   id: number;
   name: string;
   is_default: boolean;
   updated_at: string;
+  // From each scorecard's own config — previews never show another
+  // scorecard's imagery.
+  primary_color?: string | null;
+  share_image?: string | null;
+  hero_image?: string | null;
+}
+
+// Mini preview of a scorecard's landing page: its share/hero image when set,
+// otherwise its own brand colour with initials.
+function ScorecardThumb({ sc }: { sc: ScorecardEntry }) {
+  const img = sc.share_image || sc.hero_image;
+  if (img) return <img src={img} alt="" className="h-full w-full object-cover" />;
+  return (
+    <span
+      className="flex h-full w-full items-center justify-center text-xs font-bold text-white"
+      style={{ background: sc.primary_color || '#1c78fe' }}
+    >
+      {sc.name.slice(0, 2).toUpperCase()}
+    </span>
+  );
 }
 
 export default function AccountBar({
@@ -21,7 +41,6 @@ export default function AccountBar({
   isOwner = false,
   scorecardTitle,
   iconUrl,
-  thumbUrl,
   scorecards = [],
   activeId,
 }: {
@@ -29,7 +48,6 @@ export default function AccountBar({
   isOwner?: boolean;
   scorecardTitle: string;
   iconUrl: string;
-  thumbUrl: string;
   scorecards?: ScorecardEntry[];
   activeId?: number;
 }) {
@@ -216,11 +234,7 @@ export default function AccountBar({
                   className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-gray-50 disabled:opacity-60"
                 >
                   <div className="relative flex h-11 w-14 flex-none items-center justify-center overflow-hidden rounded border border-gray-200 bg-white">
-                    {sc.id === activeId ? (
-                      <img src={thumbUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-semibold text-muted">{sc.name.slice(0, 2).toUpperCase()}</span>
-                    )}
+                    <ScorecardThumb sc={sc} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-2 truncate text-sm font-medium">
@@ -259,27 +273,17 @@ export default function AccountBar({
       </div>
 
       <div className="flex items-center gap-3">
-        <a
-          href="mailto:support@accesoai.com.au"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-muted hover:bg-gray-50"
-          aria-label="Help"
-          title="Contact support"
-        >
-          ?
-        </a>
         <button
           onClick={logout}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 text-muted hover:bg-gray-50"
+          className="flex items-center gap-2 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-muted hover:bg-gray-50 hover:text-ink"
           aria-label="Log out"
           title="Log out"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
             <path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h9" />
           </svg>
+          Log out
         </button>
-        <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-gray-200 text-sm font-semibold text-muted" aria-label="Account avatar">
-          {accountName.slice(0, 1).toUpperCase()}
-        </span>
       </div>
       <CreateScorecardModal open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>

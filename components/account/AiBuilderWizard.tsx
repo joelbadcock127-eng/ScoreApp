@@ -101,8 +101,9 @@ export default function AiBuilderWizard() {
         </span>
       </div>
       <p className="mt-2 text-sm text-muted">
-        Describe your business and scorecard idea — the AI drafts the landing page, questions, results and PDF report.
-        Everything it writes opens in the normal editors, so you can change anything afterwards.
+        Creates a brand-new scorecard in your account: describe your business and idea, and the AI drafts the landing
+        page copy, questions, results and PDF report. Everything opens in the normal editors afterwards — and you can
+        restyle the landing and results pages any time in Build → Custom Design (AI).
       </p>
 
       {/* Step indicator */}

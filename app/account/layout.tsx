@@ -17,7 +17,6 @@ export default async function AccountLayout({ children }: { children: React.Reac
         isOwner={account.role === 'owner'}
         scorecardTitle={config.title}
         iconUrl={config.branding.iconUrl}
-        thumbUrl={config.shareAppearance?.image || config.landing.heroImage || config.branding.logoUrl}
         scorecards={scorecards}
         activeId={activeId}
       />

@@ -9,7 +9,10 @@ import { NAV_GROUPS } from '@/components/admin/nav';
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const account = await getSessionAccount();
   if (!account) redirect('/login');
-  const [config, scorecards, activeId] = await Promise.all([getConfig(), listMyScorecards(), getActiveOrDefaultId()]);
+  const scorecards = await listMyScorecards();
+  // Nothing to edit yet — go create a scorecard first.
+  if (!scorecards.length) redirect('/account/scorecards');
+  const [config, activeId] = await Promise.all([getConfig(), getActiveOrDefaultId()]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <AccountBar
@@ -17,7 +20,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         isOwner={account.role === 'owner'}
         scorecardTitle={config.title}
         iconUrl={config.branding.iconUrl}
-        thumbUrl={config.shareAppearance?.image || config.landing.heroImage || config.branding.logoUrl}
         scorecards={scorecards}
         activeId={activeId}
       />

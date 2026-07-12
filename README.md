@@ -42,3 +42,20 @@ Next.js + Tailwind on the front, Supabase for storage, the Claude API (Haiku) fo
 
 Scoring: each answer scores its position (1–5). Category % = points / max points;
 overall % = total points / max total.
+
+## Domains
+
+Three kinds of host, resolved in `lib/server/config.ts`:
+
+1. **Platform** — the dashboard/marketing site, e.g. `score.accesoai.com.au`.
+   Set `PUBLIC_APP_HOST` to this exact host (plus `PUBLIC_BASE_DOMAIN=accesoai.com.au`).
+   Reserved subdomains (`www`, `app`, `score`, `admin`, …) can never be claimed by a scorecard.
+2. **Managed scorecard subdomains** — `<slug>.accesoai.com.au` set per scorecard in
+   *Settings → Domain*. Requires a wildcard `*.accesoai.com.au` DNS record pointing at the
+   deployment (on Vercel this means using Vercel nameservers, or adding each subdomain
+   individually). Each scorecard is also always reachable at `/<slug>` and `/s/<id>` on the
+   platform host.
+3. **Customer custom domains** — e.g. `scorecard.client.com`: the customer CNAMEs their
+   host to the deployment, the domain is added to the hosting project, and the scorecard
+   sets it in *Settings → Domain*.
+

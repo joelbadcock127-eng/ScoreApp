@@ -20,9 +20,22 @@ export interface ScorecardSummary {
   custom_domain?: string | null;
   updated_at: string;
   created_at: string;
+  // Pulled from each scorecard's own config so switcher previews never show
+  // another scorecard's imagery.
+  primary_color?: string | null;
+  share_image?: string | null;
+  hero_image?: string | null;
 }
 
 export const BASE_DOMAIN = process.env.PUBLIC_BASE_DOMAIN || 'accesoai.com.au';
+
+// Subdomains of the base domain that belong to the platform itself and can
+// never be a scorecard's managed subdomain. PUBLIC_APP_HOST pins the exact
+// host the dashboard runs on (e.g. score.accesoai.com.au).
+export const RESERVED_SUBDOMAINS = new Set([
+  'www', 'app', 'score', 'scores', 'scorecard', 'scorecards', 'platform', 'dashboard', 'admin', 'api', 'mail',
+]);
+const APP_HOST = (process.env.PUBLIC_APP_HOST || '').toLowerCase().replace(/^https?:\/\//, '').split('/')[0];
 
 function requestHost(): string {
   try {
@@ -34,12 +47,14 @@ function requestHost(): string {
 
 // Managed-subdomain resolution: www.<sub>.<base> or <sub>.<base> → the
 // scorecard whose `domain` column matches <sub>. Returns null when the host is
-// the bare base domain, localhost, or an unrecognised host.
+// the bare base domain, the platform's own host, localhost, or unrecognised.
 export function getHostSubdomain(): string | null {
   const host = requestHost();
   if (!host || !host.endsWith(`.${BASE_DOMAIN}`)) return null;
+  if (APP_HOST && host === APP_HOST) return null;
   const sub = host.slice(0, -(BASE_DOMAIN.length + 1)).replace(/^www\./, '');
-  return /^[a-z0-9-]{1,63}$/.test(sub) && sub !== 'www' ? sub : null;
+  if (RESERVED_SUBDOMAINS.has(sub)) return null;
+  return /^[a-z0-9-]{1,63}$/.test(sub) ? sub : null;
 }
 
 // Fully custom domains the customer owns (e.g. scorecard.mybusiness.com):
@@ -70,7 +85,10 @@ export const listScorecards = cache(async (): Promise<ScorecardSummary[]> => {
   const sb = supabaseAdmin();
   const { data, error } = await sb
     .from('scorecard_config')
-    .select('id, name, is_default, account_id, domain, custom_domain, updated_at, created_at')
+    .select(
+      'id, name, is_default, account_id, domain, custom_domain, updated_at, created_at, ' +
+        'primary_color:config->branding->>primaryColor, share_image:config->shareAppearance->>image, hero_image:config->landing->>heroImage'
+    )
     .order('created_at', { ascending: true })
     .returns<ScorecardSummary[]>();
   if (error) throw error;
@@ -105,7 +123,42 @@ const fetchConfigById = cache(async (id: number): Promise<ScorecardConfig | null
   const sb = supabaseAdmin();
   const { data, error } = await sb.from('scorecard_config').select('config').eq('id', id).maybeSingle();
   if (error) throw error;
-  return data ? { ...defaultConfig, ...(data.config as ScorecardConfig) } : null;
+  if (!data) return null;
+  // Back-fill any keys missing from older rows with GENERIC placeholders —
+  // never with another scorecard's content. Every scorecard is fully
+  // independent.
+  const stored = data.config as ScorecardConfig;
+  return { ...blankConfig(stored.title || 'Scorecard'), ...stored };
+});
+
+// Which scorecard the current request is about, as a summary row.
+//   1. Host (a scorecard's subdomain / custom domain) — public pages.
+//   2. Logged-in session — ONLY that account's scorecards: switcher cookie,
+//      else their default/first. Never another account's, never the global
+//      default. Every scorecard is fully independent.
+//   3. Anonymous on the platform host — the platform's default scorecard.
+const resolveActiveScorecard = cache(async (): Promise<ScorecardSummary | null> => {
+  const all = await listScorecards();
+
+  const sub = getHostSubdomain();
+  if (sub) {
+    const byDomain = all.find((s) => s.domain === sub);
+    if (byDomain) return byDomain;
+  }
+  const custom = getHostCustomDomain();
+  if (custom) {
+    const byCustom = all.find((s) => s.custom_domain === custom);
+    if (byCustom) return byCustom;
+  }
+
+  const accountId = getSessionAccountId();
+  if (accountId != null) {
+    const mine = all.filter((s) => s.account_id === accountId);
+    const wanted = getActiveScorecardId();
+    return mine.find((s) => s.id === wanted) ?? mine.find((s) => s.is_default) ?? mine[0] ?? null;
+  }
+
+  return all.find((s) => s.is_default) ?? all[0] ?? null;
 });
 
 export async function getConfig(id?: number): Promise<ScorecardConfig> {
@@ -115,52 +168,17 @@ export async function getConfig(id?: number): Promise<ScorecardConfig> {
     if (byId) return byId;
   }
 
-  const all = await listScorecards();
-
-  // Admin editing context: the switcher cookie, but only for scorecards the
-  // logged-in account actually owns.
-  const accountId = getSessionAccountId();
-  const wanted = getActiveScorecardId();
-  if (accountId != null && wanted != null && all.some((s) => s.id === wanted && s.account_id === accountId)) {
-    const byCookie = await fetchConfigById(wanted);
-    if (byCookie) return byCookie;
-  }
-
-  // Public visitors: resolve by host.
-  const sub = getHostSubdomain();
-  if (sub) {
-    const match = all.find((s) => s.domain === sub);
-    if (match) {
-      const byDomain = await fetchConfigById(match.id);
-      if (byDomain) return byDomain;
-    }
-  }
-  const custom = getHostCustomDomain();
-  if (custom) {
-    const match = all.find((s) => s.custom_domain === custom);
-    if (match) {
-      const byCustom = await fetchConfigById(match.id);
-      if (byCustom) return byCustom;
-    }
-  }
-
-  // Logged-in account with no cookie: their first scorecard.
-  if (accountId != null) {
-    const mine = all.filter((s) => s.account_id === accountId);
-    const pick = mine.find((s) => s.is_default) ?? mine[0];
-    if (pick) {
-      const cfg = await fetchConfigById(pick.id);
-      if (cfg) return cfg;
-    }
-  }
-
-  const def = all.find((s) => s.is_default) ?? all[0];
-  if (def) {
-    const cfg = await fetchConfigById(def.id);
+  const active = await resolveActiveScorecard();
+  if (active) {
+    const cfg = await fetchConfigById(active.id);
     if (cfg) return cfg;
   }
 
-  // First run: seed the database with the default scorecard content.
+  // Logged-in account with no scorecards yet: a blank placeholder, never
+  // somebody else's content.
+  if (getSessionAccountId() != null) return blankConfig('Your first scorecard');
+
+  // First run of a fresh install: seed the default scorecard.
   const sb = supabaseAdmin();
   await sb
     .from('scorecard_config')
@@ -168,30 +186,12 @@ export async function getConfig(id?: number): Promise<ScorecardConfig> {
   return defaultConfig;
 }
 
-// Resolved id for queries that filter by scorecard. For a logged-in account
-// this stays within their own scorecards; for public visitors it resolves by
-// host and falls back to the default.
+// Resolved id for queries that filter by scorecard (leads, visits). Returns 0
+// for a logged-in account with no scorecards, so nothing matches.
 export const getActiveOrDefaultId = cache(async (): Promise<number> => {
-  const all = await listScorecards();
-  const accountId = getSessionAccountId();
-  const mine = accountId != null ? all.filter((s) => s.account_id === accountId) : [];
-
-  const wanted = getActiveScorecardId();
-  if (wanted != null && (accountId != null ? mine : all).some((s) => s.id === wanted)) return wanted;
-
-  const sub = getHostSubdomain();
-  if (sub) {
-    const byDomain = all.find((s) => s.domain === sub);
-    if (byDomain) return byDomain.id;
-  }
-  const custom = getHostCustomDomain();
-  if (custom) {
-    const byCustom = all.find((s) => s.custom_domain === custom);
-    if (byCustom) return byCustom.id;
-  }
-
-  if (mine.length) return (mine.find((s) => s.is_default) ?? mine[0]).id;
-  return all.find((s) => s.is_default)?.id ?? all[0]?.id ?? 1;
+  const active = await resolveActiveScorecard();
+  if (active) return active.id;
+  return getSessionAccountId() != null ? 0 : 1;
 });
 
 export async function setDefaultScorecard(id: number) {
