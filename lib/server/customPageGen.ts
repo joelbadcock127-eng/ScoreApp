@@ -64,7 +64,10 @@ Extra merge tags available on this RESULTS page (live per-lead data — use them
   {{lead.first_name}} {{lead.business}} — greet the reader personally.
   {{score.overall}} — overall percentage number. {{tier.label}} {{tier.color}} — their result tier.
   {{tier.headline}} {{tier.body}} — the tier-specific result copy (body is pre-formatted paragraphs; place inside a <div>).
-  {{chart:overall}} — a donut chart of the overall score. {{chart:categories}} — per-category score bars. Use both.
+  Charts (pre-rendered, inherit text colour from their container — pick the 2–3 that best fit your design; always include one overall chart and one per-category chart):
+    {{chart:overall}} donut of the overall score · {{chart:gauge}} speedometer with tier-coloured segments and needle ·
+    {{chart:categories}} horizontal per-category score bars · {{chart:donuts}} a small donut per category ·
+    {{chart:radar}} spider/radar chart of the categories · {{chart:tiers}} horizontal tier band with a marker at the score.
   {{category:KEY.label}} {{category:KEY.percent}} {{category:KEY.tierLabel}} {{category:KEY.color}} {{category:KEY.text}} — per-category values and tier-specific advice text; build one block/card per category using the exact KEYs listed below.
   {{report.url}} — href for the "open your PDF report" button/link (plain <a> tag, not data-start-scorecard).
   Conditional blocks: {{#if tier=low}}…{{/if}} (also tier=low,medium) to show different sections per result tier.`;

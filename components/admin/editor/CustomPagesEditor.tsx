@@ -50,11 +50,31 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
     () => (page === 'results' ? sampleResultsData(cfg) : { scorecardTitle: cfg.title }),
     [cfg, page]
   );
-  const srcdoc = useMemo(() => (current ? buildPreviewSrcdoc(current, previewData) : ''), [current, previewData]);
+  const srcdoc = useMemo(
+    () => (current ? buildPreviewSrcdoc(current, previewData, { editable: true }) : ''),
+    [current, previewData]
+  );
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, chatBusy]);
+
+  // Click-to-edit: the sandboxed preview posts the slot key of whatever was
+  // clicked; scroll its field into view, focus it and flash it.
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      if (e.data?.type !== 'cp-slot-click' || typeof e.data.key !== 'string') return;
+      const field = document.getElementById(`cp-field-${e.data.key}`);
+      if (!field) return;
+      field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const input = field.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
+      input?.focus({ preventScroll: true });
+      field.classList.add('ring-2', 'ring-primary', 'rounded-lg');
+      setTimeout(() => field.classList.remove('ring-2', 'ring-primary', 'rounded-lg'), 1600);
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
 
   function patch(p: Partial<ScorecardConfig>) {
     setCfg((c) => ({ ...c, ...p }));
@@ -299,15 +319,18 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
           {current && (
             <div className="mt-6">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted">Content</p>
-              <p className="mt-1 text-xs text-muted">Every text and image in the design. Changes preview instantly.</p>
+              <p className="mt-1 text-xs text-muted">
+                Every text and image in the design — or just click anything in the preview to jump straight to its
+                field. Changes preview instantly.
+              </p>
               <div className="mt-3 space-y-4">
                 {current.slots.map((slot) =>
                   slot.type === 'image' ? (
-                    <div key={slot.key}>
+                    <div key={slot.key} id={`cp-field-${slot.key}`} className="transition-shadow">
                       <ImagePicker label={slot.label} value={slot.value} onChange={(url) => patchSlot(slot.key, url)} />
                     </div>
                   ) : slot.type === 'rich' || slot.value.length > 90 ? (
-                    <div key={slot.key}>
+                    <div key={slot.key} id={`cp-field-${slot.key}`} className="transition-shadow">
                       <label className={LABEL}>{slot.label}</label>
                       <textarea
                         value={slot.value}
@@ -317,7 +340,7 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
                       />
                     </div>
                   ) : (
-                    <div key={slot.key}>
+                    <div key={slot.key} id={`cp-field-${slot.key}`} className="transition-shadow">
                       <label className={LABEL}>{slot.label}</label>
                       <input value={slot.value} onChange={(e) => patchSlot(slot.key, e.target.value)} className={INPUT} />
                     </div>
@@ -334,7 +357,9 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
             <iframe
               title="Custom page preview"
               srcDoc={srcdoc}
-              sandbox=""
+              // allow-scripts only (opaque origin): the click-to-edit helper can
+              // postMessage to us but can never reach the app, cookies or DOM.
+              sandbox="allow-scripts"
               className={`h-full rounded-xl border border-gray-300 bg-white shadow-card transition-all ${
                 device === 'mobile' ? 'w-[375px]' : 'w-full'
               }`}

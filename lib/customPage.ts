@@ -19,7 +19,9 @@ import { tierFor } from './scoring';
 //   {{category:KEY.label}} .percent .tierLabel .color .text
 //   {{report.url}}
 //   {{#if tier=low}}…{{/if}}  (also tier=low,medium)
-//   {{chart:overall}} {{chart:categories}}
+//   Charts: {{chart:overall}} donut · {{chart:gauge}} speedometer ·
+//   {{chart:categories}} bars · {{chart:donuts}} mini per-category donuts ·
+//   {{chart:radar}} spider chart · {{chart:tiers}} tier band with marker
 // Behaviour hooks: any element with data-start-scorecard opens the lead form.
 // ————————————————————————————————————————————————————————————————————————
 
@@ -154,6 +156,7 @@ export interface CustomPageData {
   total?: number;
   max?: number;
   tier?: { key: string; label: string; color: string; headline: string; body: string };
+  tiers?: { key: string; label: string; color: string; from: number; to: number }[];
   categories?: {
     key: string;
     label: string;
@@ -195,6 +198,7 @@ export function buildResultsData(
       headline: intro?.headline ?? '',
       body: (intro?.body ?? []).map((p) => `<p>${sanitizeRichText(p)}</p>`).join(''),
     },
+    tiers: config.tiers.map((t) => ({ key: t.key, label: t.label, color: t.color, from: t.from, to: t.to })),
     categories: lead.category_scores.map((c) => {
       const catTier = tierFor(c.percent, config.tiers);
       return {
@@ -266,9 +270,138 @@ function categoriesChart(data: CustomPageData): string {
   return `<div class="cp-chart-categories">${rows}</div>`;
 }
 
+// Speedometer: a semicircle segmented by the tier ranges with a needle at the
+// lead's overall score.
+function gaugeChart(data: CustomPageData): string {
+  const pct = Math.max(0, Math.min(100, data.overall ?? 0));
+  const cx = 130;
+  const cy = 120;
+  const r = 95;
+  const arc = (from: number, to: number, color: string) => {
+    const a0 = Math.PI * (1 - from / 100);
+    const a1 = Math.PI * (1 - to / 100);
+    const x0 = cx + r * Math.cos(a0);
+    const y0 = cy - r * Math.sin(a0);
+    const x1 = cx + r * Math.cos(a1);
+    const y1 = cy - r * Math.sin(a1);
+    return `<path d="M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="${escapeHtml(color)}" stroke-width="20" stroke-linecap="butt"></path>`;
+  };
+  const tiers = data.tiers?.length
+    ? data.tiers
+    : [{ key: 'all', label: '', color: data.tier?.color || '#1c78fe', from: 0, to: 100 }];
+  const segments = tiers.map((t) => arc(Math.max(0, t.from), Math.min(100, t.to === 100 ? 100 : t.to + 1), t.color)).join('');
+  const na = Math.PI * (1 - pct / 100);
+  const nx = cx + (r - 26) * Math.cos(na);
+  const ny = cy - (r - 26) * Math.sin(na);
+  return (
+    `<div class="cp-chart-gauge" style="display:flex;justify-content:center;">` +
+    `<svg viewBox="0 0 260 150" width="280" height="162" role="img" aria-label="Overall score ${pct}%">` +
+    segments +
+    `<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="currentColor" stroke-width="4" stroke-linecap="round"></line>` +
+    `<circle cx="${cx}" cy="${cy}" r="7" fill="currentColor"></circle>` +
+    `<text x="${cx}" y="100" text-anchor="middle" font-size="34" font-weight="800" fill="currentColor">${pct}%</text>` +
+    `<text x="${cx}" y="142" text-anchor="middle" font-size="14" font-weight="600" fill="${escapeHtml(data.tier?.color ?? '#1c78fe')}">${escapeHtml(data.tier?.label ?? '')}</text>` +
+    `</svg></div>`
+  );
+}
+
+// A small donut per category, laid out in a wrapping row.
+function miniDonutsChart(data: CustomPageData): string {
+  const donut = (label: string, pct: number, color: string) => {
+    const r = 34;
+    const c = 2 * Math.PI * r;
+    const filled = (Math.max(0, Math.min(100, pct)) / 100) * c;
+    return (
+      `<div style="text-align:center;width:110px;">` +
+      `<svg viewBox="0 0 90 90" width="90" height="90" role="img" aria-label="${escapeHtml(label)} ${pct}%">` +
+      `<circle cx="45" cy="45" r="${r}" fill="none" stroke="#e8eaee" stroke-width="9"></circle>` +
+      `<circle cx="45" cy="45" r="${r}" fill="none" stroke="${escapeHtml(color)}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${filled.toFixed(1)} ${(c - filled).toFixed(1)}" transform="rotate(-90 45 45)"></circle>` +
+      `<text x="45" y="51" text-anchor="middle" font-size="19" font-weight="700" fill="currentColor">${pct}%</text>` +
+      `</svg>` +
+      `<div style="font-size:13px;font-weight:600;margin-top:6px;">${escapeHtml(label)}</div></div>`
+    );
+  };
+  const items = (data.categories ?? []).map((c) => donut(c.label, c.percent, c.color)).join('');
+  return `<div class="cp-chart-donuts" style="display:flex;flex-wrap:wrap;gap:18px;justify-content:center;">${items}</div>`;
+}
+
+// Radar / spider chart of the category percentages (needs 3+ categories;
+// falls back to bars below that).
+function radarChart(data: CustomPageData): string {
+  const cats = data.categories ?? [];
+  if (cats.length < 3) return categoriesChart(data);
+  const cx = 140;
+  const cy = 130;
+  const r = 88;
+  const n = cats.length;
+  const point = (i: number, radius: number) => {
+    const a = (2 * Math.PI * i) / n - Math.PI / 2;
+    return [cx + radius * Math.cos(a), cy + radius * Math.sin(a)] as const;
+  };
+  const ring = (frac: number) =>
+    `<polygon points="${cats.map((_, i) => point(i, r * frac).map((v) => v.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#e2e6ec" stroke-width="1"></polygon>`;
+  const spokes = cats
+    .map((_, i) => {
+      const [x, y] = point(i, r);
+      return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e2e6ec" stroke-width="1"></line>`;
+    })
+    .join('');
+  const shape = cats
+    .map((c, i) => point(i, (r * Math.max(0, Math.min(100, c.percent))) / 100).map((v) => v.toFixed(1)).join(','))
+    .join(' ');
+  const accent = data.tier?.color || '#1c78fe';
+  const labels = cats
+    .map((c, i) => {
+      const [x, y] = point(i, r + 20);
+      const anchor = Math.abs(x - cx) < 8 ? 'middle' : x > cx ? 'start' : 'end';
+      return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" font-size="12" font-weight="600" fill="currentColor">${escapeHtml(c.label)} ${c.percent}%</text>`;
+    })
+    .join('');
+  return (
+    `<div class="cp-chart-radar" style="display:flex;justify-content:center;">` +
+    `<svg viewBox="0 0 280 265" width="300" height="284" role="img" aria-label="Category scores radar chart">` +
+    ring(0.25) + ring(0.5) + ring(0.75) + ring(1) + spokes +
+    `<polygon points="${shape}" fill="${escapeHtml(accent)}33" stroke="${escapeHtml(accent)}" stroke-width="2.5" stroke-linejoin="round"></polygon>` +
+    cats
+      .map((c, i) => {
+        const [x, y] = point(i, (r * Math.max(0, Math.min(100, c.percent))) / 100);
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${escapeHtml(c.color)}"></circle>`;
+      })
+      .join('') +
+    labels +
+    `</svg></div>`
+  );
+}
+
+// Horizontal band showing the tier ranges with a marker at the lead's score.
+function tiersChart(data: CustomPageData): string {
+  const pct = Math.max(0, Math.min(100, data.overall ?? 0));
+  const tiers = data.tiers ?? [];
+  if (!tiers.length) return '';
+  const segments = tiers
+    .map((t) => {
+      const width = Math.max(0, Math.min(100, t.to) - Math.max(0, t.from)) + (t.to === 100 ? 0 : 1);
+      return `<div style="width:${width}%;background:${escapeHtml(t.color)};display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;overflow:hidden;white-space:nowrap;">${escapeHtml(t.label)}</div>`;
+    })
+    .join('');
+  return (
+    `<div class="cp-chart-tiers" style="max-width:560px;margin:0 auto;">` +
+    `<div style="position:relative;height:22px;margin-bottom:4px;">` +
+    `<div style="position:absolute;left:${pct}%;transform:translateX(-50%);font-size:13px;font-weight:800;">${pct}%<div style="width:0;height:0;margin:0 auto;border-left:6px solid transparent;border-right:6px solid transparent;border-top:7px solid currentColor;"></div></div>` +
+    `</div>` +
+    `<div style="display:flex;height:26px;border-radius:99px;overflow:hidden;">${segments}</div>` +
+    `<div style="display:flex;justify-content:space-between;font-size:11px;color:#7a828c;margin-top:5px;"><span>0</span><span>100</span></div>` +
+    `</div>`
+  );
+}
+
 // ——— Merge ————————————————————————————————————————————————————————————
 
-export function mergeCustomPage(page: CustomPage, data: CustomPageData): string {
+export function mergeCustomPage(
+  page: CustomPage,
+  data: CustomPageData,
+  opts: { editable?: boolean } = {}
+): string {
   const slotMap = new Map(page.slots.map((s) => [s.key, s]));
   let html = page.html;
 
@@ -279,15 +412,41 @@ export function mergeCustomPage(page: CustomPage, data: CustomPageData): string 
 
   // Charts.
   html = html.replace(/\{\{chart:overall\}\}/gi, () => overallChart(data));
+  html = html.replace(/\{\{chart:gauge\}\}/gi, () => gaugeChart(data));
   html = html.replace(/\{\{chart:categories\}\}/gi, () => categoriesChart(data));
+  html = html.replace(/\{\{chart:donuts\}\}/gi, () => miniDonutsChart(data));
+  html = html.replace(/\{\{chart:radar\}\}/gi, () => radarChart(data));
+  html = html.replace(/\{\{chart:tiers\}\}/gi, () => tiersChart(data));
 
-  // Slots.
-  html = html.replace(/\{\{(text|rich|image):([a-zA-Z0-9_-]+)\}\}/g, (_m, kind: string, key: string) => {
+  const slotValue = (kind: string, key: string): string => {
     const slot = slotMap.get(key);
     if (!slot) return '';
     if (kind === 'image') return escapeHtml(slot.value);
     if (kind === 'rich') return sanitizeRichText(slot.value);
     return escapeHtml(slot.value);
+  };
+
+  // Slots inside attribute values first (src="{{image:hero}}", alt="{{text:x}}"):
+  // plain replacement, with a data-cp-slot marker appended after the attribute
+  // in editable mode so click-to-edit can find the element.
+  html = html.replace(
+    /([a-zA-Z-]+)(\s*=\s*")([^"]*\{\{(?:text|rich|image):[a-zA-Z0-9_-]+\}\}[^"]*)"/g,
+    (_m, attr: string, eq: string, value: string) => {
+      let firstKey = '';
+      const replaced = value.replace(/\{\{(text|rich|image):([a-zA-Z0-9_-]+)\}\}/g, (_m2, kind: string, key: string) => {
+        firstKey = firstKey || key;
+        return slotValue(kind, key);
+      });
+      const marker = opts.editable && firstKey ? ` data-cp-slot="${firstKey}"` : '';
+      return `${attr}${eq}${replaced}"${marker}`;
+    }
+  );
+
+  // Remaining slots live in text content; in editable mode wrap them so the
+  // preview can highlight and report clicks.
+  html = html.replace(/\{\{(text|rich|image):([a-zA-Z0-9_-]+)\}\}/g, (_m, kind: string, key: string) => {
+    const value = slotValue(kind, key);
+    return opts.editable ? `<span data-cp-slot="${key}">${value}</span>` : value;
   });
 
   // Data tags.
@@ -324,14 +483,39 @@ export function mergeCustomPage(page: CustomPage, data: CustomPageData): string 
   return html;
 }
 
+// Editor-only script: outlines editable regions on hover and reports clicks
+// to the parent window so the matching content field can be focused. The
+// iframe runs sandboxed (allow-scripts only, opaque origin) so this script
+// can never touch the app itself.
+const CLICK_TO_EDIT_SCRIPT = `<script>
+(function () {
+  var style = document.createElement('style');
+  style.textContent = '[data-cp-slot]{cursor:pointer}[data-cp-slot]:hover{outline:2px dashed rgba(28,120,254,.85);outline-offset:3px;border-radius:2px}';
+  document.head.appendChild(style);
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-cp-slot]') : null;
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    parent.postMessage({ type: 'cp-slot-click', key: el.getAttribute('data-cp-slot') }, '*');
+  }, true);
+})();
+</script>`;
+
 // Full document for the editor's iframe preview (isolated from app styles).
-export function buildPreviewSrcdoc(page: CustomPage, data: CustomPageData): string {
+// editable adds hover outlines + click-to-edit reporting.
+export function buildPreviewSrcdoc(
+  page: CustomPage,
+  data: CustomPageData,
+  opts: { editable?: boolean } = {}
+): string {
   return (
     '<!doctype html><html><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     `<style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif}img{max-width:100%}${page.css}</style>` +
     '</head><body>' +
-    mergeCustomPage(page, data) +
+    mergeCustomPage(page, data, { editable: opts.editable }) +
+    (opts.editable ? CLICK_TO_EDIT_SCRIPT : '') +
     '</body></html>'
   );
 }
