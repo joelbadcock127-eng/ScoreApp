@@ -50,14 +50,21 @@ const PAGE_SCHEMA = {
 const SHARED_RULES = `
 RULES for the HTML you produce:
 - One single root element: <div class="cp-page"> … </div>. Scope EVERY CSS selector under .cp-page.
-- Plain HTML + CSS only. No <script>, <style>, <svg>, <iframe>, <form>, no event handler attributes, no external CSS/JS. Decorative shapes must be CSS (gradients, borders, border-radius, pseudo-elements).
+- Plain HTML + CSS only. No <script>, <style>, <svg>, <iframe>, <form>, no event handler attributes, no external JS. Decorative shapes must be CSS (gradients, borders, border-radius, pseudo-elements).
 - Mobile-first responsive: fluid widths, CSS grid/flex that stacks on small screens, no fixed pixel page widths, readable at 375px wide and great on desktop. Use clamp() for display type sizes.
 - EVERY piece of visible copy must come from a merge tag — never hardcode copy in the HTML:
   {{text:key}} for plain text, {{rich:key}} for short passages that may contain bold/italic, {{image:key}} inside src="" for images.
   For every tag you use, include a matching entry in "slots" with a sensible label and the actual copy as its value (write the copy — do not leave placeholders like "lorem").
 - Buttons that should start the scorecard: <button data-start-scorecard class="...">{{text:ctaLabel}}</button> (any element with data-start-scorecard works). Include at least one prominent one.
-- Design quality bar: this must look like a hand-crafted premium marketing page, not a generic template. Strong typographic hierarchy, generous whitespace, cohesive palette built from the brand colours, subtle depth (soft shadows / gradient accents). No lorem ipsum, no emoji soup.
-- CSS goes in the "css" field only (never inside html), all selectors prefixed with .cp-page.`;
+- CSS goes in the "css" field only (never inside html), all selectors prefixed with .cp-page.
+
+CREATIVE DIRECTION — this is where you earn your keep:
+- The quality bar is a page a top independent studio would ship: strong point of view, not a safe template. Commit to a distinctive art direction that fits the brand and audience.
+- NEVER use generic AI aesthetics: no default system fonts, no clichéd purple-gradient-on-white, no cookie-cutter three-column feature grids as the whole page. Build the palette out from the brand colours with real contrast decisions.
+- Typography is your strongest tool: you MAY load up to two Google Fonts via @import url('https://fonts.googleapis.com/css2?...') at the top of the css (that exact domain only). Pick characterful pairings (display + text) that suit the brand; use tight leading and clamp() display sizes.
+- Compose a real page: 5–8 distinct sections with varied rhythm — e.g. a striking hero, social-proof or stat strip, benefit sections that alternate layout, a "how it works", an objection-handling or FAQ block, and a hard-working final CTA. Vary backgrounds (light/dark/brand tints) so it doesn't read as one long white strip.
+- Motion: tasteful CSS-only micro-interactions are encouraged — @keyframes entrance fades, hover lifts on cards/buttons, a subtle animated gradient accent. Nothing that distracts or loops aggressively.
+- Details matter: consistent spacing scale, soft layered shadows, rounded corners used deliberately, decorative CSS shapes (blobs, rings, grain via gradients) where they add character.`;
 
 const RESULTS_RULES = `
 Extra merge tags available on this RESULTS page (live per-lead data — use them, do not invent slot copy for data):
@@ -120,7 +127,7 @@ export async function generateCustomPage(
   const client = new Anthropic();
   const stream = client.messages.stream({
     model: DESIGN_MODEL,
-    max_tokens: 24000,
+    max_tokens: 32000,
     system:
       'You are a senior web designer producing production-quality, responsive marketing pages as HTML + CSS with a merge-tag content system. You follow the tag grammar exactly and respond with JSON matching the requested schema.',
     messages: [{ role: 'user', content: prompt }],

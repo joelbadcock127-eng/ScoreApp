@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin, isOwner } from '@/lib/server/auth';
+import { canUseCustomDomain, getSessionAccount, isAdmin, isOwner } from '@/lib/server/auth';
 import {
   BASE_DOMAIN,
   createScorecard,
@@ -100,6 +100,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (body.action === 'set-custom-domain') {
+    const account = await getSessionAccount();
+    if (!account || !canUseCustomDomain(account)) {
+      return NextResponse.json({ error: 'Custom domains are not enabled for this account.' }, { status: 403 });
+    }
     const id = Number(body.id);
     if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     if (!(await listMyScorecards()).some((s) => s.id === id)) {

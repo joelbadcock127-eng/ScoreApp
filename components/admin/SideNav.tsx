@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_GROUPS } from './nav';
+import AiSparkleIcon from '@/components/AiSparkleIcon';
 
 // Small outline icons drawn with currentColor so they always match the label text colour.
 function Icon({ name, className = 'h-[18px] w-[18px]' }: { name: string; className?: string }) {
@@ -61,12 +62,7 @@ function Icon({ name, className = 'h-[18px] w-[18px]' }: { name: string; classNa
         </svg>
       );
     case 'ai':
-      return (
-        <svg {...common}>
-          <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4L12 3Z" />
-          <path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" />
-        </svg>
-      );
+      return <AiSparkleIcon />;
     case 'branding':
       return (
         <svg {...common}>
@@ -146,7 +142,13 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export default function SideNav({ scorecardId }: { scorecardId?: number }) {
+export default function SideNav({
+  scorecardId,
+  showCustomDesign = true,
+}: {
+  scorecardId?: number;
+  showCustomDesign?: boolean;
+}) {
   const pathname = usePathname();
   return (
     <>
@@ -159,7 +161,9 @@ export default function SideNav({ scorecardId }: { scorecardId?: number }) {
               </p>
             )}
             <div className="space-y-0.5">
-              {g.items.map((n) => {
+              {g.items
+                .filter((n) => showCustomDesign || n.href !== '/admin/build/custom')
+                .map((n) => {
                 const active = isActive(pathname, n.href);
                 return (
                   <Link

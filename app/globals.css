@@ -52,3 +52,22 @@
     animation: none;
   }
 }
+
+/* AI sparkle mark: gentle breathing glow on the main star, offset twinkle on
+   the small one. The rainbow itself animates inside the SVG gradient. */
+.ai-sparkle .ai-sparkle-main {
+  transform-origin: 12px 11px;
+  animation: ai-sparkle-breathe 3s ease-in-out infinite;
+}
+.ai-sparkle .ai-sparkle-star {
+  transform-origin: 18.7px 17.2px;
+  animation: ai-sparkle-twinkle 3s ease-in-out infinite 0.6s;
+}
+@keyframes ai-sparkle-breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.12) rotate(8deg); opacity: 0.92; }
+}
+@keyframes ai-sparkle-twinkle {
+  0%, 100% { transform: scale(0.7); opacity: 0.5; }
+  50% { transform: scale(1.25); opacity: 1; }
+}

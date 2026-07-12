@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import type { AiBrief, AiContent, AiGeneration, AiPdf, AiResults, AiStrategy } from '@/lib/ai/brief';
 import { TONES } from '@/lib/ai/brief';
+import AiSparkleIcon from '@/components/AiSparkleIcon';
 
 const CARD = 'rounded-xl border border-gray-200 bg-white p-6';
 const LABEL = 'block text-xs font-semibold uppercase tracking-wide text-ink';
@@ -20,7 +20,6 @@ const GEN_STEPS = [
 ] as const;
 
 export default function AiBuilderWizard() {
-  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('brand');
   const [brief, setBrief] = useState<AiBrief>({
     businessName: '',
@@ -84,8 +83,10 @@ export default function AiBuilderWizard() {
     setError('');
     try {
       await post<{ ok: true; id: number }>({ step: 'save', brief, generation });
-      router.push(destination);
-      router.refresh();
+      // Full navigation (not a client-side push) so the "currently editing"
+      // cookie set by the save is guaranteed to be in place before the editor
+      // renders — the editor must open the NEW scorecard, never a fallback.
+      window.location.assign(destination);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed.');
       setSaving(false);
@@ -95,6 +96,7 @@ export default function AiBuilderWizard() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center gap-3">
+        <AiSparkleIcon className="h-8 w-8" />
         <h1 className="text-3xl font-bold">AI Builder</h1>
         <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
           Beta

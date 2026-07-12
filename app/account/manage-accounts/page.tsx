@@ -13,7 +13,10 @@ export default async function ManageAccountsPage() {
 
   const sb = supabaseAdmin();
   const [{ data: accounts }, scorecards] = await Promise.all([
-    sb.from('accounts').select('id, name, email, role, created_at').order('created_at', { ascending: true }),
+    sb
+      .from('accounts')
+      .select('id, name, email, role, created_at, features, ai_used')
+      .order('created_at', { ascending: true }),
     listScorecards(),
   ]);
   const rows: AccountRow[] = (accounts ?? []).map((a) => ({
@@ -23,6 +26,8 @@ export default async function ManageAccountsPage() {
     role: a.role,
     created_at: a.created_at,
     scorecards: scorecards.filter((s) => s.account_id === a.id).map((s) => ({ id: s.id, name: s.name })),
+    features: a.features ?? {},
+    ai_used: a.ai_used ?? 0,
   }));
   return <ManageAccounts initial={rows} ownerId={account.id} />;
 }

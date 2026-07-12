@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { CustomPage, ScorecardConfig } from '@/lib/types';
 import { buildPreviewSrcdoc, sampleResultsData } from '@/lib/customPage';
 import { ImagePicker } from '@/components/admin/editor/ui';
+import AiSparkleIcon from '@/components/AiSparkleIcon';
 
 type PageKey = 'landing' | 'results';
 
@@ -213,7 +214,10 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
           >
             ‹
           </Link>
-          <h1 className="text-lg font-bold">Custom Design</h1>
+          <h1 className="flex items-center gap-2 text-lg font-bold">
+            <AiSparkleIcon className="h-5 w-5" />
+            Custom Design
+          </h1>
           <div className="flex rounded-lg bg-gray-100 p-1">
             <button onClick={() => setPage('landing')} className={tabClass(page === 'landing')}>
               Landing page
@@ -366,11 +370,8 @@ export default function CustomPagesEditor({ initialConfig }: { initialConfig: Sc
             />
           ) : (
             <div className="mt-24 max-w-md text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-7 w-7">
-                  <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4L12 3Z" />
-                  <path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" />
-                </svg>
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-card">
+                <AiSparkleIcon className="h-8 w-8" />
               </div>
               <p className="mt-4 text-lg font-semibold">No custom design yet</p>
               <p className="mt-2 text-sm text-muted">

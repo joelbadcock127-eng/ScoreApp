@@ -7,9 +7,14 @@ import AccountSideNav from '@/components/account/AccountSideNav';
 // Account-level dashboard: same top bar as the scorecard admin, but its own
 // sidebar (Scorecards / Templates / AI Builder / Account settings / Help).
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  const account = await getSessionAccount();
+  // Everything in parallel — one database round-trip of latency, not four.
+  const [account, config, scorecards, activeId] = await Promise.all([
+    getSessionAccount(),
+    getConfig(),
+    listMyScorecards(),
+    getActiveOrDefaultId(),
+  ]);
   if (!account) redirect('/login');
-  const [config, scorecards, activeId] = await Promise.all([getConfig(), listMyScorecards(), getActiveOrDefaultId()]);
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <AccountBar

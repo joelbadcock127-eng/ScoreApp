@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from '@/components/Modal';
+import AiSparkleIcon from '@/components/AiSparkleIcon';
 
 // "Create Scorecard" chooser: start from a blank scorecard or hand the whole
 // first draft to the AI Builder.
@@ -54,11 +55,8 @@ export default function CreateScorecardModal({ open, onClose }: { open: boolean;
             }}
             className="group flex items-start gap-4 rounded-xl border-2 border-primary/30 bg-primary/5 p-5 text-left transition hover:border-primary"
           >
-            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-white">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4L12 3Z" />
-                <path d="M18.5 14.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z" />
-              </svg>
+            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-white shadow-card">
+              <AiSparkleIcon className="h-7 w-7" />
             </span>
             <span>
               <span className="flex items-center gap-2 font-semibold">

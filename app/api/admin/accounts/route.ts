@@ -17,7 +17,10 @@ export async function GET() {
   if (!owner) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const sb = supabaseAdmin();
   const [{ data: accounts }, scorecards] = await Promise.all([
-    sb.from('accounts').select('id, name, email, role, created_at').order('created_at', { ascending: true }),
+    sb
+      .from('accounts')
+      .select('id, name, email, role, created_at, features, ai_used')
+      .order('created_at', { ascending: true }),
     listScorecards(),
   ]);
   return NextResponse.json({
@@ -62,6 +65,31 @@ export async function POST(req: NextRequest) {
     if (!name) return NextResponse.json({ error: 'Name required.' }, { status: 400 });
     const { error } = await sb.from('accounts').update({ name, updated_at: new Date().toISOString() }).eq('id', id);
     if (error) return NextResponse.json({ error: 'Rename failed.' }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === 'set-features') {
+    const f = body.features ?? {};
+    const features = {
+      custom_domain: f.custom_domain !== false,
+      custom_design: f.custom_design !== false,
+      ai_limit:
+        f.ai_limit == null || f.ai_limit === '' ? null : Math.max(0, Math.min(100000, Math.round(Number(f.ai_limit)))),
+    };
+    if (features.ai_limit != null && !Number.isFinite(features.ai_limit)) {
+      return NextResponse.json({ error: 'AI limit must be a number.' }, { status: 400 });
+    }
+    const { error } = await sb
+      .from('accounts')
+      .update({ features, updated_at: new Date().toISOString() })
+      .eq('id', id);
+    if (error) return NextResponse.json({ error: 'Could not save features.' }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === 'reset-ai-usage') {
+    const { error } = await sb.from('accounts').update({ ai_used: 0 }).eq('id', id);
+    if (error) return NextResponse.json({ error: 'Could not reset usage.' }, { status: 500 });
     return NextResponse.json({ ok: true });
   }
 

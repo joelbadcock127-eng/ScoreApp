@@ -9,11 +9,13 @@ export default function DomainEditor({
   initialDomain,
   initialCustomDomain = '',
   baseDomain,
+  allowCustomDomain = true,
 }: {
   scorecardId: number;
   initialDomain: string;
   initialCustomDomain?: string;
   baseDomain: string;
+  allowCustomDomain?: boolean;
 }) {
   const [domain, setDomain] = useState(initialDomain);
   const [saved, setSaved] = useState(initialDomain);
@@ -140,7 +142,9 @@ export default function DomainEditor({
         </div>
       </div>
 
-      {/* Custom owned domain */}
+      {/* Custom owned domain — hidden entirely when the owner has not enabled
+          this feature for the account. */}
+      {allowCustomDomain && (
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink">Your own domain</p>
         <p className="mt-2 text-sm text-muted">
@@ -205,6 +209,7 @@ export default function DomainEditor({
           </p>
         </div>
       </div>
+      )}
 
       <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-relaxed">
         <p className="font-semibold">One-time hosting setup for free subdomains (already done? then you’re finished)</p>

@@ -116,7 +116,9 @@ export function sanitizeCustomHtml(html: string): string {
 export function sanitizeCustomCss(css: string): string {
   return String(css)
     .replace(/<\/?style[^>]*>/gi, '')
-    .replace(/@import[^;]*;?/gi, '')
+    // @import allowed ONLY for Google Fonts (typography freedom); everything
+    // else is stripped.
+    .replace(/@import\s+(?:url\(\s*)?['"]?(?!https:\/\/fonts\.googleapis\.com\/)[^;]*;?/gi, '')
     .replace(/expression\s*\(/gi, '(')
     .replace(/behavior\s*:/gi, '')
     .replace(/javascript\s*:/gi, '')

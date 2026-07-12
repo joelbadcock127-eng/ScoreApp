@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionAccountId, isAdmin } from '@/lib/server/auth';
+import { aiRemaining, getSessionAccount, getSessionAccountId, isAdmin, recordAiUse } from '@/lib/server/auth';
 import { insertScorecard, SCORECARD_COOKIE } from '@/lib/server/config';
 import {
   aiBuilderStatus,
@@ -55,6 +55,22 @@ export async function POST(req: NextRequest) {
   const brief = cleanBrief(body.brief ?? {});
   if (!brief.description && body.step !== 'save') {
     return NextResponse.json({ error: 'Describe your scorecard first.' }, { status: 400 });
+  }
+
+  // AI usage cap: every live generation step counts one against the account's
+  // limit (sample mode is free).
+  const GEN_STEPS = ['strategy', 'content', 'results', 'pdf'];
+  const live = !aiBuilderStatus().mock;
+  if (GEN_STEPS.includes(body.step) && live) {
+    const account = await getSessionAccount();
+    if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (aiRemaining(account) < 1) {
+      return NextResponse.json(
+        { error: 'This account has reached its AI usage limit — ask the site owner to raise it.' },
+        { status: 403 }
+      );
+    }
+    await recordAiUse(account.id, account.aiUsed);
   }
 
   try {

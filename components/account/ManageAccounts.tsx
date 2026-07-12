@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+// Table rows need a keyed fragment so an account row can expand to a second
+// <tr> with its feature settings.
+const FragmentRow = Fragment;
 
 export interface AccountRow {
   id: number;
@@ -10,6 +14,8 @@ export interface AccountRow {
   role: string;
   created_at: string;
   scorecards: { id: number; name: string }[];
+  features?: { custom_domain?: boolean; custom_design?: boolean; ai_limit?: number | null };
+  ai_used?: number;
 }
 
 const CARD = 'rounded-xl border border-gray-200 bg-white';
@@ -75,6 +81,20 @@ export default function ManageAccounts({ initial, ownerId }: { initial: AccountR
     if (await post({ action: 'delete', id })) await refresh();
   }
 
+  const [featuresFor, setFeaturesFor] = useState<number | null>(null);
+
+  async function saveFeatures(id: number, features: NonNullable<AccountRow['features']>) {
+    if (await post({ action: 'set-features', id, features })) {
+      setRows((r) => r.map((a) => (a.id === id ? { ...a, features } : a)));
+    }
+  }
+
+  async function resetUsage(id: number) {
+    if (await post({ action: 'reset-ai-usage', id })) {
+      setRows((r) => r.map((a) => (a.id === id ? { ...a, ai_used: 0 } : a)));
+    }
+  }
+
   return (
     <div className="max-w-4xl">
       <h1 className="text-3xl font-bold">Manage accounts</h1>
@@ -96,7 +116,8 @@ export default function ManageAccounts({ initial, ownerId }: { initial: AccountR
           </thead>
           <tbody>
             {rows.map((a) => (
-              <tr key={a.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
+              <FragmentRow key={a.id}>
+              <tr className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
                 <td className="px-5 py-3.5">
                   <p className="font-medium">{a.name}</p>
                   <p className="mt-0.5 text-xs text-muted">Created {new Date(a.created_at).toLocaleDateString()}</p>
@@ -122,7 +143,16 @@ export default function ManageAccounts({ initial, ownerId }: { initial: AccountR
                   </span>
                 </td>
                 <td className="px-5 py-3.5 text-right text-xs">
-                  <button onClick={() => rename(a.id, a.name)} disabled={busy} className="font-medium text-primary hover:underline">
+                  {a.role !== 'owner' && (
+                    <button
+                      onClick={() => setFeaturesFor(featuresFor === a.id ? null : a.id)}
+                      disabled={busy}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Features
+                    </button>
+                  )}
+                  <button onClick={() => rename(a.id, a.name)} disabled={busy} className="ml-3 font-medium text-primary hover:underline">
                     Rename
                   </button>
                   <button onClick={() => resetPassword(a.id, a.name)} disabled={busy} className="ml-3 font-medium text-primary hover:underline">
@@ -135,6 +165,19 @@ export default function ManageAccounts({ initial, ownerId }: { initial: AccountR
                   )}
                 </td>
               </tr>
+              {featuresFor === a.id && (
+                <tr className="border-b border-gray-100 bg-gray-50/60">
+                  <td colSpan={5} className="px-5 py-4">
+                    <FeaturesPanel
+                      account={a}
+                      busy={busy}
+                      onSave={(f) => saveFeatures(a.id, f)}
+                      onResetUsage={() => resetUsage(a.id)}
+                    />
+                  </td>
+                </tr>
+              )}
+              </FragmentRow>
             ))}
           </tbody>
         </table>
@@ -164,6 +207,92 @@ export default function ManageAccounts({ initial, ownerId }: { initial: AccountR
           {busy ? 'Working…' : 'Create account'}
         </button>
       </form>
+    </div>
+  );
+}
+
+// Per-account feature limits: what appears in their dashboard, and how many
+// AI generations they can run. Toggling something off simply removes it from
+// their account.
+function FeaturesPanel({
+  account,
+  busy,
+  onSave,
+  onResetUsage,
+}: {
+  account: AccountRow;
+  busy: boolean;
+  onSave: (f: NonNullable<AccountRow['features']>) => void;
+  onResetUsage: () => void;
+}) {
+  const [customDomain, setCustomDomain] = useState(account.features?.custom_domain !== false);
+  const [customDesign, setCustomDesign] = useState(account.features?.custom_design !== false);
+  const [aiLimit, setAiLimit] = useState(account.features?.ai_limit == null ? '' : String(account.features.ai_limit));
+  const used = account.ai_used ?? 0;
+
+  return (
+    <div className="flex flex-wrap items-end gap-6 text-sm">
+      <label className="flex items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={customDomain}
+          onChange={(e) => setCustomDomain(e.target.checked)}
+          className="h-4 w-4 accent-primary"
+        />
+        <span>
+          <span className="font-medium">Own domain</span>
+          <span className="block text-xs text-muted">Can connect a domain they own</span>
+        </span>
+      </label>
+
+      <label className="flex items-center gap-2.5">
+        <input
+          type="checkbox"
+          checked={customDesign}
+          onChange={(e) => setCustomDesign(e.target.checked)}
+          className="h-4 w-4 accent-primary"
+        />
+        <span>
+          <span className="font-medium">Custom Design (AI)</span>
+          <span className="block text-xs text-muted">AI page designer + chat editor</span>
+        </span>
+      </label>
+
+      <div>
+        <span className="block text-xs font-semibold text-ink">AI usage limit</span>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            value={aiLimit}
+            onChange={(e) => setAiLimit(e.target.value.replace(/[^0-9]/g, ''))}
+            placeholder="Unlimited"
+            className="w-24 rounded-md border border-gray-300 px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+          />
+          <span className="text-xs text-muted">
+            used {used}
+            {aiLimit !== '' && ` / ${aiLimit}`}
+          </span>
+          {used > 0 && (
+            <button onClick={onResetUsage} disabled={busy} className="text-xs font-medium text-primary hover:underline">
+              reset
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-muted">Generations + chat edits. Empty = unlimited.</p>
+      </div>
+
+      <button
+        onClick={() =>
+          onSave({
+            custom_domain: customDomain,
+            custom_design: customDesign,
+            ai_limit: aiLimit === '' ? null : Number(aiLimit),
+          })
+        }
+        disabled={busy}
+        className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
+      >
+        Save features
+      </button>
     </div>
   );
 }

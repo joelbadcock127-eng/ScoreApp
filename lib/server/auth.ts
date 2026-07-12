@@ -77,12 +77,41 @@ export function isAdmin(): boolean {
   return getSessionAccountId() != null;
 }
 
+// Per-account feature flags set by the owner. Absent key = allowed/unlimited.
+export interface AccountFeatures {
+  custom_domain?: boolean; // may connect a domain they own
+  custom_design?: boolean; // may use Custom Design (AI)
+  ai_limit?: number | null; // max AI generations/edits; null = unlimited
+}
+
 export interface SessionAccount {
   id: number;
   name: string;
   email: string;
   role: 'owner' | 'member';
   users: { name: string; email: string; role: string }[];
+  features: AccountFeatures;
+  aiUsed: number;
+}
+
+export function canUseCustomDomain(a: SessionAccount): boolean {
+  return a.role === 'owner' || a.features.custom_domain !== false;
+}
+
+export function canUseCustomDesign(a: SessionAccount): boolean {
+  return a.role === 'owner' || a.features.custom_design !== false;
+}
+
+// Remaining AI generations for the account (Infinity when uncapped).
+export function aiRemaining(a: SessionAccount): number {
+  if (a.role === 'owner' || a.features.ai_limit == null) return Infinity;
+  return Math.max(0, a.features.ai_limit - a.aiUsed);
+}
+
+// Count one AI generation/edit against the account's cap.
+export async function recordAiUse(accountId: number, current: number) {
+  const sb = supabaseAdmin();
+  await sb.from('accounts').update({ ai_used: current + 1 }).eq('id', accountId);
 }
 
 // Full account row for the current session, memoised per request.
@@ -90,7 +119,11 @@ export const getSessionAccount = cache(async (): Promise<SessionAccount | null> 
   const id = getSessionAccountId();
   if (id == null) return null;
   const sb = supabaseAdmin();
-  const { data } = await sb.from('accounts').select('id, name, email, role, users').eq('id', id).maybeSingle();
+  const { data } = await sb
+    .from('accounts')
+    .select('id, name, email, role, users, features, ai_used')
+    .eq('id', id)
+    .maybeSingle();
   if (!data) return null;
   return {
     id: data.id as number,
@@ -98,6 +131,8 @@ export const getSessionAccount = cache(async (): Promise<SessionAccount | null> 
     email: data.email as string,
     role: data.role === 'owner' ? 'owner' : 'member',
     users: (data.users as SessionAccount['users']) ?? [],
+    features: (data.features as AccountFeatures) ?? {},
+    aiUsed: (data.ai_used as number) ?? 0,
   };
 });
 

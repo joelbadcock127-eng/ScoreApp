@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin } from '@/lib/server/auth';
+import { aiRemaining, canUseCustomDesign, getSessionAccount, isAdmin, recordAiUse } from '@/lib/server/auth';
 import { getConfig } from '@/lib/server/config';
 import { customPageStatus, editCustomPage, generateCustomPage } from '@/lib/server/customPageGen';
 import { sanitizeCustomPage } from '@/lib/customPage';
@@ -19,10 +19,25 @@ export async function GET() {
 //   { page, action: 'edit', customPage, instruction } → chat edit of the
 //     current design; returns the updated page + a one-line change summary.
 export async function POST(req: NextRequest) {
-  if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const account = await getSessionAccount();
+  if (!account) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!canUseCustomDesign(account)) {
+    return NextResponse.json({ error: 'Custom Design (AI) is not enabled for this account.' }, { status: 403 });
+  }
   const body = await req.json().catch(() => null);
   const page = body?.page === 'results' ? 'results' : body?.page === 'landing' ? 'landing' : null;
   if (!page) return NextResponse.json({ error: 'page must be "landing" or "results"' }, { status: 400 });
+
+  // Every live generation/edit counts one against the AI usage cap.
+  if (!customPageStatus().mock) {
+    if (aiRemaining(account) < 1) {
+      return NextResponse.json(
+        { error: 'This account has reached its AI usage limit — ask the site owner to raise it.' },
+        { status: 403 }
+      );
+    }
+    await recordAiUse(account.id, account.aiUsed);
+  }
 
   try {
     const config = await getConfig();
