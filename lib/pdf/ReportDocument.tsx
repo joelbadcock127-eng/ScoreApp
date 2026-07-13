@@ -26,6 +26,15 @@ export type PdfImages = {
 
 const NAVY = '#152042';
 
+// Paragraph arrays render as ONE flowing text block — separate <Text> elements
+// per paragraph made react-pdf mis-measure heights and overlap lines.
+function joinParagraphs(paragraphs: string[]): string {
+  return paragraphs
+    .map((p) => stripTags(p).trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 const s = StyleSheet.create({
   frame: { backgroundColor: NAVY, padding: 22 },
   sheet: { backgroundColor: '#ffffff', borderRadius: 3, padding: 40, flexGrow: 1 },
@@ -37,8 +46,10 @@ const s = StyleSheet.create({
   pageNo: { position: 'absolute', bottom: 16, right: 40, fontSize: 9, color: '#616366' },
 });
 
-// Circular ring icon with the score % below, as on the Transformation Keys page.
-function RingScore({ percent, tier, icon }: { percent: number; tier: Tier; icon?: Buffer | null }) {
+// Circular score ring on the Transformation Keys page. The category images are
+// hero photos for the category pages — never shown here, the ring always holds
+// the percentage itself.
+function RingScore({ percent, tier }: { percent: number; tier: Tier }) {
   return (
     <View style={{ width: 74, alignItems: 'center', flexShrink: 0 }}>
       <View
@@ -53,48 +64,49 @@ function RingScore({ percent, tier, icon }: { percent: number; tier: Tier; icon?
           backgroundColor: '#ffffff',
         }}
       >
-        {icon ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
-          <Image src={icon} style={{ width: 30, height: 30, objectFit: 'contain' }} />
-        ) : (
-          <Text style={{ color: tier.color, fontSize: 14, fontFamily: 'Helvetica-Bold' }}>{percent}</Text>
-        )}
+        <Text style={{ color: tier.color, fontSize: 14, fontFamily: 'Helvetica-Bold' }}>{percent}%</Text>
       </View>
-      <Text style={{ marginTop: 6, fontSize: 13, fontFamily: 'Helvetica-Bold', color: '#3a3d40' }}>
-        {percent}%
-      </Text>
     </View>
   );
 }
 
-// "13% — YOU SCORED" card overlapping the category hero image.
+// "13% — YOU SCORED" card overlapping the category hero image. react-pdf has
+// no box-shadow, so the shadow is a soft offset layer behind a translucent
+// white card; the circle and text stay fully opaque on top.
 function ScoreBadge({ percent, tier }: { percent: number; tier: Tier }) {
   return (
-    <View
-      style={{
-        position: 'absolute',
-        right: 30,
-        top: 64,
-        width: 132,
-        backgroundColor: '#ffffff',
-        padding: 12,
-        alignItems: 'center',
-        opacity: 0.95,
-      }}
-    >
+    <View style={{ position: 'absolute', right: 30, top: 64, width: 132 }}>
       <View
         style={{
-          width: 66,
-          height: 66,
-          borderRadius: 33,
-          backgroundColor: tier.color,
+          position: 'absolute',
+          top: 5,
+          left: 5,
+          right: -5,
+          bottom: -5,
+          backgroundColor: 'rgba(12, 13, 13, 0.22)',
+        }}
+      />
+      <View
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.82)',
+          padding: 12,
           alignItems: 'center',
-          justifyContent: 'center',
         }}
       >
-        <Text style={{ color: '#ffffff', fontSize: 18, fontFamily: 'Helvetica-Bold' }}>{percent}%</Text>
+        <View
+          style={{
+            width: 66,
+            height: 66,
+            borderRadius: 33,
+            backgroundColor: tier.color,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Text style={{ color: '#ffffff', fontSize: 18, fontFamily: 'Helvetica-Bold' }}>{percent}%</Text>
+        </View>
+        <Text style={{ marginTop: 9, fontSize: 9, letterSpacing: 3, color: '#3a3d40' }}>YOU SCORED</Text>
       </View>
-      <Text style={{ marginTop: 9, fontSize: 9, letterSpacing: 3, color: '#3a3d40' }}>YOU SCORED</Text>
     </View>
   );
 }
@@ -177,15 +189,18 @@ export function ReportDocument({
         <Page size="A4" style={s.frame}>
           <View style={s.sheet}>
             <Text style={[s.h1, { fontSize: 24 }]}>{stripTags(pdf.howToReadTitle)}</Text>
-            <View style={{ marginTop: 18 }}>
-              {pdf.howToRead.map((p, i) => (
-                <Text key={i} style={i === 0 ? s.lead : s.p}>
-                  {stripTags(p)}
-                </Text>
-              ))}
+            {/* flexShrink 0 on the text + flexBasis 0 on the image: the image
+                only ever fills LEFTOVER space. With an auto basis its intrinsic
+                photo height overflowed the page and yoga shrank the text views,
+                painting paragraphs on top of each other. */}
+            <View style={{ marginTop: 18, flexShrink: 0 }}>
+              {pdf.howToRead.length > 0 && (
+                <Text style={s.lead}>{joinParagraphs(pdf.howToRead.slice(0, 1))}</Text>
+              )}
+              {pdf.howToRead.length > 1 && <Text style={s.p}>{joinParagraphs(pdf.howToRead.slice(1))}</Text>}
             </View>
             {images.howToRead && (
-              <View style={{ flexGrow: 1, marginTop: 8, marginBottom: 24 }}>
+              <View style={{ flexGrow: 1, flexBasis: 0, minHeight: 0, marginTop: 8, marginBottom: 24 }}>
                 {/* eslint-disable-next-line jsx-a11y/alt-text */}
                 <Image src={images.howToRead} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </View>
@@ -208,7 +223,7 @@ export function ReportDocument({
               const text = config.results.categoryTexts[c.key]?.[t.key] ?? '';
               return (
                 <View key={c.key} style={{ flexDirection: 'row', gap: 16, marginBottom: 20 }}>
-                  <RingScore percent={c.percent} tier={t} icon={images.categories[c.key]} />
+                  <RingScore percent={c.percent} tier={t} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 12.5, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>{c.label}</Text>
                     <Text style={{ fontSize: 9.5, lineHeight: 1.5, color: '#3a3d40' }}>{stripTags(text)}</Text>
@@ -243,17 +258,9 @@ export function ReportDocument({
               <View style={{ paddingHorizontal: 40, paddingTop: 22, paddingBottom: 40 }}>
                 <Text style={[s.h1, { maxWidth: 320 }]}>{c.label}</Text>
                 <View style={{ marginTop: 16 }}>
-                  {content.intro.map((p, i) => (
-                    <Text key={i} style={s.p}>
-                      {stripTags(p)}
-                    </Text>
-                  ))}
+                  <Text style={s.p}>{joinParagraphs(content.intro)}</Text>
                   <Text style={[s.h2, { marginTop: 6 }]}>{stripTags(content.exampleTitle)}</Text>
-                  {content.example.map((p, i) => (
-                    <Text key={i} style={s.p}>
-                      {stripTags(p)}
-                    </Text>
-                  ))}
+                  <Text style={s.p}>{joinParagraphs(content.example)}</Text>
                 </View>
               </View>
               <Text style={s.pageNo}>{nextPageNo()}</Text>
@@ -266,12 +273,11 @@ export function ReportDocument({
       {!hidden.includes('closing') && (
         <Page size="A4" style={{ backgroundColor: NAVY, padding: 22 }}>
           <View style={{ flexGrow: 1, position: 'relative', backgroundColor: '#ffffff' }}>
+            {/* In-flow image (like the cover page) — an absolutely-positioned
+                image with percentage sizes resolves to zero height here. */}
             {images.closing && (
               // eslint-disable-next-line jsx-a11y/alt-text
-              <Image
-                src={images.closing}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
+              <Image src={images.closing} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             )}
             <Text style={{ position: 'absolute', top: 18, left: 20, fontSize: 10, color: images.closing ? '#ffffff' : '#0c0d0d' }}>
               {footerText}
@@ -290,11 +296,9 @@ export function ReportDocument({
                 {stripTags(pdf.closingTitle)}
               </Text>
               <View style={{ marginTop: 14 }}>
-                {pdf.closing.map((p, i) => (
-                  <Text key={i} style={{ color: '#e6e9f2', fontSize: 9.5, lineHeight: 1.55, marginBottom: 8 }}>
-                    {stripTags(p)}
-                  </Text>
-                ))}
+                <Text style={{ color: '#e6e9f2', fontSize: 9.5, lineHeight: 1.55 }}>
+                  {joinParagraphs(pdf.closing)}
+                </Text>
               </View>
             </View>
             <Text style={{ position: 'absolute', bottom: 14, right: 18, fontSize: 9, color: images.closing ? '#ffffff' : '#616366' }}>
