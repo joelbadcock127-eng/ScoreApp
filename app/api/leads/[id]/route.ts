@@ -59,7 +59,14 @@ async function sendCompletionEmails(
 
   const results = await Promise.allSettled(jobs);
   for (const r of results) {
-    if (r.status === 'rejected') console.error('[email] send failed:', r.reason);
+    if (r.status === 'rejected') {
+      console.error('[email] send threw:', r.reason);
+    } else if (r.value && typeof r.value === 'object' && 'sent' in r.value) {
+      const v = r.value as { sent: boolean; provider: string; error?: string };
+      // sendEmail returns { sent:false } instead of throwing, so log those too
+      // — otherwise a rejected provider send is completely invisible.
+      if (!v.sent) console.error(`[email] ${v.provider} did not send:`, v.error ?? '(no provider configured)');
+    }
   }
 }
 

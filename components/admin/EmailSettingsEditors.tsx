@@ -143,6 +143,8 @@ export function NotificationsEditor({ initial }: { initial: NotificationsConfig 
 }
 
 // ——— Result Email ————————————————————————————————————————————————————
+const FREE_MAIL_RE = /@(gmail|googlemail|outlook|hotmail|live|yahoo|icloud|me|aol)\./i;
+
 export function ResultEmailEditor({
   initial,
   initialApiKey = '',
@@ -153,6 +155,35 @@ export function ResultEmailEditor({
   const [v, setV] = useState(initial);
   const [apiKey, setApiKey] = useState(initialApiKey);
   const { save, saving, message } = useSave(() => ({ resultEmail: v, email: { provider: 'resend', apiKey } }));
+
+  // Test send
+  const [testTo, setTestTo] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+  async function sendTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/admin/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: testTo }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setTestResult(
+        res.ok
+          ? { ok: true, text: `Sent to ${json.to} via ${json.provider}. Check the inbox (and spam).` }
+          : { ok: false, text: json.error || 'Send failed.' }
+      );
+    } catch (e) {
+      setTestResult({ ok: false, text: e instanceof Error ? e.message : 'Send failed.' });
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  const freeMailSender = FREE_MAIL_RE.test(v.fromAddress);
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-3xl font-bold">Result Email Settings</h1>
@@ -175,6 +206,14 @@ export function ResultEmailEditor({
           placeholder="results@yourdomain.com (must be verified with your email provider)"
           onChange={(e) => setV({ ...v, fromAddress: e.target.value })}
         />
+        {freeMailSender && (
+          <p className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            You can’t send <b>from</b> a Gmail/Outlook/free address — providers reject it, so emails would only reach
+            your own inbox. Verify a domain in Resend and use an address on it (e.g.{' '}
+            <code className="rounded bg-white px-1">results@accesoai.com.au</code>), and put your Gmail in “Reply to”
+            below instead.
+          </p>
+        )}
         <p className={`${SECTION_LABEL} mt-5`}>From name</p>
         <TextInput className="mt-2" value={v.fromName} onChange={(e) => setV({ ...v, fromName: e.target.value })} />
         <p className={`${SECTION_LABEL} mt-5`}>Reply to email</p>
@@ -220,6 +259,43 @@ export function ResultEmailEditor({
           Get one free at resend.com (3,000 emails/month). With no key set, emails are logged instead of sent.
         </p>
         <SaveBar onSave={save} saving={saving} message={message} />
+      </div>
+
+      <p className={`${SECTION_LABEL} mt-8`}>Send a test</p>
+      <p className={HINT}>Save your settings first, then send a test to see exactly what your provider returns.</p>
+      <div className={`${CARD} mt-3`}>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[240px] flex-1">
+            <p className={SECTION_LABEL}>Send test to</p>
+            <TextInput
+              className="mt-2"
+              type="email"
+              value={testTo}
+              placeholder="you@example.com"
+              onChange={(e) => setTestTo(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={sendTest}
+            disabled={testing}
+            className="rounded-md border border-primary px-6 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
+          >
+            {testing ? 'Sending…' : 'Send test email'}
+          </button>
+        </div>
+        {testResult && (
+          <p
+            className={`mt-3 rounded-md px-3 py-2 text-sm ${
+              testResult.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            }`}
+          >
+            {testResult.text}
+          </p>
+        )}
+        <p className={HINT}>
+          Tip: while your domain isn’t verified, Resend only delivers to the email you signed up to Resend with —
+          test with that address first.
+        </p>
       </div>
 
       <div className="mt-6 rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm leading-relaxed text-ink">
