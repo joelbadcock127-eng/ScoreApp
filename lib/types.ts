@@ -146,6 +146,7 @@ export interface ResultEmailConfig {
   replyTo: string;
   subject: string;
   content: string; // rich html with {merge_fields}
+  headerImage?: string; // logo shown at the top of the email body
 }
 
 export interface Branding {

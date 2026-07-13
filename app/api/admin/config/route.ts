@@ -442,6 +442,7 @@ export async function PUT(req: NextRequest) {
       replyTo: String(r.replyTo ?? '').slice(0, 320),
       subject: String(r.subject ?? '').slice(0, 300),
       content: sanitizeRichText(String(r.content ?? '')).slice(0, 8000),
+      headerImage: r.headerImage != null ? String(r.headerImage).slice(0, 500) : config.resultEmail?.headerImage,
     };
   }
 

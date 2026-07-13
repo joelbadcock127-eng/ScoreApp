@@ -223,6 +223,18 @@ export function ResultEmailEditor({
           placeholder="you@yourdomain.com"
           onChange={(e) => setV({ ...v, replyTo: e.target.value })}
         />
+
+        <p className={`${SECTION_LABEL} mt-6`}>Email logo / header image</p>
+        {v.headerImage && (
+          <div className="mt-2 rounded-lg border border-dashed border-gray-300 p-3">
+            <img src={v.headerImage} alt="" className="mx-auto max-h-16 object-contain" />
+          </div>
+        )}
+        <ImagePicker label="" value={v.headerImage ?? ''} onChange={(headerImage) => setV({ ...v, headerImage })} />
+        <p className={HINT}>
+          Shown at the top of the email. (The little avatar circle next to the sender in Gmail is set by the email
+          network via BIMI, not here — this logo is what brands the message itself.)
+        </p>
       </div>
 
       <p className={`${SECTION_LABEL} mt-8`}>Content</p>
@@ -239,7 +251,12 @@ export function ResultEmailEditor({
           className="mt-2 min-h-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className={HINT}>
-          Merge fields: {'{first_name} {last_name} {email} {score} {scorecard_name} {results_link} {report_link}'}
+          Text merge fields: {'{first_name} {last_name} {email} {score} {scorecard_name} {results_link} {report_link}'}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          Button merge fields (insert a styled button):{' '}
+          <code className="rounded bg-gray-50 px-1">{'{report_download}'}</code> opens the PDF report,{' '}
+          <code className="rounded bg-gray-50 px-1">{'{results_button}'}</code> opens the results page.
         </p>
         <SaveBar onSave={save} saving={saving} message={message} />
       </div>

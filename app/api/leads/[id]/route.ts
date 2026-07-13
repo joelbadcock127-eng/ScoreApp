@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/server/config';
 import { computeScores, questionMax } from '@/lib/scoring';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { mergeFields, sendEmail } from '@/lib/server/email';
+import { mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
 import { stripTags } from '@/lib/richtext';
 import { ScorecardConfig } from '@/lib/types';
 
@@ -14,16 +14,19 @@ async function sendCompletionEmails(
   score: number,
   origin: string
 ) {
-  const fields = {
-    first_name: lead.first_name,
-    last_name: lead.last_name,
-    email: lead.email,
-    status: 'Completed',
-    score,
-    scorecard_name: config.title,
-    results_link: `${origin}/results/${lead.id}`,
-    report_link: `${origin}/api/report/${lead.id}`,
-  };
+  const fields = resultEmailFields(
+    {
+      first_name: lead.first_name,
+      last_name: lead.last_name,
+      email: lead.email,
+      status: 'Completed',
+      score,
+      scorecard_name: config.title,
+      results_link: `${origin}/results/${lead.id}`,
+      report_link: `${origin}/api/report/${lead.id}`,
+    },
+    config.branding.primaryColor
+  );
   const jobs: Promise<unknown>[] = [];
 
   const re = config.resultEmail;
@@ -32,7 +35,7 @@ async function sendCompletionEmails(
       sendEmail({
         to: [lead.email],
         subject: stripTags(mergeFields(re.subject, fields)),
-        html: mergeFields(re.content, fields),
+        html: withEmailHeader(mergeFields(re.content, fields), re.headerImage),
         fromAddress: re.fromAddress || undefined,
         fromName: re.fromName || undefined,
         replyTo: re.replyTo || undefined,

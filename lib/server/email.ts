@@ -32,6 +32,48 @@ export function mergeFields(template: string, fields: Record<string, string | nu
   });
 }
 
+// A styled call-to-action button for emails (inline styles — email clients
+// ignore <style> blocks). Used for {report_download} and {results_button}.
+export function emailButton(url: string, label: string, color = '#1c78fe'): string {
+  return (
+    `<a href="${url}" target="_blank" rel="noopener" style="display:inline-block;` +
+    `background:${color};color:#ffffff;text-decoration:none;font-weight:600;` +
+    `font-family:Inter,Arial,sans-serif;font-size:15px;padding:12px 24px;border-radius:8px;margin:6px 0;">` +
+    `${label}</a>`
+  );
+}
+
+export interface ResultEmailContext {
+  first_name: string;
+  last_name: string;
+  email: string;
+  status: string;
+  score: number;
+  scorecard_name: string;
+  results_link: string;
+  report_link: string;
+}
+
+// Merge fields available in result / notification emails, including the
+// ready-made button snippets that expand to HTML.
+export function resultEmailFields(ctx: ResultEmailContext, color = '#1c78fe'): Record<string, string | number> {
+  return {
+    ...ctx,
+    report_download: emailButton(ctx.report_link, 'Download my report (PDF)', color),
+    results_button: emailButton(ctx.results_link, 'View my results', color),
+  };
+}
+
+// Prepend the scorecard's email logo (if set) to the email body.
+export function withEmailHeader(html: string, headerImage?: string): string {
+  if (!headerImage) return html;
+  return (
+    `<div style="text-align:center;margin:0 0 20px;">` +
+    `<img src="${headerImage}" alt="" style="max-height:64px;max-width:240px;height:auto;" /></div>` +
+    html
+  );
+}
+
 export async function sendEmail(msg: EmailMessage): Promise<{ sent: boolean; provider: string; error?: string }> {
   let fromAddress = msg.fromAddress || 'onboarding@resend.dev';
   let replyTo = msg.replyTo;
