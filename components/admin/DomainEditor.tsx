@@ -1,6 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+
+type DomainStatus = 'live' | 'mismatch' | 'reachable' | 'unreachable';
+interface StatusTarget {
+  label: string;
+  host: string;
+  status: DomainStatus;
+}
 
 // Settings → Domain: the scorecard's built-in link, a managed subdomain, and
 // a fully custom domain the customer owns.
@@ -25,9 +32,28 @@ export default function DomainEditor({
   const [customSaved, setCustomSaved] = useState(initialCustomDomain);
   const [customSaving, setCustomSaving] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
+  const [statuses, setStatuses] = useState<StatusTarget[] | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const checkStatus = useCallback(async () => {
+    setChecking(true);
+    try {
+      const res = await fetch(`/api/admin/domain-status?id=${scorecardId}`, { cache: 'no-store' });
+      const json = await res.json().catch(() => ({}));
+      setStatuses(res.ok ? json.targets ?? [] : []);
+    } catch {
+      setStatuses([]);
+    } finally {
+      setChecking(false);
+    }
+  }, [scorecardId]);
+
+  useEffect(() => {
+    if (initialDomain || initialCustomDomain) checkStatus();
+  }, [initialDomain, initialCustomDomain, checkStatus]);
 
   const clean = domain.trim().toLowerCase();
-  const liveUrl = clean ? `https://www.${clean}.${baseDomain}` : `https://www.${baseDomain}`;
+  const liveUrl = clean ? `https://${clean}.${baseDomain}` : `https://${baseDomain}`;
   const cleanCustom = custom
     .trim()
     .toLowerCase()
@@ -53,6 +79,7 @@ export default function DomainEditor({
     if (ok) {
       setSaved(clean);
       setMessage('Saved — your scorecard now answers on this address.');
+      setTimeout(checkStatus, 500);
     } else {
       setMessage(json.error || 'Save failed.');
     }
@@ -66,6 +93,7 @@ export default function DomainEditor({
     if (ok) {
       setCustomSaved(cleanCustom);
       setCustomMessage(cleanCustom ? 'Saved — complete the DNS step below and it goes live.' : 'Removed.');
+      setTimeout(checkStatus, 500);
     } else {
       setCustomMessage(json.error || 'Save failed.');
     }
@@ -94,6 +122,35 @@ export default function DomainEditor({
         </div>
       </div>
 
+      {/* Live status of connected domains */}
+      {(saved || customSaved) && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink">Domain status</p>
+            <button
+              onClick={checkStatus}
+              disabled={checking}
+              className="text-xs font-medium text-primary hover:underline disabled:opacity-60"
+            >
+              {checking ? 'Checking…' : 'Re-check'}
+            </button>
+          </div>
+          <div className="mt-3 space-y-2">
+            {(statuses ?? []).map((t) => (
+              <StatusRow key={t.host} target={t} />
+            ))}
+            {statuses && statuses.length === 0 && !checking && (
+              <p className="text-sm text-muted">Nothing to check yet.</p>
+            )}
+            {!statuses && <p className="text-sm text-muted">Checking…</p>}
+          </div>
+          <p className="mt-3 text-xs text-muted">
+            New domains can take a few minutes (occasionally longer) to go live while DNS propagates and the SSL
+            certificate is issued.
+          </p>
+        </div>
+      )}
+
       {/* Managed subdomain */}
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink">Free subdomain</p>
@@ -103,7 +160,7 @@ export default function DomainEditor({
         </p>
 
         <div className="mt-6 flex items-center overflow-hidden rounded-lg border border-gray-300 focus-within:border-primary">
-          <span className="flex-none bg-gray-50 px-3 py-2.5 text-sm text-muted">https://www.</span>
+          <span className="flex-none bg-gray-50 px-3 py-2.5 text-sm text-muted">https://</span>
           <input
             value={domain}
             onChange={(e) => setDomain(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
@@ -112,6 +169,11 @@ export default function DomainEditor({
           />
           <span className="flex-none bg-gray-50 px-3 py-2.5 text-sm text-muted">.{baseDomain}</span>
         </div>
+        <p className="mt-2 text-xs text-muted">
+          Use this exact address (no <code className="rounded bg-gray-50 px-1">www.</code>). The{' '}
+          <code className="rounded bg-gray-50 px-1">www.</code> version also works only if you add a separate{' '}
+          <code className="rounded bg-gray-50 px-1">www.{clean || 'yourname'}</code> record and domain too.
+        </p>
 
         <div className="mt-4 flex items-center justify-between rounded-lg bg-blue-50 px-4 py-3">
           <div className="min-w-0">
@@ -120,7 +182,7 @@ export default function DomainEditor({
           </div>
           {saved && (
             <a
-              href={`https://www.${saved}.${baseDomain}`}
+              href={`https://${saved}.${baseDomain}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-none text-sm font-medium text-primary hover:underline"
@@ -228,6 +290,29 @@ export default function DomainEditor({
           After that, every subdomain saved here works instantly — no further setup per scorecard.
         </p>
       </div>
+    </div>
+  );
+}
+
+// One connected-domain status line with a coloured pill.
+function StatusRow({ target }: { target: StatusTarget }) {
+  const map: Record<DomainStatus, { label: string; dot: string; text: string }> = {
+    live: { label: 'Live', dot: 'bg-green-500', text: 'text-green-700' },
+    mismatch: { label: 'Serving a different scorecard', dot: 'bg-amber-500', text: 'text-amber-700' },
+    reachable: { label: 'Reachable — finishing setup', dot: 'bg-amber-500', text: 'text-amber-700' },
+    unreachable: { label: 'Not connected yet', dot: 'bg-gray-400', text: 'text-muted' },
+  };
+  const s = map[target.status];
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2.5">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{target.host}</p>
+        <p className="text-[11px] uppercase tracking-wide text-muted">{target.label}</p>
+      </div>
+      <span className={`flex flex-none items-center gap-1.5 text-xs font-semibold ${s.text}`}>
+        <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+        {s.label}
+      </span>
     </div>
   );
 }

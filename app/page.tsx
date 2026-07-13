@@ -1,4 +1,5 @@
-import { getConfig, getHostCustomDomain, getHostSubdomain } from '@/lib/server/config';
+import { notFound } from 'next/navigation';
+import { getConfig, getHostCustomDomain, getHostScorecardId, getHostSubdomain } from '@/lib/server/config';
 import { isAdmin } from '@/lib/server/auth';
 import ScorecardLanding from '@/components/ScorecardLanding';
 import MarketingPage from '@/components/marketing/MarketingPage';
@@ -17,7 +18,9 @@ export async function generateMetadata() {
       description: 'Build branded lead-generation scorecards with AI-drafted questions, results and PDF reports.',
     };
   }
-  const config = await getConfig();
+  const id = await getHostScorecardId();
+  if (id == null) return { title: 'Scorecard not found' };
+  const config = await getConfig(id);
   const sa = config.shareAppearance;
   if (!sa) return { title: config.title };
   const images = sa.image ? [{ url: sa.image, width: 1280, height: 720 }] : undefined;
@@ -30,16 +33,19 @@ export async function generateMetadata() {
 }
 
 // The base domain lands on the marketing page (Log in / Get started lead to
-// /login; logged-in visitors get a Dashboard button instead of a redirect);
-// scorecard subdomains and custom domains land straight on their scorecard.
+// /login; logged-in visitors get a Dashboard button instead of a redirect).
+// A scorecard subdomain / custom domain lands straight on THAT scorecard; a
+// subdomain not mapped to any scorecard 404s rather than showing the default.
 export default async function RootPage({
   searchParams,
 }: {
   searchParams?: { chrome?: string };
 }) {
   if (isScorecardHost()) {
-    const config = await getConfig();
-    return <ScorecardLanding config={config} hideChrome={searchParams?.chrome === '0'} />;
+    const id = await getHostScorecardId();
+    if (id == null) notFound();
+    const config = await getConfig(id);
+    return <ScorecardLanding config={config} scorecardId={id} hideChrome={searchParams?.chrome === '0'} />;
   }
   return <MarketingPage loggedIn={isAdmin()} />;
 }

@@ -161,6 +161,20 @@ const resolveActiveScorecard = cache(async (): Promise<ScorecardSummary | null> 
   return all.find((s) => s.is_default) ?? all[0] ?? null;
 });
 
+// STRICT host → scorecard id, with NO default fallback. Returns the scorecard
+// whose managed subdomain or custom domain matches the current host, or null
+// when the host is a subdomain / custom domain not mapped to any scorecard.
+// Public host pages use this so an unmapped subdomain shows "not found"
+// instead of silently serving the default (flagship) scorecard.
+export const getHostScorecardId = cache(async (): Promise<number | null> => {
+  const all = await listScorecards();
+  const sub = getHostSubdomain();
+  if (sub) return all.find((s) => s.domain === sub)?.id ?? null;
+  const custom = getHostCustomDomain();
+  if (custom) return all.find((s) => s.custom_domain === custom)?.id ?? null;
+  return null;
+});
+
 export async function getConfig(id?: number): Promise<ScorecardConfig> {
   // Explicit id (public /s/<id> pages and admin APIs) is trusted by callers.
   if (id != null) {
