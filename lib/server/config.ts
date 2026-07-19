@@ -5,6 +5,7 @@ const cache: <T extends (...args: never[]) => unknown>(fn: T) => T =
   typeof React.cache === 'function' ? React.cache : (fn) => fn;
 import { defaultConfig } from '../defaultConfig';
 import { blankConfig } from '../blankConfig';
+import { clubSurveyConfig } from '../surveyTemplate';
 import { ScorecardConfig } from '../types';
 import { supabaseAdmin } from './supabase';
 import { getSessionAccountId } from './auth';
@@ -102,10 +103,21 @@ export async function listMyScorecards(): Promise<ScorecardSummary[]> {
   return (await listScorecards()).filter((s) => s.account_id === accountId);
 }
 
-export async function createScorecard(name: string): Promise<number> {
+// Structural templates a new scorecard can start from. 'blank' (default) is
+// the generic scored starter; others ship fully-built content.
+export const SCORECARD_TEMPLATES: Record<string, (name: string) => ScorecardConfig> = {
+  blank: blankConfig,
+  'club-survey': clubSurveyConfig,
+};
+
+export async function createScorecard(name: string, template = 'blank'): Promise<number> {
   const accountId = getSessionAccountId();
   if (accountId == null) throw new Error('Not logged in');
-  return insertScorecard(name, blankConfig(name), accountId);
+  // Own-property lookup only — 'constructor' etc. must fall back to blank.
+  const build = Object.prototype.hasOwnProperty.call(SCORECARD_TEMPLATES, template)
+    ? SCORECARD_TEMPLATES[template]
+    : blankConfig;
+  return insertScorecard(name, build(name), accountId);
 }
 
 export async function insertScorecard(name: string, config: ScorecardConfig, accountId: number): Promise<number> {

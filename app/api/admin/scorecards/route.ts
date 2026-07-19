@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   if (body.action === 'create') {
     const name = String(body.name ?? '').trim();
     if (!name) return NextResponse.json({ error: 'Name required' }, { status: 400 });
-    const id = await createScorecard(name);
+    const id = await createScorecard(name, typeof body.template === 'string' ? body.template : 'blank');
     const res = NextResponse.json({ ok: true, id });
     res.cookies.set(SCORECARD_COOKIE, String(id), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
     return res;

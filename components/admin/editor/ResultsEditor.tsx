@@ -509,6 +509,13 @@ export default function ResultsEditor({ initialConfig }: { initialConfig: Scorec
         onSave={save}
       />
 
+      {config.mode === 'survey' && (
+        <p className="border-b border-blue-100 bg-blue-50 px-6 py-2 text-center text-sm text-ink">
+          Survey mode: respondents see this page as a <b>thank-you page</b> — score charts and category scores are
+          never shown to them, whatever is configured here.
+        </p>
+      )}
+
       <div className="flex min-h-0 flex-1">
         {/* Icon rail */}
         <div className="flex w-[72px] flex-none flex-col items-center gap-1 border-r border-gray-200 bg-white py-3">

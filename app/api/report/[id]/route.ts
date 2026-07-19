@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { getConfig } from '@/lib/server/config';
+import { isSurvey } from '@/lib/scoring';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { CategoryScore, Lead } from '@/lib/types';
 import { ReportDocument, ReportData, PdfImages } from '@/lib/pdf/ReportDocument';
@@ -51,6 +52,9 @@ async function loadImage(url: string | undefined, origin: string): Promise<Buffe
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   let config = await getConfig();
+  if (params.id === 'preview' && isSurvey(config)) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   let data: ReportData;
   if (params.id === 'preview') {
@@ -77,6 +81,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     if (lead.scorecard_id) config = await getConfig(lead.scorecard_id);
+    // Surveys have no respondent-facing report.
+    if (isSurvey(config)) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     data = {
       firstName: lead.first_name,
       lastName: lead.last_name,

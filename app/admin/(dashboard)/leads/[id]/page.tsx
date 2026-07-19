@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getConfig } from '@/lib/server/config';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { tierFor, questionMax } from '@/lib/scoring';
+import { isSurvey, tierFor, questionMax } from '@/lib/scoring';
 import { stripTags } from '@/lib/richtext';
-import { CategoryScore, Lead } from '@/lib/types';
+import { AnswerDetail, CategoryScore, Lead } from '@/lib/types';
 import Donut from '@/components/Donut';
 
 export const dynamic = 'force-dynamic';
@@ -36,7 +36,11 @@ export default async function LeadDetailPage({
   const config = await getConfig(lead?.scorecard_id);
   if (!lead) notFound();
 
-  const tab = searchParams.tab === 'answers' ? 'answers' : 'overview';
+  // Surveys are about the answers, so land straight on them.
+  const survey = isSurvey(config);
+  const defaultTab = survey ? 'answers' : 'overview';
+  const tab = searchParams.tab === 'answers' || searchParams.tab === 'overview' ? searchParams.tab : defaultTab;
+  const details = (lead.answer_details ?? {}) as Record<string, AnswerDetail>;
   const overall = lead.overall_percent ?? 0;
   const tier = tierFor(overall, config.tiers);
   const categoryScores = (lead.category_scores ?? []) as CategoryScore[];
@@ -113,6 +117,12 @@ export default async function LeadDetailPage({
 
           {tab === 'overview' ? (
             <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {survey && (
+                <p className="rounded-md bg-blue-50 px-4 py-2 text-sm text-ink md:col-span-2 xl:col-span-3">
+                  This scorecard is a survey — the scores below are internal only and are never shown to the
+                  respondent.
+                </p>
+              )}
               <div className="flex items-center gap-5 rounded-xl border border-orange-100 bg-orange-50/50 p-6">
                 <Donut percent={overall} color={tier.color}>
                   <span className="text-xl font-bold">{overall}%</span>
@@ -141,16 +151,25 @@ export default async function LeadDetailPage({
             <div className="mt-6 space-y-4">
               {config.questions.map((q, i) => {
                 const v = lead.answers?.[q.id];
+                const d = details[q.id];
                 const label =
                   v === q.min ? q.labels.left : v === q.max ? q.labels.right : v === Math.ceil((q.min + q.max) / 2) ? q.labels.center : '';
                 return (
                   <div key={q.id} className="rounded-xl border border-gray-200 bg-white p-5">
                     <p className="text-sm text-muted">Question {i + 1}</p>
                     <p className="mt-1 font-medium">{stripTags(q.text)}</p>
-                    <p className="mt-2 text-primary">
-                      {v != null ? `${v} / ${questionMax(q) || q.max}` : 'Not answered'}
-                      {label && <span className="ml-2 text-muted">— {label}</span>}
-                    </p>
+                    {d?.selected?.length ? (
+                      <p className="mt-2 text-primary">{d.selected.join(', ')}</p>
+                    ) : d?.text ? (
+                      <p className="mt-2 whitespace-pre-wrap text-ink">“{d.text}”</p>
+                    ) : (q.type ?? 'scale') === 'text' ? (
+                      <p className="mt-2 text-muted">No answer</p>
+                    ) : (
+                      <p className="mt-2 text-primary">
+                        {v != null ? `${v} / ${questionMax(q) || q.max}` : 'Not answered'}
+                        {label && <span className="ml-2 text-muted">— {label}</span>}
+                      </p>
+                    )}
                   </div>
                 );
               })}

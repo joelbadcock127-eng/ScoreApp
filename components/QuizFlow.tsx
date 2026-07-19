@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Category, Question, QuestionsPageConfig, QuestionOption } from '@/lib/types';
+import { AnswerDetail, Category, Question, QuestionsPageConfig, QuestionOption, ScorecardMode } from '@/lib/types';
 import { sanitizeRichText } from '@/lib/richtext';
 import Spinner from './Spinner';
 
@@ -48,6 +48,7 @@ export default function QuizFlow({
   copyright = '',
   page,
   preview = false,
+  mode = 'scorecard',
 }: {
   leadId: string;
   questions: Question[];
@@ -56,6 +57,7 @@ export default function QuizFlow({
   copyright?: string;
   page?: QuestionsPageConfig;
   preview?: boolean;
+  mode?: ScorecardMode;
 }) {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -111,6 +113,20 @@ export default function QuizFlow({
     }
   }
 
+  // The readable answer for each question (option labels / typed text), sent
+  // alongside the numeric scores so responses can be shown as words.
+  function detailFor(qq: Question, score: number): AnswerDetail {
+    const t = qq.type ?? 'scale';
+    if (t === 'text') {
+      const text = (texts[qq.id] ?? '').trim();
+      return text ? { text: text.slice(0, 4000) } : {};
+    }
+    if (t === 'scale') return { value: score };
+    const opts = qq.options && qq.options.length ? qq.options : defaultOptionsFor(t);
+    const picked = (choices[qq.id] ?? []).map((i) => opts[i]?.label).filter((l): l is string => Boolean(l));
+    return { value: score, selected: picked };
+  }
+
   async function next() {
     const score =
       type === 'scale' ? value : type === 'text' ? 0 : selected.length ? scoreFor(q, selected) : 0;
@@ -127,12 +143,15 @@ export default function QuizFlow({
       return;
     }
     try {
+      const details: Record<string, AnswerDetail> = {};
+      for (const qq of questions) details[qq.id] = detailFor(qq, withCurrent[qq.id] ?? 0);
       const res = await fetch(`/api/leads/${leadId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'complete',
           answers: withCurrent,
+          answer_details: details,
           duration_seconds: (Date.now() - startedAt.current) / 1000,
         }),
       });
@@ -152,7 +171,9 @@ export default function QuizFlow({
       {submitting && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-white/90 backdrop-blur-sm">
           <Spinner className="h-10 w-10 text-primary" />
-          <p className="text-lg text-navy">Calculating your results…</p>
+          <p className="text-lg text-navy">
+            {mode === 'survey' ? 'Submitting your responses…' : 'Calculating your results…'}
+          </p>
         </div>
       )}
       {cfg.header.show && (

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/server/config';
 import { computeScores, questionMax } from '@/lib/scoring';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { answersSummaryHtml, emailButton, mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { isSurvey } from '@/lib/scoring';
 import { stripTags } from '@/lib/richtext';
-import { ScorecardConfig } from '@/lib/types';
+import { AnswerDetail, ScorecardConfig } from '@/lib/types';
 
 // Fire the result email (to the lead) and the new-lead notification (to the
 // owner) after completion. Failures are logged, never surfaced to the lead.
@@ -12,8 +13,11 @@ async function sendCompletionEmails(
   config: ScorecardConfig,
   lead: { id: string; first_name: string; last_name: string; email: string; status: string },
   score: number,
-  origin: string
+  origin: string,
+  answersSummary: string
 ) {
+  const survey = isSurvey(config);
+  const resultsLink = `${origin}/results/${lead.id}`;
   const fields = resultEmailFields(
     {
       first_name: lead.first_name,
@@ -22,11 +26,23 @@ async function sendCompletionEmails(
       status: 'Completed',
       score,
       scorecard_name: config.title,
-      results_link: `${origin}/results/${lead.id}`,
+      results_link: resultsLink,
       report_link: `${origin}/api/report/${lead.id}`,
+      answers_summary: answersSummary,
     },
     config.branding.primaryColor
   );
+  // Respondent-facing merge fields must stay score/report-free for surveys:
+  // the report route 404s in survey mode, and internal triage scores are never
+  // shown to respondents. Owner notifications keep the real values.
+  const respondentFields = survey
+    ? {
+        ...fields,
+        score: '',
+        report_link: resultsLink,
+        report_download: emailButton(resultsLink, 'View my responses', config.branding.primaryColor),
+      }
+    : fields;
   const jobs: Promise<unknown>[] = [];
 
   const re = config.resultEmail;
@@ -34,8 +50,8 @@ async function sendCompletionEmails(
     jobs.push(
       sendEmail({
         to: [lead.email],
-        subject: stripTags(mergeFields(re.subject, fields)),
-        html: withEmailHeader(mergeFields(re.content, fields), re.headerImage),
+        subject: stripTags(mergeFields(re.subject, respondentFields)),
+        html: withEmailHeader(mergeFields(re.content, respondentFields), re.headerImage),
         fromAddress: re.fromAddress || undefined,
         fromName: re.fromName || undefined,
         replyTo: re.replyTo || undefined,
@@ -104,26 +120,62 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       }
       answers[q.id] = v;
     }
+    // The readable answers (option labels / typed text), sanitised to known
+    // question ids and bounded sizes. Untrusted input — never rendered unescaped.
+    const rawDetails = body.answer_details;
+    const answerDetails: Record<string, AnswerDetail> = {};
+    if (rawDetails && typeof rawDetails === 'object') {
+      for (const q of config.questions) {
+        const d = (rawDetails as Record<string, unknown>)[q.id];
+        if (!d || typeof d !== 'object') continue;
+        const { value, selected, text } = d as AnswerDetail;
+        const clean: AnswerDetail = {};
+        if (typeof value === 'number' && Number.isFinite(value)) clean.value = value;
+        if (Array.isArray(selected)) {
+          clean.selected = selected.slice(0, 50).map((s) => String(s).slice(0, 300));
+        }
+        if (typeof text === 'string' && text.trim()) clean.text = text.slice(0, 4000);
+        if (Object.keys(clean).length) answerDetails[q.id] = clean;
+      }
+    }
+
     const { categoryScores, score_total, score_max, overall_percent } = computeScores(config, answers);
     const duration = Number(body.duration_seconds);
-    const { data: lead, error } = await sb
+    const update = {
+      answers,
+      score_total,
+      score_max,
+      overall_percent,
+      category_scores: categoryScores,
+      status: 'completed',
+      duration_seconds: Number.isFinite(duration) ? Math.max(0, Math.round(duration)) : null,
+      completed_at: new Date().toISOString(),
+    };
+    let { data: lead, error } = await sb
       .from('leads')
-      .update({
-        answers,
-        score_total,
-        score_max,
-        overall_percent,
-        category_scores: categoryScores,
-        status: 'completed',
-        duration_seconds: Number.isFinite(duration) ? Math.max(0, Math.round(duration)) : null,
-        completed_at: new Date().toISOString(),
-      })
+      .update({ ...update, answer_details: answerDetails })
       .eq('id', params.id)
       .select('id, first_name, last_name, email, status')
       .maybeSingle();
+    // Databases that haven't run the answer_details migration yet: store
+    // everything else rather than failing the whole completion. ONLY for the
+    // missing-column error — any other failure must surface, not silently
+    // drop the respondent's written answers.
+    const missingColumn =
+      error && (error.code === 'PGRST204' || error.code === '42703' || /answer_details/i.test(error.message ?? ''));
+    if (missingColumn) {
+      console.error('[leads] answer_details column missing (run the 20260719 migration); storing without it');
+      ({ data: lead, error } = await sb
+        .from('leads')
+        .update(update)
+        .eq('id', params.id)
+        .select('id, first_name, last_name, email, status')
+        .maybeSingle());
+    }
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (lead) {
-      await sendCompletionEmails(config, lead, overall_percent, req.nextUrl.origin).catch((e) =>
+      const summary = answersSummaryHtml(config.questions, answers, answerDetails);
+      await sendCompletionEmails(config, lead, overall_percent, req.nextUrl.origin, summary).catch((e) =>
         console.error('[email]', e)
       );
     }

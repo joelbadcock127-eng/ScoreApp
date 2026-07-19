@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionAccount, isAdmin } from '@/lib/server/auth';
 import { getConfig } from '@/lib/server/config';
-import { mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { answersSummaryHtml, mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
 import { stripTags } from '@/lib/richtext';
 
 export const dynamic = 'force-dynamic';
@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
       scorecard_name: config.title,
       results_link: `${req.nextUrl.origin}/results/preview`,
       report_link: `${req.nextUrl.origin}/`,
+      answers_summary: answersSummaryHtml(
+        config.questions,
+        Object.fromEntries(config.questions.map((q) => [q.id, q.max]))
+      ),
     },
     config.branding.primaryColor
   );

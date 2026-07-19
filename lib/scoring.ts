@@ -1,5 +1,11 @@
 import { CategoryScore, Question, ScorecardConfig, Tier } from './types';
 
+// Survey scorecards still score answers internally (for owner triage in the
+// admin), but never show scores, tiers or reports to the respondent.
+export function isSurvey(config: Pick<ScorecardConfig, 'mode'>): boolean {
+  return config.mode === 'survey';
+}
+
 export function tierFor(percent: number, tiers: Tier[]): Tier {
   const t = tiers.find((t) => percent >= t.from && percent <= t.to);
   return t ?? tiers[tiers.length - 1];

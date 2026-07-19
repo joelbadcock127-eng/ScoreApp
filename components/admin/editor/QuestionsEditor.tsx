@@ -292,7 +292,9 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
               <div className="flex-none border-t border-gray-200 px-5 py-4">
                 <p className="font-semibold">End logic</p>
                 <p className="mt-2 text-sm text-muted">All users</p>
-                <p className="mt-1 text-sm font-medium">Main Result Page</p>
+                <p className="mt-1 text-sm font-medium">
+                  {config.mode === 'survey' ? 'Thank You Page (survey mode)' : 'Main Result Page'}
+                </p>
               </div>
             </>
           )}
