@@ -15,8 +15,18 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Deep-link switcher: /api/admin/scorecards?activate=<id> selects that
+  // scorecard for editing and lands on the dashboard.
+  const activate = Number(req.nextUrl.searchParams.get('activate'));
+  if (Number.isInteger(activate) && activate > 0) {
+    const exists = (await listMyScorecards()).some((s) => s.id === activate);
+    if (!exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    const res = NextResponse.redirect(new URL('/admin', req.nextUrl.origin));
+    res.cookies.set(SCORECARD_COOKIE, String(activate), { path: '/', sameSite: 'lax', maxAge: 60 * 60 * 24 * 365 });
+    return res;
+  }
   return NextResponse.json({ scorecards: await listMyScorecards() });
 }
 

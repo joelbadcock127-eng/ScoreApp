@@ -144,13 +144,22 @@ const fetchConfigById = cache(async (id: number): Promise<ScorecardConfig | null
 });
 
 // Which scorecard the current request is about, as a summary row.
-//   1. Host (a scorecard's subdomain / custom domain) — public pages.
-//   2. Logged-in session — ONLY that account's scorecards: switcher cookie,
-//      else their default/first. Never another account's, never the global
-//      default. Every scorecard is fully independent.
-//   3. Anonymous on the platform host — the platform's default scorecard.
+//   1. A logged-in admin's explicit switcher choice (cookie) — ALWAYS wins,
+//      even when the request host maps to some scorecard's subdomain or
+//      custom domain. What you click in the switcher is what you edit.
+//   2. Host (a scorecard's subdomain / custom domain) — public pages.
+//   3. Logged-in session with no explicit choice — their default/first.
+//      Never another account's, never the global default.
+//   4. Anonymous on the platform host — the platform's default scorecard.
 const resolveActiveScorecard = cache(async (): Promise<ScorecardSummary | null> => {
   const all = await listScorecards();
+  const accountId = getSessionAccountId();
+
+  if (accountId != null) {
+    const wanted = getActiveScorecardId();
+    const chosen = all.find((s) => s.id === wanted && s.account_id === accountId);
+    if (chosen) return chosen;
+  }
 
   const sub = getHostSubdomain();
   if (sub) {
@@ -163,11 +172,9 @@ const resolveActiveScorecard = cache(async (): Promise<ScorecardSummary | null> 
     if (byCustom) return byCustom;
   }
 
-  const accountId = getSessionAccountId();
   if (accountId != null) {
     const mine = all.filter((s) => s.account_id === accountId);
-    const wanted = getActiveScorecardId();
-    return mine.find((s) => s.id === wanted) ?? mine.find((s) => s.is_default) ?? mine[0] ?? null;
+    return mine.find((s) => s.is_default) ?? mine[0] ?? null;
   }
 
   return all.find((s) => s.is_default) ?? all[0] ?? null;

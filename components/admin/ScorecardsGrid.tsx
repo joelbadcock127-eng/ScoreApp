@@ -15,11 +15,16 @@ export default function ScorecardsGrid({
 
   async function open(id: number) {
     setBusy(true);
-    await fetch('/api/admin/scorecards', {
+    const res = await fetch('/api/admin/scorecards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'activate', id }),
-    });
+    }).catch(() => null);
+    if (!res?.ok) {
+      setBusy(false);
+      const json = await res?.json().catch(() => null);
+      return alert(`Could not switch scorecard: ${json?.error ?? 'request failed'}`);
+    }
     window.location.href = '/admin';
   }
 
