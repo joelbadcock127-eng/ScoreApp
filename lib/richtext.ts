@@ -6,6 +6,13 @@ const ALLOWED = new Set(['b', 'strong', 'i', 'em', 'u', 'br', 'p', 'a']);
 
 export function sanitizeRichText(html: string): string {
   return String(html)
+    // contentEditable wraps each line in a <div> (an empty line is
+    // <div><br></div>), so turn that structure into <br> before unknown tags
+    // are stripped — otherwise pasted multi-line text loses its line breaks.
+    .replace(/<div[^>]*>(?:\s|&nbsp;)*<br\s*\/?>(?:\s|&nbsp;)*<\/div>/gi, '<br>')
+    .replace(/<div[^>]*>/gi, '<br>')
+    .replace(/<\/div>/gi, '')
+    .replace(/^\s*(?:<br\s*\/?>\s*)+/i, '')
     .replace(/<\s*(\/?)\s*([a-zA-Z0-9]+)([^>]*)>/g, (_m, slash: string, tag: string, attrs: string) => {
       const t = tag.toLowerCase();
       if (!ALLOWED.has(t)) return '';
