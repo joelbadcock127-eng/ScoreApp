@@ -134,7 +134,12 @@ export function NotificationsEditor({ initial }: { initial: NotificationsConfig 
           className="mt-2 min-h-[160px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className={HINT}>
-          Merge fields: {'{first_name} {last_name} {email} {status} {score} {scorecard_name} {results_link} {report_link}'}
+          Merge fields:{' '}
+          {'{first_name} {last_name} {email} {status} {score} {scorecard_name} {results_link} {report_link} {answers_summary}'}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          <code className="rounded bg-gray-50 px-1">{'{answers_summary}'}</code> inserts every question with the
+          lead’s actual answer — ideal for surveys.
         </p>
         <SaveBar onSave={save} saving={saving} message={message} />
       </div>
@@ -251,7 +256,8 @@ export function ResultEmailEditor({
           className="mt-2 min-h-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className={HINT}>
-          Text merge fields: {'{first_name} {last_name} {email} {score} {scorecard_name} {results_link} {report_link}'}
+          Text merge fields:{' '}
+          {'{first_name} {last_name} {email} {score} {scorecard_name} {results_link} {report_link} {answers_summary}'}
         </p>
         <p className="mt-1 text-sm text-muted">
           Button merge fields (insert a styled button):{' '}

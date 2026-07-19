@@ -52,7 +52,9 @@ export default async function OverviewPage() {
   const h = headers();
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
   const proto = h.get('x-forwarded-proto') ?? 'https';
-  const url = `${proto}://${host}`;
+  // The card is about the scorecard being EDITED: link and preview its own
+  // distinct /s/<id> URL, never the site root (which shows the default).
+  const url = `${proto}://${host}/s/${scorecardId}`;
 
   return (
     <div className="max-w-6xl">
@@ -62,8 +64,8 @@ export default async function OverviewPage() {
       <div className="mt-6 flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-6 sm:flex-row sm:items-center">
         <div className="relative h-32 w-48 flex-none overflow-hidden rounded-lg border border-gray-200 bg-white">
           <iframe
-            src="/"
-            title="Homepage preview"
+            src={`/s/${scorecardId}`}
+            title="Scorecard preview"
             className="pointer-events-none absolute left-0 top-0 h-[768px] w-[1280px] origin-top-left"
             style={{ transform: 'scale(0.15)' }}
             tabIndex={-1}
@@ -72,6 +74,7 @@ export default async function OverviewPage() {
         <div className="min-w-0">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-green-700">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500" /> Live
+            {config.mode === 'survey' && <span className="ml-1 normal-case tracking-normal">· Survey</span>}
           </span>
           <h2 className="mt-2 text-xl font-semibold">{config.title}</h2>
           <a

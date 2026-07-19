@@ -117,6 +117,7 @@ export async function PUT(req: NextRequest) {
 
   if (typeof body.title === 'string') config.title = body.title.slice(0, 120);
   if (typeof body.copyright === 'string') config.copyright = sanitizeRichText(body.copyright).slice(0, 200);
+  if (body.mode === 'scorecard' || body.mode === 'survey') config.mode = body.mode;
 
   if (body.branding && typeof body.branding === 'object') {
     const b = body.branding;
@@ -240,6 +241,12 @@ export async function PUT(req: NextRequest) {
       ...cur,
       thanksPrefix: str(res.thanksPrefix, cur.thanksPrefix, 300),
       overallHeading: str(res.overallHeading, cur.overallHeading, 300),
+      surveyThanks: res.surveyThanks
+        ? {
+            headline: str(res.surveyThanks.headline, cur.surveyThanks?.headline ?? '', 1000),
+            body: strArr(res.surveyThanks.body, cur.surveyThanks?.body ?? []),
+          }
+        : cur.surveyThanks,
       tierIntros: tierRecord(res.tierIntros, cur.tierIntros),
       emailedNote: str(res.emailedNote, cur.emailedNote, 300),
       changeEmailLabel: str(res.changeEmailLabel, cur.changeEmailLabel, 120),

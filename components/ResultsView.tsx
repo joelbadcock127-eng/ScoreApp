@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import { tierFor } from '@/lib/scoring';
+import { isSurvey, tierFor } from '@/lib/scoring';
 import { sanitizeRichText } from '@/lib/richtext';
 import { ButtonAction, CategoryScore, ResultsPageConfig, ScorecardConfig } from '@/lib/types';
 import SpeedChart from '@/components/SpeedChart';
@@ -35,8 +35,20 @@ function rich(html: string) {
 const CTA_CLASS =
   'mt-8 inline-block rounded-md bg-primary px-10 py-3.5 text-lg font-medium text-white transition hover:brightness-110';
 
-// Results CTA button honouring its configured action.
-function CtaButton({ label, action, reportHref }: { label: string; action: ButtonAction; reportHref: string }) {
+// Results CTA button honouring its configured action. In survey mode there is
+// no respondent report, so 'report' actions (stored or defaulted) open the
+// change-details popup instead of a link that would 404.
+function CtaButton({
+  label,
+  action,
+  reportHref,
+  survey = false,
+}: {
+  label: string;
+  action: ButtonAction;
+  reportHref: string;
+  survey?: boolean;
+}) {
   if (action.type === 'url' && action.url) {
     return <a href={action.url} className={CTA_CLASS} {...rich(label)} />;
   }
@@ -44,7 +56,7 @@ function CtaButton({ label, action, reportHref }: { label: string; action: Butto
     const href = action.page === 'quiz' ? '/quiz?preview=1' : action.page === 'results' ? '#' : '/';
     return <a href={href} className={CTA_CLASS} {...rich(label)} />;
   }
-  if (action.type === 'report') {
+  if (action.type === 'report' && !survey) {
     return <a href={reportHref} target="_blank" rel="noopener noreferrer" className={CTA_CLASS} {...rich(label)} />;
   }
   // 'details' and 'lead-form' both open the change-details popup on this page.
@@ -65,7 +77,15 @@ export default function ResultsView({
   const intro = config.results.tierIntros[tier.key] ?? config.results.tierIntros.medium;
   const r = config.results;
   const page = config.resultsPage ?? DEFAULT_PAGE;
-  const hidden = (k: string) => page.hidden.includes(k);
+  // Surveys never show scores to the respondent: the chart sections are
+  // suppressed regardless of the page layout, and the speedChart slot renders
+  // as a thank-you hero instead — so the results page reads as a thank-you
+  // page built from the remaining sections. The hero always renders, even if
+  // the owner hid or removed the speedChart section back in scorecard mode.
+  const survey = isSurvey(config);
+  const hidden = (k: string) =>
+    survey ? k === 'categoryScores' || (k !== 'speedChart' && page.hidden.includes(k)) : page.hidden.includes(k);
+  const sectionOrder = survey && !page.order.includes('speedChart') ? ['speedChart', ...page.order] : page.order;
   const chartLeft = page.speedChart.chartPosition === 'left';
   const gridCols = page.categories.itemsPerRow === 1 ? '' : 'md:grid-cols-2';
   const sortedTiers = [...config.tiers].sort((a, b) => a.from - b.from);
@@ -75,6 +95,7 @@ export default function ResultsView({
     const extra = (page.extraSections ?? []).find((x) => x.id === k);
     if (extra) {
       if (isResultsChartType(extra.type)) {
+        if (survey) return null;
         return (
           <ResultsExtraView
             key={k}
@@ -91,6 +112,33 @@ export default function ResultsView({
       return <ExtraSectionView key={k} section={extra} config={config} />;
     }
     if (k === 'speedChart') {
+      if (survey) {
+        // Score-free fallback: never reuse tier intro copy here — it is
+        // written against score bands and would leak the respondent's tier.
+        const thanks = r.surveyThanks ?? {
+          headline: 'Your responses have been recorded.',
+          body: ['Thanks for taking the time to complete this — your answers have been submitted successfully.'],
+        };
+        return (
+          <section key={k} className="mx-auto max-w-3xl px-6 py-16 text-center">
+            <h1 className="text-3xl font-medium leading-snug md:text-4xl">
+              <span {...rich(r.thanksPrefix)} />
+              <br />
+              <span className="font-bold">{config.title}</span>
+            </h1>
+            <p className="mt-8 text-xl font-medium leading-relaxed" {...rich(thanks.headline)} />
+            {thanks.body.map((p) => (
+              <p key={p.slice(0, 24)} className="mt-6 text-lg leading-relaxed text-muted" {...rich(p)} />
+            ))}
+            <p className="mt-6 text-lg leading-relaxed text-muted">
+              <span {...rich(r.emailedNote)} /> {lead.email} -{' '}
+              <button data-change-details className="text-primary underline">
+                {r.changeEmailLabel}
+              </button>
+            </p>
+          </section>
+        );
+      }
       return (
         <section key={k} className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-2">
           <div className={chartLeft ? 'md:order-2' : ''}>
@@ -180,12 +228,22 @@ export default function ResultsView({
             <div className="text-center md:px-10">
               <h3 className="text-3xl font-medium md:text-4xl" {...rich(r.cta.leftTitle)} />
               <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted" {...rich(r.cta.leftBody)} />
-              <CtaButton label={r.cta.leftButton} action={r.cta.leftAction ?? { type: 'report' }} reportHref={reportHref} />
+              <CtaButton
+                label={r.cta.leftButton}
+                action={r.cta.leftAction ?? { type: survey ? 'details' : 'report' }}
+                reportHref={reportHref}
+                survey={survey}
+              />
             </div>
             <div className="text-center md:px-10">
               <h3 className="text-3xl font-medium md:text-4xl" {...rich(r.cta.rightTitle)} />
               <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-muted" {...rich(r.cta.rightBody)} />
-              <CtaButton label={r.cta.rightButton} action={r.cta.rightAction ?? { type: 'details' }} reportHref={reportHref} />
+              <CtaButton
+                label={r.cta.rightButton}
+                action={r.cta.rightAction ?? { type: 'details' }}
+                reportHref={reportHref}
+                survey={survey}
+              />
             </div>
           </div>
         </section>
@@ -224,7 +282,7 @@ export default function ResultsView({
             <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
           </header>
         )}
-        {page.order.map((k) => renderSection(k))}
+        {sectionOrder.map((k) => renderSection(k))}
         {!hidden('footer') && <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} />}
       </main>
     </ChangeDetails>

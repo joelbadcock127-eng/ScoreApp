@@ -215,9 +215,16 @@ export interface CustomPage {
   updatedAt?: string;
 }
 
+// How a scorecard behaves end-to-end. 'scorecard' (default) scores answers and
+// shows results/tiers/report to the respondent. 'survey' collects the answers
+// themselves: respondents see a thank-you page instead of scores, and score/
+// report surfaces stay owner-only.
+export type ScorecardMode = 'scorecard' | 'survey';
+
 export interface ScorecardConfig {
   title: string;
   copyright: string;
+  mode?: ScorecardMode;
   // 'custom' renders the AI-designed page from customPages instead of the
   // component-based views. Absent = 'components'.
   landingMode?: 'components' | 'custom';
@@ -269,6 +276,9 @@ export interface ScorecardConfig {
   results: {
     thanksPrefix: string;
     overallHeading: string;
+    // Survey-mode thank-you hero copy (replaces the score chart section).
+    // Absent = a generic, score-free acknowledgement.
+    surveyThanks?: { headline: string; body: string[] };
     tierIntros: Record<TierKey, TierContent>;
     categoryScoresNote: string;
     emailedNote: string;
@@ -331,6 +341,15 @@ export interface CategoryScore {
   percent: number;
 }
 
+// What a respondent actually answered, keyed by question id — the human-readable
+// counterpart to the numeric `answers` map. Selected option labels for choice
+// questions, the typed answer for open text, the chosen value for scales.
+export interface AnswerDetail {
+  value?: number;
+  selected?: string[];
+  text?: string;
+}
+
 export interface Lead {
   id: string;
   scorecard_id?: number;
@@ -340,6 +359,7 @@ export interface Lead {
   business: string;
   contact_opt_in: boolean;
   answers: Record<string, number>;
+  answer_details?: Record<string, AnswerDetail> | null;
   score_total: number | null;
   score_max: number | null;
   overall_percent: number | null;

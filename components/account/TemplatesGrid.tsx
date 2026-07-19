@@ -3,8 +3,16 @@
 import { useState } from 'react';
 
 // Templates page: a small gallery of starting points. Using one creates a new
-// scorecard (blank structure named after the template) and opens the builder.
-const TEMPLATES = [
+// scorecard and opens the builder. Entries with a `template` key create a
+// fully-built structure (questions, landing page, emails); the rest start blank.
+const TEMPLATES: { name: string; blurb: string; tint: string; template?: string }[] = [
+  {
+    name: 'Sports Club Pulse Survey',
+    blurb:
+      'A ready-to-send survey for club committees: volunteer load, admin, money and growth. No scores shown — respondents get a thank-you page, you get their answers.',
+    tint: 'from-rose-500 to-orange-400',
+    template: 'club-survey',
+  },
   {
     name: 'Business Growth Scorecard',
     blurb: 'Score leads across strategy, marketing and operations.',
@@ -40,14 +48,14 @@ const TEMPLATES = [
 export default function TemplatesGrid() {
   const [busy, setBusy] = useState(false);
 
-  async function use(name: string) {
+  async function use(name: string, template?: string) {
     const n = prompt('Name your new scorecard', name === 'Blank Scorecard' ? '' : name);
     if (!n?.trim()) return;
     setBusy(true);
     const res = await fetch('/api/admin/scorecards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'create', name: n.trim() }),
+      body: JSON.stringify({ action: 'create', name: n.trim(), template }),
     });
     if (!res.ok) {
       setBusy(false);
@@ -74,7 +82,7 @@ export default function TemplatesGrid() {
             <p className="mt-4 font-semibold">{t.name}</p>
             <p className="mt-1 flex-1 text-sm text-muted">{t.blurb}</p>
             <button
-              onClick={() => use(t.name)}
+              onClick={() => use(t.name, t.template)}
               disabled={busy}
               className="mt-4 rounded-md border border-primary py-2 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
             >

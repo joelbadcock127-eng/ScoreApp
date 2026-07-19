@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getConfig } from '@/lib/server/config';
+import { isSurvey } from '@/lib/scoring';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { CategoryScore, Lead } from '@/lib/types';
 import ResultsView from '@/components/ResultsView';
@@ -17,7 +18,9 @@ export default async function ResultsPage({ params }: { params: { id: string } }
   const config = await getConfig(lead?.scorecard_id);
   if (!lead || lead.status !== 'completed' || lead.overall_percent == null) notFound();
 
-  if (config.resultsMode === 'custom' && config.customPages?.results) {
+  // Surveys always use the component-based thank-you page: AI-designed custom
+  // results pages are built around scores/tiers and would leak them.
+  if (config.resultsMode === 'custom' && config.customPages?.results && !isSurvey(config)) {
     return (
       <CustomResultsPage
         config={config}
