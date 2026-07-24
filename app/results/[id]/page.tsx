@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getConfig } from '@/lib/server/config';
+import { isSurvey } from '@/lib/scoring';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { CategoryScore, Lead } from '@/lib/types';
 import ResultsView from '@/components/ResultsView';
@@ -17,10 +18,18 @@ export default async function ResultsPage({ params }: { params: { id: string } }
   const config = await getConfig(lead?.scorecard_id);
   if (!lead || lead.status !== 'completed' || lead.overall_percent == null) notFound();
 
-  if (config.resultsMode === 'custom' && config.customPages?.results) {
+  // Surveys may use a custom thank-you page, but only a score-free shell: any
+  // custom page that references scores/tiers/charts falls back to the
+  // component thank-you page so respondents can never see scores.
+  const survey = isSurvey(config);
+  const scoreyShell = /\{\{\s*(chart:|score\.|tier\.|category:|#if\s+tier)/i.test(
+    config.customPages?.results?.html ?? ''
+  );
+  if (config.resultsMode === 'custom' && config.customPages?.results && (!survey || !scoreyShell)) {
     return (
       <CustomResultsPage
         config={config}
+        survey={survey}
         lead={{
           id: lead.id,
           first_name: lead.first_name,

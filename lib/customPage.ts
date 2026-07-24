@@ -117,12 +117,19 @@ export function sanitizeCustomCss(css: string): string {
   return String(css)
     .replace(/<\/?style[^>]*>/gi, '')
     // @import allowed ONLY for Google Fonts (typography freedom); everything
-    // else is stripped.
-    .replace(/@import\s+(?:url\(\s*)?['"]?(?!https:\/\/fonts\.googleapis\.com\/)[^;]*;?/gi, '')
+    // else is stripped. A single zero-width lookahead covering both allowed
+    // forms — the previous optional-group version backtracked and mangled
+    // even permitted Google Fonts imports mid-URL.
+    .replace(
+      /@import\s+(?!url\(\s*['"]?https:\/\/fonts\.googleapis\.com\/|['"]https:\/\/fonts\.googleapis\.com\/)[^;]*;?/gi,
+      ''
+    )
     .replace(/expression\s*\(/gi, '(')
     .replace(/behavior\s*:/gi, '')
     .replace(/javascript\s*:/gi, '')
-    .replace(/url\(\s*(['"]?)(?!https:\/\/|\/|data:image\/)[^)]*\)/gi, 'none')
+    // Quote is matched inside the lookahead: as a consumed optional group it
+    // backtracked and stripped ALLOWED quoted urls too.
+    .replace(/url\(\s*(?!['"]?(?:https:\/\/|\/|data:image\/))[^)]*\)/gi, 'none')
     .replace(/<\//g, '');
 }
 

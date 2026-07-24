@@ -52,6 +52,36 @@ export interface ResultEmailContext {
   scorecard_name: string;
   results_link: string;
   report_link: string;
+  /** Optional {answers_summary} block: the respondent's actual answers as HTML. */
+  answers_summary?: string;
+}
+
+// Renders every question with the respondent's readable answer (option labels
+// and typed text from answer_details, numeric fallback otherwise) for the
+// {answers_summary} merge field. Question text and answers are user/lead
+// content, so both are escaped.
+export function answersSummaryHtml(
+  questions: { id: string; text: string; type?: string; min: number; max: number }[],
+  answers: Record<string, number>,
+  details?: Record<string, { value?: number; selected?: string[]; text?: string }> | null
+): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const rows = questions.map((q) => {
+    const d = details?.[q.id];
+    let answer = '';
+    if (d?.selected?.length) answer = d.selected.join(', ');
+    else if (d?.text) answer = d.text;
+    else if ((q.type ?? 'scale') === 'scale') answer = `${answers[q.id] ?? d?.value ?? '—'} / ${q.max}`;
+    else if ((q.type ?? 'scale') === 'text') answer = '(no answer)';
+    else answer = String(answers[q.id] ?? d?.value ?? '—');
+    const question = q.text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return (
+      `<tr><td style="padding:8px 0 2px;font-family:Inter,Arial,sans-serif;font-size:14px;color:#152042;"><b>${esc(question)}</b></td></tr>` +
+      `<tr><td style="padding:0 0 8px;font-family:Inter,Arial,sans-serif;font-size:14px;color:#4a5578;border-bottom:1px solid #e8ebf2;">${esc(answer)}</td></tr>`
+    );
+  });
+  return `<table cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;">${rows.join('')}</table>`;
 }
 
 // Merge fields available in result / notification emails, including the
@@ -59,6 +89,7 @@ export interface ResultEmailContext {
 export function resultEmailFields(ctx: ResultEmailContext, color = '#1c78fe'): Record<string, string | number> {
   return {
     ...ctx,
+    answers_summary: ctx.answers_summary ?? '',
     report_download: emailButton(ctx.report_link, 'Download my report (PDF)', color),
     results_button: emailButton(ctx.results_link, 'View my results', color),
   };

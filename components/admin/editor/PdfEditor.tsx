@@ -231,6 +231,13 @@ export default function PdfEditor({ initialConfig }: { initialConfig: ScorecardC
         onSave={save}
       />
 
+      {config.mode === 'survey' && (
+        <p className="border-b border-blue-100 bg-blue-50 px-6 py-2 text-center text-sm text-ink">
+          Survey mode: respondents never receive the PDF report — the report link is disabled while this scorecard is
+          a survey, so this page only matters if you switch back to scorecard mode.
+        </p>
+      )}
+
       <div className="flex min-h-0 flex-1">
         {/* Icon rail */}
         <div className="flex w-[72px] flex-none flex-col items-center gap-1 border-r border-gray-200 bg-white py-3">

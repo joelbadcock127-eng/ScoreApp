@@ -29,6 +29,7 @@ export default async function QuizPage({
       copyright={config.copyright}
       page={config.questionsPage}
       preview={preview}
+      mode={config.mode ?? 'scorecard'}
     />
   );
 }

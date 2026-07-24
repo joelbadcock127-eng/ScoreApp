@@ -60,14 +60,19 @@ export default function AccountBar({
   async function activate(id: number) {
     if (id === activeId) return setOpen(null);
     setBusy(true);
-    await fetch('/api/admin/scorecards', {
+    const res = await fetch('/api/admin/scorecards', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'activate', id }),
-    });
-    setOpen(null);
-    setBusy(false);
-    router.refresh();
+    }).catch(() => null);
+    if (!res?.ok) {
+      setBusy(false);
+      const json = await res?.json().catch(() => null);
+      return alert(`Could not switch scorecard: ${json?.error ?? 'request failed'}`);
+    }
+    // Full reload: every page (and any client-side cache) must re-render
+    // against the newly selected scorecard.
+    window.location.reload();
   }
 
   function createScorecard() {

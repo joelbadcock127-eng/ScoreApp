@@ -5,6 +5,7 @@ const cache: <T extends (...args: never[]) => unknown>(fn: T) => T =
   typeof React.cache === 'function' ? React.cache : (fn) => fn;
 import { defaultConfig } from '../defaultConfig';
 import { blankConfig } from '../blankConfig';
+import { clubSurveyConfig } from '../surveyTemplate';
 import { ScorecardConfig } from '../types';
 import { supabaseAdmin } from './supabase';
 import { getSessionAccountId } from './auth';
@@ -102,10 +103,21 @@ export async function listMyScorecards(): Promise<ScorecardSummary[]> {
   return (await listScorecards()).filter((s) => s.account_id === accountId);
 }
 
-export async function createScorecard(name: string): Promise<number> {
+// Structural templates a new scorecard can start from. 'blank' (default) is
+// the generic scored starter; others ship fully-built content.
+export const SCORECARD_TEMPLATES: Record<string, (name: string) => ScorecardConfig> = {
+  blank: blankConfig,
+  'club-survey': clubSurveyConfig,
+};
+
+export async function createScorecard(name: string, template = 'blank'): Promise<number> {
   const accountId = getSessionAccountId();
   if (accountId == null) throw new Error('Not logged in');
-  return insertScorecard(name, blankConfig(name), accountId);
+  // Own-property lookup only — 'constructor' etc. must fall back to blank.
+  const build = Object.prototype.hasOwnProperty.call(SCORECARD_TEMPLATES, template)
+    ? SCORECARD_TEMPLATES[template]
+    : blankConfig;
+  return insertScorecard(name, build(name), accountId);
 }
 
 export async function insertScorecard(name: string, config: ScorecardConfig, accountId: number): Promise<number> {
@@ -132,13 +144,22 @@ const fetchConfigById = cache(async (id: number): Promise<ScorecardConfig | null
 });
 
 // Which scorecard the current request is about, as a summary row.
-//   1. Host (a scorecard's subdomain / custom domain) — public pages.
-//   2. Logged-in session — ONLY that account's scorecards: switcher cookie,
-//      else their default/first. Never another account's, never the global
-//      default. Every scorecard is fully independent.
-//   3. Anonymous on the platform host — the platform's default scorecard.
+//   1. A logged-in admin's explicit switcher choice (cookie) — ALWAYS wins,
+//      even when the request host maps to some scorecard's subdomain or
+//      custom domain. What you click in the switcher is what you edit.
+//   2. Host (a scorecard's subdomain / custom domain) — public pages.
+//   3. Logged-in session with no explicit choice — their default/first.
+//      Never another account's, never the global default.
+//   4. Anonymous on the platform host — the platform's default scorecard.
 const resolveActiveScorecard = cache(async (): Promise<ScorecardSummary | null> => {
   const all = await listScorecards();
+  const accountId = getSessionAccountId();
+
+  if (accountId != null) {
+    const wanted = getActiveScorecardId();
+    const chosen = all.find((s) => s.id === wanted && s.account_id === accountId);
+    if (chosen) return chosen;
+  }
 
   const sub = getHostSubdomain();
   if (sub) {
@@ -151,11 +172,9 @@ const resolveActiveScorecard = cache(async (): Promise<ScorecardSummary | null> 
     if (byCustom) return byCustom;
   }
 
-  const accountId = getSessionAccountId();
   if (accountId != null) {
     const mine = all.filter((s) => s.account_id === accountId);
-    const wanted = getActiveScorecardId();
-    return mine.find((s) => s.id === wanted) ?? mine.find((s) => s.is_default) ?? mine[0] ?? null;
+    return mine.find((s) => s.is_default) ?? mine[0] ?? null;
   }
 
   return all.find((s) => s.is_default) ?? all[0] ?? null;
