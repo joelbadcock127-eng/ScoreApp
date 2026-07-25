@@ -5,8 +5,20 @@ import { supabaseAdmin } from '@/lib/server/supabase';
 import { CategoryScore, Lead } from '@/lib/types';
 import ResultsView from '@/components/ResultsView';
 import CustomResultsPage from '@/components/CustomResultsPage';
+import { faviconIcons } from '@/lib/favicon';
 
 export const dynamic = 'force-dynamic';
+
+// Favicon from the scorecard this lead belongs to.
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  if (!/^[0-9a-f-]{36}$/i.test(params.id)) return {};
+  const { data: lead } = await supabaseAdmin()
+    .from('leads')
+    .select('scorecard_id')
+    .eq('id', params.id)
+    .maybeSingle<{ scorecard_id: number | null }>();
+  return { icons: faviconIcons(await getConfig(lead?.scorecard_id ?? undefined)) };
+}
 
 export default async function ResultsPage({ params }: { params: { id: string } }) {
   if (!/^[0-9a-f-]{36}$/i.test(params.id)) notFound();

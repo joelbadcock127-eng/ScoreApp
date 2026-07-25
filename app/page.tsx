@@ -3,6 +3,7 @@ import { getConfig, getHostCustomDomain, getHostScorecardId, getHostSubdomain } 
 import { isAdmin } from '@/lib/server/auth';
 import ScorecardLanding from '@/components/ScorecardLanding';
 import MarketingPage from '@/components/marketing/MarketingPage';
+import { faviconIcons } from '@/lib/favicon';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,17 +17,20 @@ export async function generateMetadata() {
     return {
       title: 'Acceso AI Scorecards',
       description: 'Build branded lead-generation scorecards with AI-drafted questions, results and PDF reports.',
+      icons: faviconIcons(null), // always the platform icon on the base domain
     };
   }
   const id = await getHostScorecardId();
   if (id == null) return { title: 'Scorecard not found' };
   const config = await getConfig(id);
+  const icons = faviconIcons(config);
   const sa = config.shareAppearance;
-  if (!sa) return { title: config.title };
+  if (!sa) return { title: config.title, icons };
   const images = sa.image ? [{ url: sa.image, width: 1280, height: 720 }] : undefined;
   return {
     title: sa.title || config.title,
     description: sa.description,
+    icons,
     openGraph: { title: sa.title || config.title, description: sa.description, images },
     twitter: { card: 'summary_large_image', title: sa.title || config.title, description: sa.description, images },
   };

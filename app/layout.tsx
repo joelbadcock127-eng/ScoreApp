@@ -2,14 +2,27 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { getConfig } from '@/lib/server/config';
+import { faviconIcons } from '@/lib/favicon';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'The AI Opportunity Assessment',
-  description:
-    'Find your business’s most valuable AI opportunity in under 3 minutes. Get tailored, practical results you can act on immediately.',
-};
+// Title/description defaults live here; pages override them. The favicon is
+// per-scorecard (host / active-scorecard aware via getConfig) — pages that
+// resolve a scorecard another way (by slug, id or lead) set their own icons.
+export async function generateMetadata(): Promise<Metadata> {
+  let icons = faviconIcons(null);
+  try {
+    icons = faviconIcons(await getConfig());
+  } catch {
+    // Missing env/db at build time: fall back to the platform icon.
+  }
+  return {
+    title: 'The AI Opportunity Assessment',
+    description:
+      'Find your business’s most valuable AI opportunity in under 3 minutes. Get tailored, practical results you can act on immediately.',
+    icons,
+  };
+}
 
 export const dynamic = 'force-dynamic';
 

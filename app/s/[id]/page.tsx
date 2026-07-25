@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getConfig, listScorecards } from '@/lib/server/config';
 import ScorecardLanding from '@/components/ScorecardLanding';
+import { faviconIcons } from '@/lib/favicon';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,12 +18,14 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   const id = await resolveId(params.id);
   if (id == null) return {};
   const config = await getConfig(id);
+  const icons = faviconIcons(config);
   const sa = config.shareAppearance;
-  if (!sa) return { title: config.title };
+  if (!sa) return { title: config.title, icons };
   const images = sa.image ? [{ url: sa.image, width: 1280, height: 720 }] : undefined;
   return {
     title: sa.title || config.title,
     description: sa.description,
+    icons,
     openGraph: { title: sa.title || config.title, description: sa.description, images },
     twitter: { card: 'summary_large_image', title: sa.title || config.title, description: sa.description, images },
   };
