@@ -453,6 +453,20 @@ export async function PUT(req: NextRequest) {
     };
   }
 
+  if (body.inviteEmail && typeof body.inviteEmail === 'object') {
+    const r = body.inviteEmail;
+    config.inviteEmail = {
+      fromAddress: String(r.fromAddress ?? '').slice(0, 320),
+      fromName: String(r.fromName ?? '').slice(0, 120),
+      replyTo: String(r.replyTo ?? '').slice(0, 320),
+      subject: String(r.subject ?? '').slice(0, 300),
+      content: sanitizeRichText(String(r.content ?? '')).slice(0, 8000),
+      headerImage: r.headerImage != null ? String(r.headerImage).slice(0, 500) : config.inviteEmail?.headerImage,
+      senderName: String(r.senderName ?? '').slice(0, 200),
+      senderAddress: String(r.senderAddress ?? '').slice(0, 300),
+    };
+  }
+
   // AI-designed custom pages: which mode each page renders in, plus the
   // sanitized design shells + content slots.
   if (body.landingMode === 'components' || body.landingMode === 'custom') config.landingMode = body.landingMode;
