@@ -149,6 +149,21 @@ export interface ResultEmailConfig {
   headerImage?: string; // logo shown at the top of the email body
 }
 
+// Distribution invites (Settings → Distribution): the email sent to an
+// imported list, inviting each recipient to take this scorecard.
+export interface InviteEmailConfig {
+  fromAddress: string;
+  fromName: string;
+  replyTo: string;
+  subject: string;
+  content: string; // rich html with {merge_fields}
+  headerImage?: string;
+  // Who the sender is, shown in the compliance footer of every invite
+  // (business name + physical/postal address — required by anti-spam law).
+  senderName: string;
+  senderAddress: string;
+}
+
 export interface Branding {
   logoUrl: string;
   iconUrl: string;
@@ -241,6 +256,7 @@ export interface ScorecardConfig {
   email?: { provider?: string; apiKey?: string };
   notifications?: NotificationsConfig;
   resultEmail?: ResultEmailConfig;
+  inviteEmail?: InviteEmailConfig;
   landing: {
     heroImage?: string;
     imagePosition?: 'left' | 'right';

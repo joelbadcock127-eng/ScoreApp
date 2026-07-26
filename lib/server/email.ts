@@ -18,6 +18,8 @@ export interface EmailMessage {
   replyTo?: string;
   /** Provider API key from the scorecard config (falls back to env vars). */
   apiKey?: string;
+  /** Extra message headers (e.g. List-Unsubscribe for bulk invites). */
+  headers?: Record<string, string>;
 }
 
 // Free-mail domains can't be verified as senders, so mail from them would be
@@ -129,6 +131,7 @@ export async function sendEmail(msg: EmailMessage): Promise<{ sent: boolean; pro
           subject: msg.subject,
           html: msg.html,
           ...(replyTo ? { reply_to: replyTo } : {}),
+          ...(msg.headers ? { headers: msg.headers } : {}),
         }),
       });
       if (!res.ok) return { sent: false, provider: 'resend', error: await res.text() };
