@@ -418,6 +418,7 @@ export function clubSurveyConfig(name: string): ScorecardConfig {
         },
       ],
       submitLabel: 'Start the survey',
+      buttonColor: '#E63946',
     },
     // Internal triage only — respondents never see tiers in survey mode.
     tiers: [

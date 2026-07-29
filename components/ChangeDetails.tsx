@@ -74,6 +74,7 @@ export default function ChangeDetails({
             type="submit"
             disabled={submitting}
             className="mt-6 flex w-full items-center justify-center gap-3 rounded-md bg-primary py-4 text-lg font-medium text-white transition hover:brightness-110 disabled:opacity-60"
+            style={leadForm.buttonColor ? { backgroundColor: leadForm.buttonColor } : undefined}
           >
             {submitting && <Spinner className="h-5 w-5 text-white" />}
             {submitting ? 'Saving…' : changeDetails.submitLabel}
