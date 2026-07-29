@@ -112,6 +112,13 @@ export async function PUT(req: NextRequest) {
       heading: String(body.leadForm.heading ?? config.leadForm.heading).slice(0, 300),
       submitLabel: String(body.leadForm.submitLabel ?? config.leadForm.submitLabel).slice(0, 60),
       fields: fields.length ? fields : config.leadForm.fields,
+      // '' clears back to the brand colour; absent keeps the stored value.
+      buttonColor:
+        body.leadForm.buttonColor == null
+          ? config.leadForm.buttonColor
+          : body.leadForm.buttonColor === ''
+            ? undefined
+            : color(body.leadForm.buttonColor, config.leadForm.buttonColor ?? '#1c78fe'),
     };
   }
 

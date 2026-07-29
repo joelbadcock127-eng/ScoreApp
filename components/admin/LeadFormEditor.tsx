@@ -23,7 +23,8 @@ export default function LeadFormEditor({ initial }: { initial: LeadForm }) {
     const res = await fetch('/api/admin/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadForm: form }),
+      // buttonColor '' explicitly clears back to the brand colour.
+      body: JSON.stringify({ leadForm: { ...form, buttonColor: form.buttonColor ?? '' } }),
     });
     setSaving(false);
     setMessage(res.ok ? 'Saved.' : 'Save failed.');
@@ -45,6 +46,45 @@ export default function LeadFormEditor({ initial }: { initial: LeadForm }) {
           onChange={(e) => setForm({ ...form, heading: e.target.value })}
           className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-primary"
         />
+
+        <div className="mt-6 flex flex-wrap items-end gap-8">
+          <div>
+            <label className="block text-sm font-medium">Button label</label>
+            <input
+              value={form.submitLabel}
+              onChange={(e) => setForm({ ...form, submitLabel: e.target.value })}
+              className="mt-2 w-56 rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium">Button colour</label>
+            <div className="mt-2 flex items-center gap-3">
+              <input
+                type="color"
+                value={form.buttonColor ?? '#1c78fe'}
+                onChange={(e) => setForm({ ...form, buttonColor: e.target.value })}
+                className="h-10 w-14 cursor-pointer rounded border border-gray-300"
+              />
+              {form.buttonColor ? (
+                <button
+                  onClick={() => setForm({ ...form, buttonColor: undefined })}
+                  className="text-sm text-muted hover:text-primary"
+                >
+                  Use brand colour
+                </button>
+              ) : (
+                <span className="text-sm text-muted">Using brand primary colour</span>
+              )}
+            </div>
+          </div>
+          <button
+            className="pointer-events-none rounded-md bg-primary px-8 py-2.5 font-medium text-white"
+            style={form.buttonColor ? { backgroundColor: form.buttonColor } : undefined}
+            aria-hidden
+          >
+            {form.submitLabel || 'Start'}
+          </button>
+        </div>
 
         <div className="mt-8 grid grid-cols-[1fr,110px,100px,90px,40px] items-center gap-4 text-xs font-semibold uppercase tracking-wide text-muted">
           <span>Label</span>

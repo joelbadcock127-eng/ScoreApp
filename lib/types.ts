@@ -269,6 +269,9 @@ export interface ScorecardConfig {
     heading: string;
     fields: LeadFormField[];
     submitLabel: string;
+    // Submit button colour for the lead form and change-details popups.
+    // Absent = the scorecard's primary colour.
+    buttonColor?: string;
   };
   tiers: Tier[];
   categories: Category[];
