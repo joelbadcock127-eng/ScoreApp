@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { getConfig } from '@/lib/server/config';
+import { getActiveOrDefaultId, getConfig } from '@/lib/server/config';
 import CopyLinkButton from '@/components/admin/CopyLinkButton';
 
 export const dynamic = 'force-dynamic';
@@ -77,11 +77,12 @@ const OPTIONS = [
 ] as const;
 
 export default async function EmbedPage() {
-  const config = await getConfig();
+  const [config, scorecardId] = await Promise.all([getConfig(), getActiveOrDefaultId()]);
   const h = headers();
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
   const proto = h.get('x-forwarded-proto') ?? 'https';
-  const url = `${proto}://${host}`;
+  // The scorecard's own distinct URL, never the site root.
+  const url = `${proto}://${host}/s/${scorecardId}`;
 
   return (
     <div className="max-w-5xl">
@@ -92,7 +93,7 @@ export default async function EmbedPage() {
       <div className="mt-4 flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-6 sm:flex-row sm:items-center">
         <div className="relative h-28 w-44 flex-none overflow-hidden rounded-lg border border-gray-200 bg-white">
           <iframe
-            src="/"
+            src={`/s/${scorecardId}`}
             title="Scorecard preview"
             className="pointer-events-none absolute left-0 top-0 h-[768px] w-[1280px] origin-top-left"
             style={{ transform: 'scale(0.14)' }}
