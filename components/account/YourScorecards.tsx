@@ -70,8 +70,8 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
       router.refresh();
     }
   }
-  async function createFromTemplate(name: string) {
-    if (await post({ action: 'create', name })) {
+  async function createFromTemplate(name: string, template?: string) {
+    if (await post({ action: 'create', name, template })) {
       router.push('/admin');
       router.refresh();
     }
@@ -202,20 +202,19 @@ export default function YourScorecards({ rows, activeId }: { rows: ScorecardRow[
 
       {/* Featured template */}
       <div className="mt-8 flex flex-wrap items-center gap-6 rounded-xl border border-gray-200 bg-white p-6">
-        <div className="flex h-24 w-36 flex-none items-center justify-center rounded-lg bg-gradient-to-br from-primary/90 to-blue-400 text-white">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10">
-            <path d="M12 3l1.7 4.6L18 9l-4.3 1.4L12 15l-1.7-4.6L6 9l4.3-1.4L12 3Z" />
-          </svg>
+        <div className="flex h-24 w-36 flex-none items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-orange-400 text-3xl text-white">
+          🏓
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Featured template</p>
-          <p className="mt-1 text-lg font-semibold">Business Growth Scorecard</p>
+          <p className="mt-1 text-lg font-semibold">Club Pulse Survey</p>
           <p className="mt-0.5 text-sm text-muted">
-            A ready-made assessment that scores leads across strategy, marketing and operations — customise every question and result page.
+            The committee survey with custom-designed pages — 12 questions on volunteers, admin, money and growth,
+            answers straight to your inbox, no scores shown to respondents.
           </p>
         </div>
         <button
-          onClick={() => createFromTemplate('Business Growth Scorecard')}
+          onClick={() => createFromTemplate('Club Pulse Survey', 'club-survey')}
           disabled={busy}
           className="flex-none rounded-md border border-primary px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/5 disabled:opacity-60"
         >
