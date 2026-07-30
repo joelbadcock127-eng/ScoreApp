@@ -2,46 +2,22 @@
 
 import { useState } from 'react';
 
-// Templates page: a small gallery of starting points. Using one creates a new
-// scorecard and opens the builder. Entries with a `template` key create a
-// fully-built structure (questions, landing page, emails); the rest start blank.
+// Templates page: real, fully-built starting points. Using one creates a new
+// scorecard and opens the builder.
 const TEMPLATES: { name: string; blurb: string; tint: string; template?: string }[] = [
   {
-    name: 'Sports Club Pulse Survey',
+    name: 'Club Pulse Survey',
     blurb:
-      'A ready-to-send survey for club committees: volunteer load, admin, money and growth. No scores shown — respondents get a thank-you page, you get their answers.',
+      'The table tennis committee survey: custom-designed landing and thank-you pages, 12 questions on volunteers, admin, money and growth. No scores shown to respondents — their answers land in your inbox.',
     tint: 'from-rose-500 to-orange-400',
     template: 'club-survey',
   },
   {
-    name: 'Business Growth Scorecard',
-    blurb: 'Score leads across strategy, marketing and operations.',
+    name: 'The AI Opportunity Assessment',
+    blurb:
+      'A copy of your flagship scored assessment exactly as it is today — 23 questions, tiered results pages and the PDF report — ready to rebrand for a new audience.',
     tint: 'from-primary/90 to-blue-400',
-  },
-  {
-    name: 'Marketing Health Check',
-    blurb: 'Benchmark channels, content and conversion in 3 minutes.',
-    tint: 'from-emerald-500 to-teal-400',
-  },
-  {
-    name: 'Leadership Readiness Quiz',
-    blurb: 'Assess delegation, vision and team-building skills.',
-    tint: 'from-violet-500 to-fuchsia-400',
-  },
-  {
-    name: 'Financial Fitness Test',
-    blurb: 'Reveal cashflow, pricing and profitability blind spots.',
-    tint: 'from-amber-500 to-orange-400',
-  },
-  {
-    name: 'Website Effectiveness Audit',
-    blurb: 'Score design, speed, SEO and lead capture.',
-    tint: 'from-sky-500 to-cyan-400',
-  },
-  {
-    name: 'Blank Scorecard',
-    blurb: 'Start from scratch with the full editor.',
-    tint: 'from-gray-500 to-gray-400',
+    template: 'ai-opportunity',
   },
 ];
 
@@ -49,7 +25,7 @@ export default function TemplatesGrid() {
   const [busy, setBusy] = useState(false);
 
   async function use(name: string, template?: string) {
-    const n = prompt('Name your new scorecard', name === 'Blank Scorecard' ? '' : name);
+    const n = prompt('Name your new scorecard', name);
     if (!n?.trim()) return;
     setBusy(true);
     const res = await fetch('/api/admin/scorecards', {

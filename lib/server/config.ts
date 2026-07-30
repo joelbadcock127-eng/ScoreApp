@@ -113,6 +113,15 @@ export const SCORECARD_TEMPLATES: Record<string, (name: string) => ScorecardConf
 export async function createScorecard(name: string, template = 'blank'): Promise<number> {
   const accountId = getSessionAccountId();
   if (accountId == null) throw new Error('Not logged in');
+  // 'ai-opportunity' clones the account's default (flagship) scorecard AS IT
+  // CURRENTLY IS — every edit the owner has made comes along — falling back
+  // to the built-in AI Opportunity content on a fresh account.
+  if (template === 'ai-opportunity') {
+    const mine = await listMyScorecards();
+    const source = mine.find((s) => s.is_default) ?? mine[0];
+    const cfg = source ? await fetchConfigById(source.id) : null;
+    return insertScorecard(name, { ...(cfg ?? defaultConfig), title: name }, accountId);
+  }
   // Own-property lookup only — 'constructor' etc. must fall back to blank.
   const build = Object.prototype.hasOwnProperty.call(SCORECARD_TEMPLATES, template)
     ? SCORECARD_TEMPLATES[template]
