@@ -19,9 +19,11 @@ const STYLE_LABELS: Record<EmbedType, string> = {
 export default function EmbedConfigurator({
   initialType,
   primaryColor,
+  scorecardId,
 }: {
   initialType: EmbedType;
   primaryColor: string;
+  scorecardId: number;
 }) {
   const router = useRouter();
   const [type, setType] = useState<EmbedType>(initialType);
@@ -53,7 +55,11 @@ export default function EmbedConfigurator({
     router.replace(`/admin/settings/embed/${t}`);
   }
 
-  const scorecardUrl = `${origin}/${hideChrome ? '?chrome=0' : ''}${keepInside ? (hideChrome ? '&' : '?') + 'sa_target=self' : ''}`;
+  // Always the scorecard's own distinct URL — the bare site root shows the
+  // default scorecard or the marketing page, never necessarily this one.
+  const basePath = `/s/${scorecardId}`;
+  const urlParams = [hideChrome ? 'chrome=0' : '', keepInside ? 'sa_target=self' : ''].filter(Boolean).join('&');
+  const scorecardUrl = `${origin}${basePath}${urlParams ? `?${urlParams}` : ''}`;
 
   function snippet(): string {
     const attrs: string[] = [`data-sa-url="${scorecardUrl}"`, `data-sa-view="${type}"`];
@@ -146,7 +152,7 @@ export default function EmbedConfigurator({
               }
             >
               <iframe
-                src={hideChrome ? '/?chrome=0' : '/'}
+                src={hideChrome ? `${basePath}?chrome=0` : basePath}
                 title="Scorecard preview"
                 className="h-[72vh] w-full"
               />
