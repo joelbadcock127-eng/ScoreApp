@@ -38,6 +38,22 @@ const SURVEY_CSS = `
 .pc-meta{position:relative;margin-top:16px;font-size:14px;color:var(--mut)}
 .pc-chips{position:relative;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:760px;margin:44px auto 0}
 .pc-chip{font-size:13.5px;font-weight:600;color:#E7ECF6;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:8px 15px}
+.pc-byline{position:relative;display:flex;gap:22px;align-items:flex-start;max-width:720px;margin:56px auto 0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:28px 30px;text-align:left}
+.pc-avatar{flex:none;width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Sora,Inter,sans-serif;font-weight:800;font-size:22px;color:#fff;background:linear-gradient(135deg,var(--red),var(--orange));box-shadow:0 10px 24px rgba(230,57,70,.35)}
+.pc-byline h3{font-size:17px;margin:0}
+.pc-byline .pc-role{font-size:13.5px;color:var(--orange);font-weight:600;margin:3px 0 10px}
+.pc-byline p{font-size:15px;line-height:1.65;color:#C4CEE0;margin:0}
+.pc-feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;max-width:900px;margin:36px auto 0}
+.pc-feat-item{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid #ECE6DA;border-radius:16px;padding:16px 18px;text-align:left}
+.pc-tick{flex:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#2AA971,#5BC98F)}
+.pc-feat-item p{font-size:14.5px;line-height:1.5;color:#3A4354;margin:0;font-weight:600}
+.pc-gets{list-style:none;max-width:640px;margin:40px auto 0;padding:0;text-align:left}
+.pc-gets li{display:flex;gap:16px;align-items:flex-start;padding:16px 0;border-bottom:1px dashed #DED6C6}
+.pc-gets li:last-of-type{border-bottom:0}
+.pc-gets .pc-gift{flex:none;width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--ball)}
+.pc-gets h3{font-size:17.5px;margin:2px 0 5px}
+.pc-gets p{font-size:15px;line-height:1.6;color:#5B6472;margin:0}
+.pc-deadline{display:inline-block;margin-top:22px;font-size:13.5px;font-weight:700;color:#fff;background:rgba(11,18,32,.28);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:8px 18px}
 .pc-points{background:var(--paper);color:var(--ink);padding:84px 0 90px;border-radius:44px 44px 0 0}
 .pc-points h2,.pc-how h2,.pc-cta h2{font-size:clamp(28px,4vw,44px);font-weight:800;line-height:1.12;text-align:center;margin:0}
 .pc-sub{text-align:center;color:#5B6472;font-size:17px;line-height:1.6;max-width:620px;margin:16px auto 0}
@@ -124,6 +140,14 @@ export function surveyLandingPage(): CustomPage {
     <p class="pc-lede">{{text:hero_sub}}</p>
     <p style="position:relative;margin:34px 0 0;"><button class="pc-btn pc-btn-primary pc-btn-xl" data-start-scorecard>{{text:hero_cta}}</button></p>
     <p class="pc-meta">{{text:hero_meta}}</p>
+    <div class="pc-byline">
+      <span class="pc-avatar">{{text:byline_initials}}</span>
+      <div>
+        <h3>{{text:byline_name}}</h3>
+        <p class="pc-role">{{text:byline_role}}</p>
+        <p>{{text:byline_note}}</p>
+      </div>
+    </div>
     <div class="pc-chips">
       <span class="pc-chip">{{text:chip1}}</span>
       <span class="pc-chip">{{text:chip2}}</span>
@@ -135,27 +159,28 @@ export function surveyLandingPage(): CustomPage {
   </section>
 
   <section class="pc-points">
-    <div class="pc-wrap">
-      <h2>{{text:points_title}}</h2>
-      <p class="pc-sub">{{text:points_sub}}</p>
-      <div class="pc-grid">
-        <article class="pc-card"><span class="pc-emoji">🙋</span><h3>{{text:p1_title}}</h3><p>{{text:p1_body}}</p></article>
-        <article class="pc-card"><span class="pc-emoji">🗂️</span><h3>{{text:p2_title}}</h3><p>{{text:p2_body}}</p></article>
-        <article class="pc-card"><span class="pc-emoji">💰</span><h3>{{text:p3_title}}</h3><p>{{text:p3_body}}</p></article>
-        <article class="pc-card"><span class="pc-emoji">📈</span><h3>{{text:p4_title}}</h3><p>{{text:p4_body}}</p></article>
+    <div class="pc-wrap" style="text-align:center;">
+      <h2>{{text:why_title}}</h2>
+      <p class="pc-sub">{{text:why_sub}}</p>
+      <div class="pc-feat">
+        <div class="pc-feat-item"><span class="pc-tick">✓</span><p>{{text:f1}}</p></div>
+        <div class="pc-feat-item"><span class="pc-tick">✓</span><p>{{text:f2}}</p></div>
+        <div class="pc-feat-item"><span class="pc-tick">✓</span><p>{{text:f3}}</p></div>
+        <div class="pc-feat-item"><span class="pc-tick">✓</span><p>{{text:f4}}</p></div>
       </div>
+      <p class="pc-sub" style="margin-top:34px;"><b>{{text:why_punch}}</b></p>
     </div>
   </section>
 
   <section class="pc-how">
     <div class="pc-wrap">
       <div class="pc-quote"><p>{{text:quote}}</p></div>
-      <h2>{{text:how_title}}</h2>
-      <ol class="pc-steps">
-        <li><span class="pc-num">1</span><div><h3>{{text:s1_title}}</h3><p>{{text:s1_body}}</p></div></li>
-        <li><span class="pc-num">2</span><div><h3>{{text:s2_title}}</h3><p>{{text:s2_body}}</p></div></li>
-        <li><span class="pc-num">3</span><div><h3>{{text:s3_title}}</h3><p>{{text:s3_body}}</p></div></li>
-      </ol>
+      <h2>{{text:gets_title}}</h2>
+      <ul class="pc-gets">
+        <li><span class="pc-gift">📊</span><div><h3>{{text:g1_title}}</h3><p>{{text:g1_body}}</p></div></li>
+        <li><span class="pc-gift">🎟️</span><div><h3>{{text:g2_title}}</h3><p>{{text:g2_body}}</p></div></li>
+        <li><span class="pc-gift">🤝</span><div><h3>{{text:g3_title}}</h3><p>{{text:g3_body}}</p></div></li>
+      </ul>
     </div>
   </section>
 
@@ -164,6 +189,7 @@ export function surveyLandingPage(): CustomPage {
     <p>{{text:cta_sub}}</p>
     <button class="pc-btn pc-btn-light pc-btn-xl" data-start-scorecard>{{text:cta_btn}}</button>
     <p class="pc-note">{{text:cta_note}}</p>
+    <p><span class="pc-deadline">{{text:deadline}}</span></p>
   </section>
 
   <footer class="pc-foot">{{text:footer}}</footer>
@@ -174,49 +200,75 @@ export function surveyLandingPage(): CustomPage {
     css: SURVEY_CSS,
     slots: [
       slot('brand', 'Wordmark', 'Club Pulse Check'),
-      slot('top_pill', 'Top-right pill', '3-minute survey · 2026'),
-      slot('kicker', 'Kicker line', 'For Australian table tennis clubs'),
-      slot('hero_title', 'Headline', 'How’s your club <b>really</b> holding up?', 'rich'),
+      slot('top_pill', 'Top-right pill', 'Surveying every club in Australia'),
+      slot('kicker', 'Kicker line', 'A quick survey for Australian table tennis clubs'),
+      slot('hero_title', 'Headline', 'Does running your club feel <b>heavier</b> than it should?', 'rich'),
       slot(
         'hero_sub',
         'Hero subline',
-        'Twelve honest questions about the stuff nobody sees from the courts — the registrations, the fee chasing, the paperwork, and the two people quietly carrying all of it.'
+        'I’m asking every club in the country the same few questions about the jobs behind the tables — the rego, the fee chasing, the paperwork. Answer honestly, and I’ll send you what everyone said.'
       ),
-      slot('hero_cta', 'Hero button', 'Start the survey'),
-      slot('hero_meta', 'Under-button note', 'About 3 minutes · one response per club · every club gets the summary'),
+      slot('hero_cta', 'Hero button', 'Take the 1-minute survey'),
+      slot('hero_meta', 'Under-button note', 'No commitment · results shared with every participating club'),
+      slot('byline_initials', 'Byline avatar initials', 'JB'),
+      slot('byline_name', 'Byline name', 'Joel Badcock'),
+      slot('byline_role', 'Byline role line', 'Treasurer, Devonport Table Tennis Club · playing in Tasmania for 8 years'),
+      slot(
+        'byline_note',
+        'Byline personal note',
+        'I do the fee chasing and the grant paperwork at our club, so I know exactly where the evenings go. We built software that now handles most of it for us — and before taking it any further, I want to know honestly whether other clubs deal with the same headaches.'
+      ),
       slot('chip1', 'Pain chip 1', 'Registrations'),
       slot('chip2', 'Pain chip 2', 'Chasing fees'),
       slot('chip3', 'Pain chip 3', 'Fixtures & grading'),
       slot('chip4', 'Pain chip 4', 'Grant paperwork'),
       slot('chip5', 'Pain chip 5', 'Newsletters & socials'),
       slot('chip6', 'Pain chip 6', 'Committee burnout'),
-      slot('points_title', 'Pressure points title', 'Four pressure points every committee knows'),
+      slot('why_title', 'Why-I’m-asking title', 'Why I’m asking'),
       slot(
-        'points_sub',
-        'Pressure points subline',
-        'Every question comes from the realities of running a club. Answer for how things actually are — not how the annual report says they are.'
+        'why_sub',
+        'Why-I’m-asking subline',
+        'At Devonport we got tired of the committee spending more time on paperwork than table tennis, so we built a system that takes the worst of it off our plate:'
       ),
-      slot('p1_title', 'Card 1 title', 'Volunteers & key people'),
-      slot('p1_body', 'Card 1 body', 'How much rests on one or two sets of shoulders — and what happens when they need a break.'),
-      slot('p2_title', 'Card 2 title', 'Admin & time'),
-      slot('p2_body', 'Card 2 body', 'Registrations, fixtures, minutes and newsletters — where the volunteer hours actually go.'),
-      slot('p3_title', 'Card 3 title', 'Money & funding'),
-      slot('p3_body', 'Card 3 body', 'Collecting fees, chasing grants, and knowing where the club stands financially.'),
-      slot('p4_title', 'Card 4 title', 'Members & growth'),
-      slot('p4_body', 'Card 4 body', 'Membership trends, junior pathways and what’s working at growing clubs.'),
+      slot('f1', 'Feature 1', 'Registrations & memberships that handle themselves'),
+      slot('f2', 'Feature 2', 'Fee reminders that do the chasing for you'),
+      slot('f3', 'Feature 3', 'Fixtures, results and ladders in one place'),
+      slot('f4', 'Feature 4', 'Club comms without the Sunday-night newsletter slog'),
+      slot(
+        'why_punch',
+        'Why-I’m-asking punchline',
+        'It works for us. This survey is me finding out if it’s just us — or if every club is carrying the same load.'
+      ),
       slot('quote', 'Quote card', '“Most clubs aren’t run by a committee. They’re run by three people and a group chat.”'),
-      slot('how_title', 'How it works title', 'What happens with your answers'),
-      slot('s1_title', 'Step 1 title', 'Tell it straight'),
-      slot('s1_body', 'Step 1 body', '12 quick questions, multiple choice plus two in your own words. No scores, no grades, no wrong answers.'),
-      slot('s2_title', 'Step 2 title', 'We build the national picture'),
-      slot('s2_body', 'Step 2 body', 'Responses are combined across clubs. No individual club is ever singled out in the results.'),
-      slot('s3_title', 'Step 3 title', 'The summary comes back to you'),
-      slot('s3_body', 'Step 3 body', 'Every participating club receives the findings — see how others handle the same jobs, and steal what works.'),
-      slot('cta_title', 'Bottom CTA title', 'Add your club’s voice'),
-      slot('cta_sub', 'Bottom CTA subline', 'The more clubs take part, the more useful the picture gets — for everyone who keeps the tables up and the lights on.'),
+      slot('gets_title', 'What-you-get title', 'What you get for a minute of honesty'),
+      slot('g1_title', 'Get 1 title', 'The national results'),
+      slot(
+        'g1_body',
+        'Get 1 body',
+        'Every participating club receives the full summary — see how clubs across Australia handle the same jobs, and steal what works.'
+      ),
+      slot('g2_title', 'Get 2 title', '15% off, locked in'),
+      slot(
+        'g2_body',
+        'Get 2 body',
+        'Complete the survey within 2 days and if you ever buy anything we make, 15% comes off — no strings, no expiry pressure, just a thank-you.'
+      ),
+      slot('g3_title', 'Get 3 title', 'Zero commitment'),
+      slot(
+        'g3_body',
+        'Get 3 body',
+        'This is research, not a sales trap. Take the results and run — you’ll have helped another club in the table tennis community either way.'
+      ),
+      slot('cta_title', 'Bottom CTA title', 'Help a fellow committee out'),
+      slot(
+        'cta_sub',
+        'Bottom CTA subline',
+        'One response per club is plenty — from whoever knows where the admin hours really go.'
+      ),
       slot('cta_btn', 'Bottom CTA button', 'Take the survey'),
-      slot('cta_note', 'Bottom CTA note', 'Three minutes. One response per club is plenty.'),
-      slot('footer', 'Footer line', '© Club Pulse Check'),
+      slot('cta_note', 'Bottom CTA note', 'About a minute · no commitment · results shared with participants'),
+      slot('deadline', 'Deadline pill', 'Closing soon — complete within 2 days of your invite to lock in the 15%'),
+      slot('footer', 'Footer line', '© Club Pulse Check · run by Joel Badcock, Devonport Table Tennis Club'),
     ],
   };
 }
@@ -262,30 +314,38 @@ export function surveyThanksPage(): CustomPage {
     css: THANKS_CSS,
     slots: [
       slot('kicker', 'Kicker line', 'Response recorded'),
-      slot('title', 'Headline', 'That’s it — your club is in.'),
+      slot('title', 'Headline', 'You’re a legend — that’s it.'),
       slot(
         'lede',
         'Subline (merge tags work here)',
-        'Thanks {{lead.first_name}} — your answers are safely in. A copy has been emailed to {{lead.email}}.'
+        'Thanks {{lead.first_name}} — your answers are in, your 15% is locked in, and a copy of what you told us has been emailed to {{lead.email}}. Genuinely appreciate the minute.'
       ),
       slot('next_title', 'Next steps title', 'What happens next'),
-      slot('n1_title', 'Step 1 title', 'Your answers join the pool'),
-      slot('n1_body', 'Step 1 body', 'Responses from clubs across the country are combined — no club is ever singled out.'),
-      slot('n2_title', 'Step 2 title', 'We compile the findings'),
-      slot('n2_body', 'Step 2 body', 'Where the volunteer load sits heaviest, how clubs handle fees and rego, what growing clubs do differently.'),
-      slot('n3_title', 'Step 3 title', 'The summary lands in your inbox'),
-      slot('n3_body', 'Step 3 body', 'Every participating club gets it at {{lead.email}} — so keep an eye out.'),
-      slot('offer_title', 'Offer card title', 'Want the admin load lighter sooner?'),
+      slot('n1_title', 'Step 1 title', 'Your answers join clubs from all over Australia'),
+      slot('n1_body', 'Step 1 body', 'Responses are combined into one national picture — no individual club is ever singled out.'),
+      slot('n2_title', 'Step 2 title', 'The results come back to you'),
+      slot(
+        'n2_body',
+        'Step 2 body',
+        'Once the survey closes, the full summary — plus your 15% discount confirmation — lands at {{lead.email}}.'
+      ),
+      slot('n3_title', 'Step 3 title', 'And it’s really me on the other end'),
+      slot(
+        'n3_body',
+        'Step 3 body',
+        'Reply to any email from us and it comes straight to Joel at the Devonport club — questions, war stories and corrections all welcome.'
+      ),
+      slot('offer_title', 'Offer card title', 'Curious what we built for Devonport?'),
       slot(
         'offer_body',
         'Offer card body',
-        'We build simple tools that take club admin off volunteers’ plates — registrations, fee reminders, comms and more. If today’s questions hit close to home, we’d be glad to show you what that looks like.'
+        'The system that does our rego, fee reminders, fixtures and comms is the reason this survey exists. No obligation ever — but if you’d like an early look, I’ll happily show you around it.'
       ),
-      slot('offer_btn', 'Offer button label', 'Get in touch'),
+      slot('offer_btn', 'Offer button label', 'Show me around'),
       slot('offer_url', 'Offer button link', 'https://accesoai.com.au'),
       slot('share_line', 'Share line', 'Know another committee whose voice belongs in this? Send them the link:'),
       slot('share_url', 'Share URL shown', 'score.accesoai.com.au/s/11'),
-      slot('footer', 'Footer line', '© Club Pulse Check'),
+      slot('footer', 'Footer line', '© Club Pulse Check · run by Joel Badcock, Devonport Table Tennis Club'),
     ],
   };
 }
