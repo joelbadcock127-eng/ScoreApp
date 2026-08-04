@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnswerDetail, Category, Question, QuestionsPageConfig, QuestionOption, ScorecardMode } from '@/lib/types';
 import { sanitizeRichText } from '@/lib/richtext';
+import { logoLink } from '@/lib/branding';
 import Spinner from './Spinner';
 
 export const DEFAULT_QUESTIONS_PAGE: QuestionsPageConfig = {
@@ -45,6 +46,7 @@ export default function QuizFlow({
   questions,
   categories = [],
   logoUrl,
+  logoLinkUrl,
   copyright = '',
   page,
   preview = false,
@@ -54,6 +56,7 @@ export default function QuizFlow({
   questions: Question[];
   categories?: Category[];
   logoUrl: string;
+  logoLinkUrl?: string;
   copyright?: string;
   page?: QuestionsPageConfig;
   preview?: boolean;
@@ -77,6 +80,7 @@ export default function QuizFlow({
   const percent = Math.round((index / questions.length) * 100);
   const range = Array.from({ length: q.max - q.min + 1 }, (_, i) => q.min + i);
   const category = categories.find((c) => c.key === q.category);
+  const logoHref = logoLink({ logoLinkUrl });
 
   const alignClass =
     cfg.questions.align === 'left' ? 'text-left' : cfg.questions.align === 'right' ? 'text-right' : 'text-center';
@@ -181,7 +185,13 @@ export default function QuizFlow({
           className={`flex px-6 ${headerJustify}`}
           style={{ paddingTop: cfg.header.topMargin, paddingBottom: cfg.header.bottomMargin }}
         >
-          <img src={logoUrl} alt="Logo" className="h-24 w-auto object-contain" style={{ maxWidth: cfg.header.maxWidth }} />
+          {logoHref ? (
+            <a href={logoHref} target="_blank" rel="noopener noreferrer">
+              <img src={logoUrl} alt="Logo" className="h-24 w-auto object-contain" style={{ maxWidth: cfg.header.maxWidth }} />
+            </a>
+          ) : (
+            <img src={logoUrl} alt="Logo" className="h-24 w-auto object-contain" style={{ maxWidth: cfg.header.maxWidth }} />
+          )}
         </header>
       )}
 
@@ -347,7 +357,13 @@ export default function QuizFlow({
 
       {cfg.footer.show && (
         <footer className="flex items-center justify-between border-t border-gray-200 bg-white px-8 py-5">
-          <img src={logoUrl} alt="" className="h-10 w-auto object-contain" />
+          {logoHref ? (
+            <a href={logoHref} target="_blank" rel="noopener noreferrer">
+              <img src={logoUrl} alt="" className="h-10 w-auto object-contain" />
+            </a>
+          ) : (
+            <img src={logoUrl} alt="" className="h-10 w-auto object-contain" />
+          )}
           <span className="text-sm text-muted">{copyright}</span>
         </footer>
       )}

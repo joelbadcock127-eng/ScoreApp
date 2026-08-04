@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { isSurvey, tierFor } from '@/lib/scoring';
 import { sanitizeRichText } from '@/lib/richtext';
+import { logoLink } from '@/lib/branding';
 import { ButtonAction, CategoryScore, ResultsPageConfig, ScorecardConfig } from '@/lib/types';
 import SpeedChart from '@/components/SpeedChart';
 import Footer from '@/components/Footer';
@@ -279,11 +280,19 @@ export default function ResultsView({
       <main>
         {!hidden('header') && (
           <header className="flex justify-center border-b border-gray-100 py-6">
-            <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
+            {logoLink(config.branding) ? (
+              <a href={logoLink(config.branding)} target="_blank" rel="noopener noreferrer">
+                <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
+              </a>
+            ) : (
+              <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
+            )}
           </header>
         )}
         {sectionOrder.map((k) => renderSection(k))}
-        {!hidden('footer') && <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} />}
+        {!hidden('footer') && (
+          <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} logoHref={logoLink(config.branding)} />
+        )}
       </main>
     </ChangeDetails>
   );
