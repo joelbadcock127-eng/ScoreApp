@@ -42,6 +42,7 @@ export default async function QuizPage({
       questions={config.questions}
       categories={config.categories}
       logoUrl={config.branding.logoUrl}
+      logoLinkUrl={config.branding.logoLinkUrl}
       copyright={config.copyright}
       page={config.questionsPage}
       preview={preview}

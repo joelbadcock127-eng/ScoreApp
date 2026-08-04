@@ -132,6 +132,7 @@ export async function PUT(req: NextRequest) {
       ...config.branding,
       logoUrl: String(b.logoUrl ?? config.branding.logoUrl).slice(0, 500),
       iconUrl: String(b.iconUrl ?? config.branding.iconUrl).slice(0, 500),
+      logoLinkUrl: b.logoLinkUrl != null ? String(b.logoLinkUrl).trim().slice(0, 500) : config.branding.logoLinkUrl,
       primaryColor: color(b.primaryColor, config.branding.primaryColor),
       secondaryColor: color(b.secondaryColor, config.branding.secondaryColor),
       backgroundColor: b.backgroundColor != null ? color(b.backgroundColor, '#ffffff') : config.branding.backgroundColor,

@@ -167,6 +167,8 @@ export interface InviteEmailConfig {
 export interface Branding {
   logoUrl: string;
   iconUrl: string;
+  // Optional external URL the logos link to on public pages
+  logoLinkUrl?: string;
   primaryColor: string;
   secondaryColor: string;
   // Theme extras (edited via the Theme rail in the editors)

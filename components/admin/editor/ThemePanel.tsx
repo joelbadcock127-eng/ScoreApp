@@ -49,6 +49,15 @@ export default function ThemePanel({
           </div>
           <ImagePicker label="Main logo" value={branding.logoUrl} onChange={(v) => patch({ logoUrl: v })} />
           <ImagePicker label="Square icon" value={branding.iconUrl} onChange={(v) => patch({ iconUrl: v })} />
+          <p className="mt-4 text-sm font-medium">Logo link</p>
+          <TextInput
+            type="url"
+            className="mt-1"
+            placeholder="https://yourwebsite.com"
+            value={branding.logoLinkUrl ?? ''}
+            onChange={(e) => patch({ logoLinkUrl: e.target.value })}
+          />
+          <p className="mt-1 text-xs text-muted">Where the logo links to on your scorecard pages. Leave blank for no link.</p>
         </div>
       )}
 

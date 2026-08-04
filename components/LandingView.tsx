@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { sanitizeRichText } from '@/lib/richtext';
+import { logoLink } from '@/lib/branding';
 import { ButtonAction, ScorecardConfig } from '@/lib/types';
 import StartScorecard from '@/components/StartScorecard';
 import Footer from '@/components/Footer';
@@ -51,6 +52,7 @@ export default function LandingView({
   const sectionOrder: string[] =
     landing.sectionOrder && landing.sectionOrder.length ? landing.sectionOrder : ['banner', 'categories', 'cta'];
   const extras = landing.extraSections ?? [];
+  const logoHref = logoLink(config.branding);
 
   return (
     <StartScorecard leadForm={leadForm} scorecardId={scorecardId}>
@@ -59,7 +61,13 @@ export default function LandingView({
         {/* Header */}
         {landing.showHeader !== false && !hideChrome && (
           <header className="flex justify-center py-6">
-            <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
+            {logoHref ? (
+              <a href={logoHref} target="_blank" rel="noopener noreferrer">
+                <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
+              </a>
+            ) : (
+              <img src={config.branding.logoUrl} alt="Logo" className="h-24 w-auto" />
+            )}
           </header>
         )}
 
@@ -136,7 +144,7 @@ export default function LandingView({
         })}
 
         {landing.showFooter !== false && !hideChrome && (
-          <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} />
+          <Footer copyright={config.copyright} logoUrl={config.branding.logoUrl} logoHref={logoHref} />
         )}
       </main>
     </StartScorecard>
