@@ -212,6 +212,7 @@ export async function PUT(req: NextRequest) {
         showBack: Boolean(p.questions?.showBack),
         showCategory: Boolean(p.questions?.showCategory),
         optionTextColor: color(p.questions?.optionTextColor, '#152042'),
+        inputTextColor: color(p.questions?.inputTextColor, '#152042'),
         buttonColor: color(p.questions?.buttonColor, '#1c78fe'),
         questionTextColor: color(p.questions?.questionTextColor, '#152042'),
         backgroundColor: color(p.questions?.backgroundColor, '#ffffff'),

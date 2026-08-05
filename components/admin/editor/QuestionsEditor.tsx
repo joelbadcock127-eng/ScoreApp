@@ -537,7 +537,10 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
                 </div>
               )}
               {q && type === 'text' && (
-                <div className="mx-auto mt-12 w-full max-w-xl rounded-lg border-2 border-gray-300 p-4 text-lg text-muted">
+                <div
+                  className="mx-auto mt-12 w-full max-w-xl rounded-lg border-2 border-gray-300 bg-white p-4 text-lg"
+                  style={{ color: page.questions.inputTextColor || '#152042' }}
+                >
                   Type your answer…
                 </div>
               )}
@@ -913,6 +916,11 @@ export default function QuestionsEditor({ initialConfig }: { initialConfig: Scor
                     label="Option Text Colour"
                     value={page.questions.optionTextColor}
                     onChange={(v) => patchPage({ questions: { ...page.questions, optionTextColor: v } })}
+                  />
+                  <ColorField
+                    label="Answer Text Colour (open text)"
+                    value={page.questions.inputTextColor || '#152042'}
+                    onChange={(v) => patchPage({ questions: { ...page.questions, inputTextColor: v } })}
                   />
                   <ColorField
                     label="Button Colour"

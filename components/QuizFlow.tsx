@@ -15,6 +15,7 @@ export const DEFAULT_QUESTIONS_PAGE: QuestionsPageConfig = {
     showBack: true,
     showCategory: false,
     optionTextColor: '#152042',
+    inputTextColor: '#152042',
     buttonColor: '#1c78fe',
     questionTextColor: '#152042',
     backgroundColor: '#ffffff',
@@ -326,8 +327,8 @@ export default function QuizFlow({
             onChange={(e) => setTexts({ ...texts, [q.id]: e.target.value })}
             rows={4}
             placeholder="Type your answer…"
-            className="mx-auto mt-12 w-full max-w-xl rounded-lg border-2 border-gray-300 p-4 text-lg outline-none focus:border-primary"
-            style={optionStyle}
+            className="mx-auto mt-12 w-full max-w-xl rounded-lg border-2 border-gray-300 bg-white p-4 text-lg outline-none focus:border-primary"
+            style={{ color: cfg.questions.inputTextColor || '#152042' }}
           />
         )}
 

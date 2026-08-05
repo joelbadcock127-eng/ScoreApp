@@ -201,6 +201,7 @@ export const defaultConfig: ScorecardConfig = {
       showBack: true,
       showCategory: false,
       optionTextColor: '#152042',
+      inputTextColor: '#152042',
       buttonColor: '#1c78fe',
       questionTextColor: '#152042',
       backgroundColor: '#ffffff',
