@@ -696,22 +696,22 @@ export function thanksPage() {
 // The invite (Distribution) email: selfless and for the greater good. It
 // leads with the reader's reality, mentions what Devonport has managed only
 // in passing, and sells the national picture, not a product.
+//
+// Deliverability note: this is written to read (and score) like a personal
+// letter, because Gmail files campaign-shaped email under Promotions. No
+// styled button ({invite_link} as a plain link instead), no bullet list of
+// benefits, no percent-off or "free" offer language. The 15% still greets
+// respondents on the landing page and in the result email.
 export const inviteEmail = {
-  subject: 'A few minutes that help every table tennis club in Australia',
+  subject: 'A question from the committee at Devonport table tennis',
   content:
     '<p>Hi {first_name},</p>' +
-    '<p>If you help run a table tennis club, this will sound familiar. A committee of a few dedicated people. Evenings that disappear into registrations, fee chasing and fixtures. The quiet worry about what happens if one key person ever steps away.</p>' +
-    '<p>I am Joel Badcock, treasurer at the Devonport Table Tennis Association in Tasmania, and plenty of those evenings were mine. Over the last couple of seasons our club has slowly handed most of that work to systems instead of people, and it has changed what running the club feels like. It also left us wondering how every other club is getting on, and whether what we have learned could be useful beyond Devonport.</p>' +
-    '<p>That is why this survey exists. We are asking every club in the country the same few questions about volunteers, admin, money and growth, so all of us can see the full picture: where the load really sits, what works, and what the strongest clubs do differently.</p>' +
-    '<p>{invite_button}</p>' +
-    '<p>The deal is simple:</p>' +
-    '<ul>' +
-    '<li>It takes a few minutes, and one response per club is plenty.</li>' +
-    '<li>Every participating club receives the full national results, free.</li>' +
-    '<li>No club is ever singled out. Results are reported in aggregate only.</li>' +
-    '<li>There is nothing to buy and nobody will call you. If we ever release something and your club wants it, completing the survey locks in 15% off as a thank-you.</li>' +
-    '</ul>' +
-    '<p>The clearer the national picture gets, the easier it becomes to give volunteers their evenings back, at every club, not just ours. We would love your club’s voice in it.</p>',
+    '<p>I am Joel Badcock, the treasurer at the Devonport Table Tennis Association in Tasmania, writing to committee people at clubs around the country with a small ask.</p>' +
+    '<p>If you help run a club, you know the drill. A few dedicated people, evenings that disappear into registrations, fee chasing and fixtures, and the quiet worry about what happens if one key person ever steps away. At Devonport we have slowly handed most of that work to systems instead of people, and it changed what running the club feels like. It also left us wondering how other clubs are getting on, and whether what we learned could be useful beyond our own hall.</p>' +
+    '<p>So we are running one short survey across every club in Australia: the same few questions about volunteers, admin, money and growth. It takes a few minutes, and one response per club is plenty. Every participating club receives the full national results, so all of us can see where the load really sits and what the strongest clubs do differently. No club is ever singled out.</p>' +
+    '<p>Here is your club’s link: {invite_link}</p>' +
+    '<p>There is nothing to buy and nobody will call you. This is one committee asking another to help build a clearer picture for everyone. If you have questions, just reply and it comes straight to me.</p>' +
+    '<p>Thanks for reading, and good luck for the season.</p>',
 };
 
 // The result email a respondent receives right after completing the survey.
