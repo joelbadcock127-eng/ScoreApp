@@ -246,6 +246,22 @@ export default function SignatureEditor() {
                           <option value="square">Square</option>
                         </SelectInput>
                       </div>
+                      <div>
+                        <p className={FIELD_LABEL}>Background panel</p>
+                        <SelectInput
+                          className="mt-1"
+                          value={sig.panel}
+                          onChange={(e) => upd({ panel: e.target.value as EmailSignature['panel'] })}
+                        >
+                          <option value="light">Light panel (recommended)</option>
+                          <option value="dark">Dark panel</option>
+                          <option value="none">None (transparent)</option>
+                        </SelectInput>
+                        <p className="mt-1 text-[11px] leading-snug text-muted">
+                          A panel keeps the signature readable in dark mode inboxes. The dark panel switches text to
+                          light automatically.
+                        </p>
+                      </div>
                     </div>
                   )}
 

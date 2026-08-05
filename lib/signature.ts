@@ -26,6 +26,7 @@ export const BLANK_SIGNATURE: EmailSignature = {
   font: 'arial',
   fontSize: 'medium',
   photoShape: 'circle',
+  panel: 'light',
   facebook: '',
   twitter: '',
   youtube: '',
@@ -91,6 +92,7 @@ export function cleanSignature(raw: unknown): EmailSignature {
     font: oneOf(String(r.font ?? 'arial'), Object.keys(SIGNATURE_FONTS), 'arial'),
     fontSize: oneOf(r.fontSize as string, ['small', 'medium', 'large'] as const, 'medium'),
     photoShape: oneOf(r.photoShape as string, ['circle', 'rounded', 'square'] as const, 'circle'),
+    panel: oneOf(r.panel as string, ['light', 'dark', 'none'] as const, 'light'),
     facebook: url(r.facebook, 300),
     twitter: url(r.twitter, 300),
     youtube: url(r.youtube, 300),
@@ -119,8 +121,12 @@ export function renderSignature(sig: EmailSignature | null | undefined): string 
   if (!hasContent) return '';
 
   const accent = esc(s.accentColor);
-  const text = esc(s.textColor);
-  const muted = '#6b7280';
+  // On a dark panel the configured (usually dark) text colour is unreadable,
+  // so text goes light automatically; muted follows suit. A panel means the
+  // signature carries its own contrast whatever the inbox's dark mode does.
+  const dark = s.panel === 'dark';
+  const text = dark ? '#F4F7FB' : esc(s.textColor);
+  const muted = dark ? '#A8B4C6' : '#6b7280';
   const px = FONT_SIZES[s.fontSize] ?? 13;
   const font = `font-family:${SIGNATURE_FONTS[s.font]?.stack ?? SIGNATURE_FONTS.arial.stack};`;
   const line = (extra = '') => `margin:0;${font}font-size:${px}px;line-height:1.55;color:${text};${extra}`;
@@ -148,7 +154,7 @@ export function renderSignature(sig: EmailSignature | null | undefined): string 
       (so) =>
         `<td style="padding:0 6px 0 0;"><a href="${esc(String(s[so.key]))}" target="_blank" rel="noopener" title="${so.title}" ` +
         `style="display:inline-block;width:22px;height:22px;background:${text};border-radius:4px;text-align:center;` +
-        `${font}font-size:11px;font-weight:700;line-height:22px;color:#ffffff;text-decoration:none;">${so.label}</a></td>`
+        `${font}font-size:11px;font-weight:700;line-height:22px;color:${dark ? '#0C1B2E' : '#ffffff'};text-decoration:none;">${so.label}</a></td>`
     )
     .join('');
 
@@ -180,12 +186,23 @@ export function renderSignature(sig: EmailSignature | null | undefined): string 
       `</p>`
     : '';
 
-  return (
-    `<table cellpadding="0" cellspacing="0" role="presentation" style="margin-top:28px;"><tr>` +
+  const inner =
+    `<table cellpadding="0" cellspacing="0" role="presentation"><tr>` +
     photo +
     divider +
     details +
     `</tr></table>` +
-    banner
+    banner;
+
+  if (s.panel === 'none') {
+    return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin-top:28px;"><tr><td>${inner}</td></tr></table>`;
+  }
+  // bgcolor + inline background: the attribute survives clients that strip
+  // styles, the style keeps the rounded corners where supported.
+  const bg = dark ? '#0C1B2E' : '#F5F7FA';
+  return (
+    `<table cellpadding="0" cellspacing="0" role="presentation" style="margin-top:28px;"><tr>` +
+    `<td bgcolor="${bg}" style="background-color:${bg};border-radius:12px;padding:18px 20px;">${inner}</td>` +
+    `</tr></table>`
   );
 }

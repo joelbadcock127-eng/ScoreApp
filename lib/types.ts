@@ -183,6 +183,11 @@ export interface EmailSignature {
   font: string; // email-safe font stack key: arial | georgia | verdana | tahoma | trebuchet
   fontSize: 'small' | 'medium' | 'large';
   photoShape: 'circle' | 'rounded' | 'square';
+  // Background panel behind the signature. A panel carries its own contrast,
+  // so the signature stays readable in dark mode inboxes: 'light' (default)
+  // keeps the chosen text colour on a light card, 'dark' switches the text
+  // to light automatically, 'none' is transparent (inbox background shows).
+  panel: 'light' | 'dark' | 'none';
   // Social media links (icon badges, in this order)
   facebook: string;
   twitter: string;
