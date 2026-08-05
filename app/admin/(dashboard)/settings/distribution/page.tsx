@@ -7,6 +7,7 @@ export default async function DistributionPage() {
   const config = await getConfig();
   return (
     <DistributionEditor
+      leadFields={config.leadForm?.fields ?? []}
       initial={
         config.inviteEmail ?? {
           fromAddress: config.resultEmail?.fromAddress ?? '',

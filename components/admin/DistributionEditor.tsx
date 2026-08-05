@@ -3,8 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { InviteEmailConfig } from '@/lib/types';
-import { ImagePicker, RichText, TextInput } from '@/components/admin/editor/ui';
+import { InviteEmailConfig, LeadFormField } from '@/lib/types';
+import { ImagePicker, RichText, SpacingSelect, TextInput } from '@/components/admin/editor/ui';
+import { inviteMergeFields } from '@/components/admin/mergeFields';
+import SignatureEditor from '@/components/admin/SignatureEditor';
 
 const CARD = 'rounded-xl border border-gray-200 bg-white p-6';
 const SECTION_LABEL = 'text-xs font-semibold uppercase tracking-wide text-ink';
@@ -61,7 +63,13 @@ function StatChip({ label, value, tone }: { label: string; value: number; tone: 
   );
 }
 
-export default function DistributionEditor({ initial }: { initial: InviteEmailConfig }) {
+export default function DistributionEditor({
+  initial,
+  leadFields = [],
+}: {
+  initial: InviteEmailConfig;
+  leadFields?: LeadFormField[];
+}) {
   const router = useRouter();
   const [v, setV] = useState(initial);
 
@@ -247,6 +255,11 @@ export default function DistributionEditor({ initial }: { initial: InviteEmailCo
             onChange={(e) => setV({ ...v, replyTo: e.target.value })}
           />
         </div>
+        <p className="mt-3 text-xs text-muted">
+          The little profile picture next to the sender in Gmail can’t be set from here — mailbox providers pull it
+          from the from-address’s own Google account photo, or from the domain’s BIMI record. See the note under Email
+          signature below.
+        </p>
         <div className="mt-6 border-t border-gray-100 pt-5">
           <p className={SECTION_LABEL}>Sender identification</p>
           <p className={HINT}>
@@ -274,16 +287,20 @@ export default function DistributionEditor({ initial }: { initial: InviteEmailCo
       <div className={`${CARD} mt-3`}>
         <p className={SECTION_LABEL}>Subject</p>
         <TextInput className="mt-2" value={v.subject} onChange={(e) => setV({ ...v, subject: e.target.value })} />
-        <p className={`${SECTION_LABEL} mt-6`}>Content</p>
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <p className={SECTION_LABEL}>Content</p>
+          <SpacingSelect value={v.lineSpacing} onChange={(lineSpacing) => setV({ ...v, lineSpacing })} />
+        </div>
         <RichText
           value={v.content}
           onChange={(content) => setV({ ...v, content })}
+          mergeFields={inviteMergeFields(leadFields)}
           className="mt-2 min-h-[180px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className={HINT}>
-          Merge fields: {'{first_name} {last_name} {business} {scorecard_name} {invite_link} {invite_button}'} —{' '}
-          <code className="rounded bg-gray-50 px-1">{'{invite_button}'}</code> inserts a styled button with the
-          recipient’s personal link. An unsubscribe footer is appended automatically.
+          Use <b>Insert merge field</b> to drop in the recipient’s details —{' '}
+          <code className="rounded bg-gray-50 px-1">{'{invite_button}'}</code> becomes a styled button with their
+          personal link. An unsubscribe footer is appended automatically.
         </p>
         <p className={`${SECTION_LABEL} mt-6`}>Header image</p>
         {v.headerImage && (
@@ -325,6 +342,18 @@ export default function DistributionEditor({ initial }: { initial: InviteEmailCo
         </div>
         <p className={HINT}>Save first — the test uses the last saved version.</p>
       </div>
+
+      {/* Signature (account-wide) */}
+      <p className={`${SECTION_LABEL} mt-10`}>Email signature</p>
+      <p className={HINT}>
+        Signed off automatically at the bottom of invite and result emails, on every scorecard in this account.
+      </p>
+      <SignatureEditor />
+      <p className={HINT}>
+        Want your photo in the little circle next to the sender in Gmail too? That avatar is controlled by the inbox,
+        not the email: create a Google account for your from-address and set its profile photo (fastest), or set up
+        BIMI on the domain. The signature above puts your face inside the email itself, which every recipient sees.
+      </p>
 
       {/* Import */}
       <p className={`${SECTION_LABEL} mt-10`}>Import recipients</p>

@@ -97,6 +97,14 @@ export function resultEmailFields(ctx: ResultEmailContext, color = '#1c78fe'): R
   };
 }
 
+// Wrap the body in the editor-chosen line spacing (1.6 = the email default,
+// so only non-default values add the wrapper). Inline style, email-safe.
+export function applyEmailSpacing(html: string, lineSpacing?: number): string {
+  const s = Number(lineSpacing);
+  if (!Number.isFinite(s) || s <= 0 || s === 1.6) return html;
+  return `<div style="line-height:${Math.min(3, Math.max(1, s))};">${html}</div>`;
+}
+
 // Prepend the scorecard's email logo (if set) to the email body.
 export function withEmailHeader(html: string, headerImage?: string): string {
   if (!headerImage) return html;

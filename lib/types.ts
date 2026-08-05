@@ -141,6 +141,7 @@ export interface NotificationsConfig {
   recipients: string; // comma separated
   subject: string;
   content: string; // rich html with {merge_fields}
+  lineSpacing?: number; // email body line-height (1.4 compact / 1.6 normal / 1.9 relaxed)
 }
 
 export interface ResultEmailConfig {
@@ -151,6 +152,21 @@ export interface ResultEmailConfig {
   subject: string;
   content: string; // rich html with {merge_fields}
   headerImage?: string; // logo shown at the top of the email body
+  lineSpacing?: number; // email body line-height (1.4 compact / 1.6 normal / 1.9 relaxed)
+}
+
+// Account-wide email signature, appended to invite and result emails for
+// EVERY scorecard in the account. Stored on the accounts table, not in any
+// scorecard config.
+export interface EmailSignature {
+  enabled: boolean;
+  imageUrl: string; // photo or logo, shown as a circle
+  name: string;
+  role: string;
+  company: string;
+  phone: string;
+  website: string; // shown as a link
+  accentColor: string; // top rule + name colour
 }
 
 // Distribution invites (Settings → Distribution): the email sent to an
@@ -162,6 +178,7 @@ export interface InviteEmailConfig {
   subject: string;
   content: string; // rich html with {merge_fields}
   headerImage?: string;
+  lineSpacing?: number; // email body line-height (1.4 compact / 1.6 normal / 1.9 relaxed)
   // Who the sender is, shown in the compliance footer of every invite
   // (business name + physical/postal address — required by anti-spam law).
   senderName: string;

@@ -3,6 +3,7 @@ import { getSessionAccount, getSessionAccountId } from '@/lib/server/auth';
 import { getActiveOrDefaultId, getConfig, listMyScorecards } from '@/lib/server/config';
 import { sendEmail } from '@/lib/server/email';
 import { InviteRecipient, renderInvite } from '@/lib/server/invites';
+import { signatureHtmlForScorecard } from '@/lib/server/signature';
 import { supabaseAdmin } from '@/lib/server/supabase';
 import { stripTags } from '@/lib/richtext';
 
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
 
   const origin = req.nextUrl.origin;
   const sb = supabaseAdmin();
+  // Account signature (if configured) is appended to every invite.
+  const signatureHtml = await signatureHtmlForScorecard(scorecardId);
 
   // ——— Test send: the rendered invite with sample data, to the admin. ————
   if (body.test) {
@@ -67,7 +70,7 @@ export async function POST(req: NextRequest) {
     // unsubscribe headers) so its spam/inbox placement reflects the real send.
     // "[Test]"-style bracket prefixes and missing List-Unsubscribe headers both
     // score worse with spam filters than the production email would.
-    const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin);
+    const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin, signatureHtml);
     const result = await sendEmail({
       to: [to],
       subject: stripTags(subject),
@@ -126,7 +129,7 @@ export async function POST(req: NextRequest) {
       await sb.from('leads').update({ invited_at: new Date().toISOString(), status: 'unsubscribed' }).eq('id', lead.id);
       continue;
     }
-    const { subject, html, unsubscribeUrl } = renderInvite(config, lead, origin);
+    const { subject, html, unsubscribeUrl } = renderInvite(config, lead, origin, signatureHtml);
     const result = await sendEmail({
       to: [lead.email],
       subject: stripTags(subject),

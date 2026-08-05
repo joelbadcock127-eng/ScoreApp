@@ -125,23 +125,35 @@ export function SliderField({
   );
 }
 
-// contentEditable rich text with a floating Bold / Italic / Underline toolbar,
-// like the ScoreApp page editors. Emits sanitized HTML (b/i/u/br only).
+// A merge field the RichText "Insert field" menu can drop into the content.
+export interface MergeFieldOption {
+  token: string; // e.g. '{first_name}'
+  label: string; // e.g. 'First name'
+  hint?: string; // e.g. 'Styled button with the personal link'
+}
+
+// contentEditable rich text with a floating toolbar (bold / italic /
+// underline / lists / link / clear formatting), like the ScoreApp page
+// editors. Emits sanitized HTML. Pass `mergeFields` to add an "Insert field"
+// dropdown that drops {tokens} in at the caret.
 export function RichText({
   value,
   onChange,
   className = '',
   style,
   placeholder,
+  mergeFields,
 }: {
   value: string;
   onChange: (html: string) => void;
   className?: string;
   style?: React.CSSProperties;
   placeholder?: string;
+  mergeFields?: MergeFieldOption[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
+  const [fieldsOpen, setFieldsOpen] = useState(false);
 
   // Only push external value into the DOM when not editing, so the caret survives typing.
   useEffect(() => {
@@ -149,38 +161,82 @@ export function RichText({
     if (el && !focused && el.innerHTML !== value) el.innerHTML = value;
   }, [value, focused]);
 
-  function exec(cmd: 'bold' | 'italic' | 'underline') {
-    document.execCommand(cmd);
+  function emit() {
     if (ref.current) onChange(sanitizeRichText(ref.current.innerHTML));
   }
+
+  function exec(cmd: string, arg?: string) {
+    document.execCommand(cmd, false, arg);
+    emit();
+  }
+
+  // Put the caret inside the editor (at the end if it isn't there already) so
+  // toolbar/menu actions always have somewhere to land.
+  function ensureCaret() {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    const sel = document.getSelection();
+    if (sel && sel.rangeCount > 0 && el.contains(sel.anchorNode)) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  }
+
+  function insertToken(token: string) {
+    ensureCaret();
+    document.execCommand('insertText', false, token);
+    emit();
+  }
+
+  function addLink() {
+    const url = window.prompt('Link URL (https://…)');
+    if (!url) return;
+    const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    ensureCaret();
+    const sel = document.getSelection();
+    if (!sel || sel.isCollapsed) {
+      // Nothing selected: insert the URL itself as a link.
+      document.execCommand('insertHTML', false, `<a href="${href}">${href}</a>`);
+    } else {
+      document.execCommand('createLink', false, href);
+    }
+    emit();
+  }
+
+  const TOOL = 'rounded px-2.5 py-1 text-sm hover:bg-gray-100';
 
   return (
     <div className="relative">
       {focused && (
         <div
-          className="absolute -top-11 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1 rounded-lg border border-gray-200 bg-white p-1 shadow-card"
+          className="absolute -top-11 left-1/2 z-30 flex -translate-x-1/2 items-center gap-0.5 whitespace-nowrap rounded-lg border border-gray-200 bg-white p-1 shadow-card"
           onMouseDown={(e) => e.preventDefault() /* keep selection */}
         >
-          <button
-            type="button"
-            onClick={() => exec('bold')}
-            className="rounded px-2.5 py-1 text-sm font-bold hover:bg-gray-100"
-          >
+          <button type="button" onClick={() => exec('bold')} className={`${TOOL} font-bold`} title="Bold">
             B
           </button>
-          <button
-            type="button"
-            onClick={() => exec('italic')}
-            className="rounded px-2.5 py-1 text-sm italic hover:bg-gray-100"
-          >
+          <button type="button" onClick={() => exec('italic')} className={`${TOOL} italic`} title="Italic">
             I
           </button>
-          <button
-            type="button"
-            onClick={() => exec('underline')}
-            className="rounded px-2.5 py-1 text-sm underline hover:bg-gray-100"
-          >
+          <button type="button" onClick={() => exec('underline')} className={`${TOOL} underline`} title="Underline">
             U
+          </button>
+          <span className="mx-1 h-5 w-px bg-gray-200" />
+          <button type="button" onClick={() => exec('insertUnorderedList')} className={TOOL} title="Bulleted list">
+            ≔
+          </button>
+          <button type="button" onClick={() => exec('insertOrderedList')} className={TOOL} title="Numbered list">
+            1.
+          </button>
+          <button type="button" onClick={addLink} className={`${TOOL} underline decoration-dotted`} title="Insert link">
+            Link
+          </button>
+          <span className="mx-1 h-5 w-px bg-gray-200" />
+          <button type="button" onClick={() => exec('removeFormat')} className={`${TOOL} text-muted`} title="Clear formatting">
+            Clear
           </button>
         </div>
       )}
@@ -192,15 +248,80 @@ export function RichText({
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          if (ref.current) onChange(sanitizeRichText(ref.current.innerHTML));
+          emit();
         }}
-        onInput={() => {
-          if (ref.current) onChange(sanitizeRichText(ref.current.innerHTML));
-        }}
+        onInput={emit}
         className={`cursor-text rounded outline-none ring-primary/40 transition focus:ring-2 ${className}`}
         style={style}
       />
+      {mergeFields && mergeFields.length > 0 && (
+        <div className="relative mt-2 flex justify-end">
+          {/* mousedown + preventDefault everywhere so the editor never loses its caret */}
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setFieldsOpen((o) => !o);
+            }}
+            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 font-mono text-xs font-medium text-ink hover:bg-gray-50"
+          >
+            {'{ }'} Insert merge field ▾
+          </button>
+          {fieldsOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setFieldsOpen(false)} />
+              <div className="absolute right-0 top-9 z-40 max-h-72 w-80 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-card">
+                {mergeFields.map((f) => (
+                  <button
+                    key={f.token}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      insertToken(f.token);
+                      setFieldsOpen(false);
+                    }}
+                    className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left hover:bg-gray-50"
+                  >
+                    <span className="text-sm text-ink">
+                      {f.label}
+                      {f.hint && <span className="block text-xs text-muted">{f.hint}</span>}
+                    </span>
+                    <code className="flex-none rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-muted">{f.token}</code>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+// Paragraph spacing for email bodies, stored as a line-height number.
+export function SpacingSelect({
+  value,
+  onChange,
+}: {
+  value: number | undefined;
+  onChange: (v: number | undefined) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-xs font-medium text-muted">
+      Spacing
+      <select
+        value={String(value ?? 1.6)}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          onChange(n === 1.6 ? undefined : n);
+        }}
+        className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-ink outline-none focus:border-primary"
+      >
+        <option value="1.4">Compact</option>
+        <option value="1.6">Normal</option>
+        <option value="1.9">Relaxed</option>
+      </select>
+    </label>
   );
 }
 

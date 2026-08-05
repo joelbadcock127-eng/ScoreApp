@@ -1,8 +1,8 @@
 // Minimal rich-text support for editor-authored copy: bold, italic, underline,
-// paragraphs, line breaks and http(s) links survive. Everything else is
+// paragraphs, line breaks, lists and http(s) links survive. Everything else is
 // stripped, attributes included, so stored HTML stays safe to render with
 // dangerouslySetInnerHTML.
-const ALLOWED = new Set(['b', 'strong', 'i', 'em', 'u', 'br', 'p', 'a']);
+const ALLOWED = new Set(['b', 'strong', 'i', 'em', 'u', 'br', 'p', 'a', 'ul', 'ol', 'li']);
 
 export function sanitizeRichText(html: string): string {
   return String(html)
