@@ -63,15 +63,23 @@ export async function POST(req: NextRequest) {
       email: to,
       business: 'Example Pty Ltd',
     };
-    const { subject, html } = renderInvite(config, sample, origin);
+    // Send the test exactly like a real invite (same subject, same mailbox-level
+    // unsubscribe headers) so its spam/inbox placement reflects the real send.
+    // "[Test]"-style bracket prefixes and missing List-Unsubscribe headers both
+    // score worse with spam filters than the production email would.
+    const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin);
     const result = await sendEmail({
       to: [to],
-      subject: '[Test] ' + stripTags(subject),
+      subject: stripTags(subject),
       html,
       fromAddress: ie.fromAddress || undefined,
       fromName: ie.fromName || undefined,
       replyTo: ie.replyTo || undefined,
       apiKey: config.email?.apiKey,
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
     if (result.sent) return NextResponse.json({ ok: true, provider: result.provider, to });
     return NextResponse.json(
