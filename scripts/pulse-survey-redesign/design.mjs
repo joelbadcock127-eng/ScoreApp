@@ -515,7 +515,16 @@ const THANKS_CSS = BASE_CSS + `
 .ck-peek-shot img{display:block;width:100%;max-width:172px;border-radius:14px 14px 0 0;border:1px solid var(--line);border-bottom:0;box-shadow:0 -10px 30px rgba(10,27,46,.10)}
 .ck-share{text-align:center;padding:64px 24px 36px}
 .ck-share p{margin:0;font-size:15px;color:var(--mut)}
-.ck-share-url{display:inline-block;margin-top:14px;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700;font-size:16px;
+.ck-share .ck-share-head{font-family:'Space Grotesk',Inter,sans-serif;font-size:clamp(21px,2.8vw,26px);font-weight:700;color:var(--ink);margin:0 0 10px}
+.ck-share-btns{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+.ck-share-btn{display:inline-flex;align-items:center;gap:9px;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700;font-size:14px;color:var(--ink);
+  background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 18px 8px 9px;text-decoration:none;
+  transition:transform .15s ease,border-color .15s ease,color .15s ease,box-shadow .15s ease}
+.ck-share-btn:hover{transform:translateY(-2px);border-color:var(--blue);color:var(--blue-deep);box-shadow:0 10px 24px rgba(29,99,237,.14)}
+.ck-share-badge{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:50%;
+  background:var(--navy-deep);color:#fff;font-size:11.5px;font-weight:700}
+.ck-share-copy{margin-top:22px}
+.ck-share-url{display:inline-block;margin-top:10px;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700;font-size:16px;
   color:var(--blue-deep);background:var(--tint);border:1px solid #D6E4FC;border-radius:11px;padding:13px 24px}
 .ck-foot{text-align:center;padding:18px 24px 40px}
 .ck-foot p{margin:0;font-size:13px;color:var(--mut);line-height:1.7}
@@ -574,7 +583,16 @@ const THANKS_HTML = `
   </section>
 
   <section class="ck-share">
+    <p class="ck-share-head">{{text:share_title}}</p>
     <p>{{text:share_line}}</p>
+    <div class="ck-share-btns">
+      <a class="ck-share-btn" href="{{text:share_fb}}" target="_blank"><span class="ck-share-badge">f</span>Facebook</a>
+      <a class="ck-share-btn" href="{{text:share_x}}" target="_blank"><span class="ck-share-badge">X</span>X</a>
+      <a class="ck-share-btn" href="{{text:share_li}}" target="_blank"><span class="ck-share-badge">in</span>LinkedIn</a>
+      <a class="ck-share-btn" href="{{text:share_wa}}" target="_blank"><span class="ck-share-badge">wa</span>WhatsApp</a>
+      <a class="ck-share-btn" href="{{text:share_mail}}"><span class="ck-share-badge">@</span>Email</a>
+    </div>
+    <p class="ck-share-copy">{{text:share_copy}}</p>
     <span class="ck-share-url">{{text:share_url}}</span>
   </section>
 
@@ -634,7 +652,34 @@ export function thanksPage() {
       slot('peek_btn', 'Peek button label', 'Visit devtt.com.au'),
       slot('peek_url', 'Peek button link', 'https://devtt.com.au'),
       slot('peek_shot', 'Peek screenshot', `${IMG}/dtta-mobile.jpg`, 'image'),
+      slot('share_title', 'Share section title', 'Pass it down the table'),
       slot('share_line', 'Share line', 'The more clubs take part, the better the results get. Know a committee who should be in them?'),
+      slot(
+        'share_fb',
+        'Facebook share link',
+        'https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+      ),
+      slot(
+        'share_x',
+        'X share link',
+        'https://twitter.com/intent/tweet?text=How%20do%20table%20tennis%20clubs%20across%20Australia%20really%20run%3F%20Add%20your%20club%20and%20the%20national%20results%20come%20back%20to%20you%2C%20free.&url=https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+      ),
+      slot(
+        'share_li',
+        'LinkedIn share link',
+        'https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+      ),
+      slot(
+        'share_wa',
+        'WhatsApp share link',
+        'https://api.whatsapp.com/send?text=How%20do%20table%20tennis%20clubs%20across%20Australia%20really%20run%3F%20Add%20your%20club%20to%20the%20national%20survey%20and%20the%20results%20come%20back%20to%20you%2C%20free%3A%20https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+      ),
+      slot(
+        'share_mail',
+        'Email share link',
+        'mailto:?subject=The%20Table%20Tennis%20Club%20Pulse%20Check&body=A%20quick%20survey%20for%20Australian%20table%20tennis%20club%20committees.%20Add%20your%20club%20and%20the%20national%20results%20come%20back%20to%20you%2C%20free%3A%0A%0Ahttps%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+      ),
+      slot('share_copy', 'Copy-link line', 'Or copy the link and send it however you like:'),
       slot('share_url', 'Share URL shown', 'score.accesoai.com.au/s/11'),
       slot('footer1', 'Footer line 1', 'The Club Pulse Check is run by Joel Badcock, treasurer of the Devonport Table Tennis Association.'),
       slot('footer2', 'Footer line 2', 'Questions? Just reply to any email from us and it comes straight to Joel.'),
