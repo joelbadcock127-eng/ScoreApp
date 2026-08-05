@@ -14,6 +14,7 @@ import { sanitizeCustomPage } from '../../lib/customPage';
 import {
   landingPage,
   thanksPage,
+  inviteEmail,
   resultEmail,
   brandingPatch,
   questionColorsPatch,
@@ -49,6 +50,7 @@ config.questionsPage = {
   questions: { ...config.questionsPage?.questions, ...questionColorsPatch },
 };
 config.resultEmail = { ...config.resultEmail, subject: resultEmail.subject, content: resultEmail.content };
+config.inviteEmail = { ...config.inviteEmail, subject: inviteEmail.subject, content: inviteEmail.content };
 config.shareAppearance = { ...config.shareAppearance, description: shareDescription };
 
 const { error: upErr } = await sb
