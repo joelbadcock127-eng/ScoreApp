@@ -2,15 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getConfig } from '@/lib/server/config';
 import { computeScores, questionMax } from '@/lib/scoring';
 import { supabaseAdmin } from '@/lib/server/supabase';
-import { answersSummaryHtml, emailButton, mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { answersSummaryHtml, applyEmailSpacing, emailButton, mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { signatureHtmlForScorecard } from '@/lib/server/signature';
 import { isSurvey } from '@/lib/scoring';
 import { stripTags } from '@/lib/richtext';
 import { AnswerDetail, ScorecardConfig } from '@/lib/types';
+
+// Custom lead-form answers for this lead ({} when the column/values are
+// missing) — every key becomes a merge field in result/notification emails.
+async function leadCustomFields(leadId: string): Promise<Record<string, string>> {
+  try {
+    const sb = supabaseAdmin();
+    const { data } = await sb.from('leads').select('custom_fields, business').eq('id', leadId).maybeSingle();
+    const out: Record<string, string> = { business: String(data?.business ?? '') };
+    const custom = (data?.custom_fields ?? {}) as Record<string, unknown>;
+    for (const [k, v] of Object.entries(custom)) {
+      if (!/^[a-z0-9_]+$/i.test(k)) continue;
+      out[k] = typeof v === 'boolean' ? (v ? 'Yes' : 'No') : String(v ?? '');
+    }
+    return out;
+  } catch (e) {
+    console.error('[email] custom field load failed:', e);
+    return {};
+  }
+}
 
 // Fire the result email (to the lead) and the new-lead notification (to the
 // owner) after completion. Failures are logged, never surfaced to the lead.
 async function sendCompletionEmails(
   config: ScorecardConfig,
+  scorecardId: number | undefined,
   lead: { id: string; first_name: string; last_name: string; email: string; status: string },
   score: number,
   origin: string,
@@ -18,20 +39,29 @@ async function sendCompletionEmails(
 ) {
   const survey = isSurvey(config);
   const resultsLink = `${origin}/results/${lead.id}`;
-  const fields = resultEmailFields(
-    {
-      first_name: lead.first_name,
-      last_name: lead.last_name,
-      email: lead.email,
-      status: 'Completed',
-      score,
-      scorecard_name: config.title,
-      results_link: resultsLink,
-      report_link: `${origin}/api/report/${lead.id}`,
-      answers_summary: answersSummary,
-    },
-    config.branding.primaryColor
-  );
+  // Custom lead-form fields merge alongside the built-ins; built-ins win on
+  // any key collision. The account signature is appended to the result email.
+  const [customFields, signatureHtml] = await Promise.all([
+    leadCustomFields(lead.id),
+    scorecardId != null ? signatureHtmlForScorecard(scorecardId) : Promise.resolve(''),
+  ]);
+  const fields = {
+    ...customFields,
+    ...resultEmailFields(
+      {
+        first_name: lead.first_name,
+        last_name: lead.last_name,
+        email: lead.email,
+        status: 'Completed',
+        score,
+        scorecard_name: config.title,
+        results_link: resultsLink,
+        report_link: `${origin}/api/report/${lead.id}`,
+        answers_summary: answersSummary,
+      },
+      config.branding.primaryColor
+    ),
+  };
   // Respondent-facing merge fields must stay score/report-free for surveys:
   // the report route 404s in survey mode, and internal triage scores are never
   // shown to respondents. Owner notifications keep the real values.
@@ -51,7 +81,9 @@ async function sendCompletionEmails(
       sendEmail({
         to: [lead.email],
         subject: stripTags(mergeFields(re.subject, respondentFields)),
-        html: withEmailHeader(mergeFields(re.content, respondentFields), re.headerImage),
+        html:
+          withEmailHeader(applyEmailSpacing(mergeFields(re.content, respondentFields), re.lineSpacing), re.headerImage) +
+          signatureHtml,
         fromAddress: re.fromAddress || undefined,
         fromName: re.fromName || undefined,
         replyTo: re.replyTo || undefined,
@@ -73,7 +105,7 @@ async function sendCompletionEmails(
       sendEmail({
         to: recipients,
         subject: stripTags(mergeFields(n.subject, fields)),
-        html: mergeFields(n.content, fields),
+        html: applyEmailSpacing(mergeFields(n.content, fields), n.lineSpacing),
         fromAddress: re?.fromAddress || undefined,
         fromName: re?.fromName || undefined,
         apiKey: config.email?.apiKey,
@@ -180,7 +212,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     if (lead) {
       const summary = answersSummaryHtml(config.questions, answers, answerDetails);
-      await sendCompletionEmails(config, lead, overall_percent, req.nextUrl.origin, summary).catch((e) =>
+      await sendCompletionEmails(config, leadRow?.scorecard_id ?? undefined, lead, overall_percent, req.nextUrl.origin, summary).catch((e) =>
         console.error('[email]', e)
       );
     }

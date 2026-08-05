@@ -7,6 +7,7 @@ export default async function NotificationsPage() {
   const config = await getConfig();
   return (
     <NotificationsEditor
+      leadFields={config.leadForm?.fields ?? []}
       initial={
         config.notifications ?? {
           enabled: true,

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionAccount, isAdmin } from '@/lib/server/auth';
-import { getConfig } from '@/lib/server/config';
-import { answersSummaryHtml, mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { getActiveOrDefaultId, getConfig } from '@/lib/server/config';
+import { answersSummaryHtml, applyEmailSpacing, mergeFields, resultEmailFields, sendEmail, withEmailHeader } from '@/lib/server/email';
+import { signatureHtmlForScorecard } from '@/lib/server/signature';
 import { stripTags } from '@/lib/richtext';
 
 export const dynamic = 'force-dynamic';
@@ -42,10 +43,17 @@ export async function POST(req: NextRequest) {
     config.branding.primaryColor
   );
 
+  // The test mirrors a real send: same spacing and the account signature.
+  const signatureHtml = await signatureHtmlForScorecard(await getActiveOrDefaultId());
+
   const result = await sendEmail({
     to: [to],
     subject: '[Test] ' + stripTags(mergeFields(re.subject || '{scorecard_name} Report', fields)),
-    html: withEmailHeader(mergeFields(re.content || '<p>This is a test result email.</p>', fields), re.headerImage),
+    html:
+      withEmailHeader(
+        applyEmailSpacing(mergeFields(re.content || '<p>This is a test result email.</p>', fields), re.lineSpacing),
+        re.headerImage
+      ) + signatureHtml,
     fromAddress: re.fromAddress || undefined,
     fromName: re.fromName || undefined,
     replyTo: re.replyTo || undefined,

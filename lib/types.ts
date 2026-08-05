@@ -141,6 +141,7 @@ export interface NotificationsConfig {
   recipients: string; // comma separated
   subject: string;
   content: string; // rich html with {merge_fields}
+  lineSpacing?: number; // email body line-height (1.4 compact / 1.6 normal / 1.9 relaxed)
 }
 
 export interface ResultEmailConfig {
@@ -151,6 +152,43 @@ export interface ResultEmailConfig {
   subject: string;
   content: string; // rich html with {merge_fields}
   headerImage?: string; // logo shown at the top of the email body
+  lineSpacing?: number; // email body line-height (1.4 compact / 1.6 normal / 1.9 relaxed)
+}
+
+// Account-wide email signature, appended to invite and result emails for
+// EVERY scorecard in the account. Stored on the accounts table, not in any
+// scorecard config. Grouped like the classic signature builders: personal
+// data, company data, graphics, style, social media links.
+export interface EmailSignature {
+  enabled: boolean;
+  // Personal data
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  email: string;
+  phone: string;
+  mobile: string;
+  // Company data
+  company: string;
+  website: string; // shown as a link
+  address: string; // street, city, postcode
+  // Graphics
+  photoUrl: string; // profile photo beside the details
+  logoUrl: string; // small company logo above the name
+  bannerUrl: string; // wide banner below the signature
+  bannerLink: string; // where the banner clicks through to
+  // Style
+  accentColor: string; // divider, links and highlights
+  textColor: string;
+  font: string; // email-safe font stack key: arial | georgia | verdana | tahoma | trebuchet
+  fontSize: 'small' | 'medium' | 'large';
+  photoShape: 'circle' | 'rounded' | 'square';
+  // Social media links (icon badges, in this order)
+  facebook: string;
+  twitter: string;
+  youtube: string;
+  linkedin: string;
+  instagram: string;
 }
 
 // Distribution invites (Settings → Distribution): the email sent to an
@@ -162,6 +200,7 @@ export interface InviteEmailConfig {
   subject: string;
   content: string; // rich html with {merge_fields}
   headerImage?: string;
+  lineSpacing?: number; // email body line-height (1.4 compact / 1.6 normal / 1.9 relaxed)
   // Who the sender is, shown in the compliance footer of every invite
   // (business name + physical/postal address — required by anti-spam law).
   senderName: string;

@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { ScorecardConfig } from '../types';
-import { emailButton, mergeFields, withEmailHeader } from './email';
+import { applyEmailSpacing, emailButton, mergeFields, withEmailHeader } from './email';
 
 // ——— Unsubscribe tokens: <leadId>.<hmac> ————————————————————————————————
 // Signed with the same secret chain as sessions so no new env var is needed.
@@ -77,19 +77,23 @@ export function inviteFooter(senderName: string, senderAddress: string, unsubscr
   );
 }
 
-/** Full invite HTML for one recipient: header image + merged body + footer. */
+/** Full invite HTML for one recipient: header image + merged body + account
+ *  signature + compliance footer. */
 export function renderInvite(
   config: ScorecardConfig,
   lead: InviteRecipient,
-  origin: string
+  origin: string,
+  signatureHtml = ''
 ): { subject: string; html: string; unsubscribeUrl: string } {
   const ie = config.inviteEmail;
   if (!ie) throw new Error('No invite email configured');
   const inviteLink = `${origin}/quiz?lead=${lead.id}`;
   const unsubscribeUrl = `${origin}/api/unsubscribe?t=${encodeURIComponent(unsubscribeToken(lead.id))}`;
   const fields = inviteFields(lead, config, inviteLink, config.branding.primaryColor);
-  const body = mergeFields(ie.content, fields);
+  const body = applyEmailSpacing(mergeFields(ie.content, fields), ie.lineSpacing);
   const html =
-    withEmailHeader(body, ie.headerImage) + inviteFooter(ie.senderName, ie.senderAddress, unsubscribeUrl);
+    withEmailHeader(body, ie.headerImage) +
+    signatureHtml +
+    inviteFooter(ie.senderName, ie.senderAddress, unsubscribeUrl);
   return { subject: mergeFields(ie.subject, fields), html, unsubscribeUrl };
 }

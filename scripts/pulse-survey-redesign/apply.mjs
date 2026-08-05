@@ -5,10 +5,21 @@
 //
 // tsx is needed because the sanitizer lives in the app's TypeScript lib; the
 // pages are stored already-sanitized, exactly as the custom page editor would
-// save them. Only scorecard 11 is touched.
+// save them. Only scorecard 11 is touched. Besides the two custom pages this
+// also applies the matching palette (branding, lead form button, question
+// screen colours), the result email and the share description, so the whole
+// respondent flow lines up with the design.
 import { createClient } from '@supabase/supabase-js';
 import { sanitizeCustomPage } from '../../lib/customPage';
-import { landingPage, thanksPage } from './design.mjs';
+import {
+  landingPage,
+  thanksPage,
+  resultEmail,
+  brandingPatch,
+  questionColorsPatch,
+  leadFormButtonColor,
+  shareDescription,
+} from './design.mjs';
 
 const SCORECARD_ID = 11;
 
@@ -31,6 +42,14 @@ config.customPages = {
 };
 config.landingMode = 'custom';
 config.resultsMode = 'custom';
+config.branding = { ...config.branding, ...brandingPatch };
+config.leadForm = { ...config.leadForm, buttonColor: leadFormButtonColor };
+config.questionsPage = {
+  ...config.questionsPage,
+  questions: { ...config.questionsPage?.questions, ...questionColorsPatch },
+};
+config.resultEmail = { ...config.resultEmail, subject: resultEmail.subject, content: resultEmail.content };
+config.shareAppearance = { ...config.shareAppearance, description: shareDescription };
 
 const { error: upErr } = await sb
   .from('scorecard_config')

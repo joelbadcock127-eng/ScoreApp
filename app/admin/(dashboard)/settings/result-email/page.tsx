@@ -7,6 +7,7 @@ export default async function ResultEmailPage() {
   const config = await getConfig();
   return (
     <ResultEmailEditor
+      leadFields={config.leadForm?.fields ?? []}
       initialApiKey={config.email?.apiKey ?? ''}
       initial={
         config.resultEmail ?? {

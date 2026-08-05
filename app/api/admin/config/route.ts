@@ -28,6 +28,13 @@ function num(v: unknown, fallback: number, min: number, max: number) {
   return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
 }
 
+// Email body line spacing: only the editor's three presets survive, and the
+// default (1.6) is stored as undefined so older configs stay byte-identical.
+function lineSpacing(v: unknown): number | undefined {
+  const n = Number(v);
+  return n === 1.4 || n === 1.9 ? n : undefined;
+}
+
 const ACTION_TYPES = ['lead-form', 'page', 'url', 'report', 'details'] as const;
 const ACTION_PAGES = ['landing', 'quiz', 'results'] as const;
 function action(v: unknown, fallback: ButtonAction | undefined): ButtonAction | undefined {
@@ -439,6 +446,7 @@ export async function PUT(req: NextRequest) {
       recipients: String(n.recipients ?? '').slice(0, 1000),
       subject: String(n.subject ?? '').slice(0, 300),
       content: sanitizeRichText(String(n.content ?? '')).slice(0, 8000),
+      lineSpacing: lineSpacing(n.lineSpacing),
     };
   }
 
@@ -459,6 +467,7 @@ export async function PUT(req: NextRequest) {
       subject: String(r.subject ?? '').slice(0, 300),
       content: sanitizeRichText(String(r.content ?? '')).slice(0, 8000),
       headerImage: r.headerImage != null ? String(r.headerImage).slice(0, 500) : config.resultEmail?.headerImage,
+      lineSpacing: lineSpacing(r.lineSpacing),
     };
   }
 
@@ -471,6 +480,7 @@ export async function PUT(req: NextRequest) {
       subject: String(r.subject ?? '').slice(0, 300),
       content: sanitizeRichText(String(r.content ?? '')).slice(0, 8000),
       headerImage: r.headerImage != null ? String(r.headerImage).slice(0, 500) : config.inviteEmail?.headerImage,
+      lineSpacing: lineSpacing(r.lineSpacing),
       senderName: String(r.senderName ?? '').slice(0, 200),
       senderAddress: String(r.senderAddress ?? '').slice(0, 300),
     };

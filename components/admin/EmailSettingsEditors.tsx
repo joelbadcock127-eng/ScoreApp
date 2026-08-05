@@ -3,8 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { NotificationsConfig, ResultEmailConfig, ShareAppearanceConfig } from '@/lib/types';
-import { ImagePicker, RichText, TextInput, Toggle } from '@/components/admin/editor/ui';
+import { LeadFormField, NotificationsConfig, ResultEmailConfig, ShareAppearanceConfig } from '@/lib/types';
+import { ImagePicker, RichText, SpacingSelect, TextInput, Toggle } from '@/components/admin/editor/ui';
+import { notificationMergeFields, resultMergeFields } from '@/components/admin/mergeFields';
+import SignatureEditor from '@/components/admin/SignatureEditor';
 
 function SaveBar({ onSave, saving, message }: { onSave: () => void; saving: boolean; message: string }) {
   return (
@@ -91,7 +93,13 @@ export function ShareAppearanceEditor({ initial }: { initial: ShareAppearanceCon
 }
 
 // ——— Notifications ———————————————————————————————————————————————————
-export function NotificationsEditor({ initial }: { initial: NotificationsConfig }) {
+export function NotificationsEditor({
+  initial,
+  leadFields = [],
+}: {
+  initial: NotificationsConfig;
+  leadFields?: LeadFormField[];
+}) {
   const [v, setV] = useState(initial);
   const { save, saving, message } = useSave(() => ({ notifications: v }));
   return (
@@ -127,19 +135,20 @@ export function NotificationsEditor({ initial }: { initial: NotificationsConfig 
           Merge fields: {'{first_name} {last_name} {scorecard_name}'}
         </p>
 
-        <p className={`${SECTION_LABEL} mt-6`}>Email content</p>
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <p className={SECTION_LABEL}>Email content</p>
+          <SpacingSelect value={v.lineSpacing} onChange={(lineSpacing) => setV({ ...v, lineSpacing })} />
+        </div>
         <RichText
           value={v.content}
           onChange={(content) => setV({ ...v, content })}
+          mergeFields={notificationMergeFields(leadFields)}
           className="mt-2 min-h-[160px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className={HINT}>
-          Merge fields:{' '}
-          {'{first_name} {last_name} {email} {status} {score} {scorecard_name} {results_link} {report_link} {answers_summary}'}
-        </p>
-        <p className="mt-1 text-sm text-muted">
+          Use <b>Insert merge field</b> to drop in the lead’s details —{' '}
           <code className="rounded bg-gray-50 px-1">{'{answers_summary}'}</code> inserts every question with the
-          lead’s actual answer — ideal for surveys.
+          lead’s actual answer, ideal for surveys. Lead form fields (including custom ones) are in the list too.
         </p>
         <SaveBar onSave={save} saving={saving} message={message} />
       </div>
@@ -153,9 +162,11 @@ const FREE_MAIL_RE = /@(gmail|googlemail|outlook|hotmail|live|yahoo|icloud|me|ao
 export function ResultEmailEditor({
   initial,
   initialApiKey = '',
+  leadFields = [],
 }: {
   initial: ResultEmailConfig;
   initialApiKey?: string;
+  leadFields?: LeadFormField[];
 }) {
   const [v, setV] = useState(initial);
   const [apiKey, setApiKey] = useState(initialApiKey);
@@ -249,23 +260,28 @@ export function ResultEmailEditor({
         <TextInput className="mt-2" value={v.subject} onChange={(e) => setV({ ...v, subject: e.target.value })} />
         <p className={HINT}>Merge fields: {'{first_name} {last_name} {scorecard_name}'}</p>
 
-        <p className={`${SECTION_LABEL} mt-6`}>Email content</p>
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <p className={SECTION_LABEL}>Email content</p>
+          <SpacingSelect value={v.lineSpacing} onChange={(lineSpacing) => setV({ ...v, lineSpacing })} />
+        </div>
         <RichText
           value={v.content}
           onChange={(content) => setV({ ...v, content })}
+          mergeFields={resultMergeFields(leadFields)}
           className="mt-2 min-h-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
         <p className={HINT}>
-          Text merge fields:{' '}
-          {'{first_name} {last_name} {email} {score} {scorecard_name} {results_link} {report_link} {answers_summary}'}
-        </p>
-        <p className="mt-1 text-sm text-muted">
-          Button merge fields (insert a styled button):{' '}
-          <code className="rounded bg-gray-50 px-1">{'{report_download}'}</code> opens the PDF report,{' '}
-          <code className="rounded bg-gray-50 px-1">{'{results_button}'}</code> opens the results page.
+          Use <b>Insert merge field</b> to drop in the lead’s details, answers and buttons — lead form fields
+          (including custom ones) are in the list too.{' '}
+          <code className="rounded bg-gray-50 px-1">{'{report_download}'}</code> and{' '}
+          <code className="rounded bg-gray-50 px-1">{'{results_button}'}</code> insert styled buttons.
         </p>
         <SaveBar onSave={save} saving={saving} message={message} />
       </div>
+
+      <p className={`${SECTION_LABEL} mt-8`}>Email signature</p>
+      <p className={HINT}>Appended below the content of invite and result emails, on every scorecard in this account.</p>
+      <SignatureEditor />
 
       <p className={`${SECTION_LABEL} mt-8`}>Sending provider</p>
       <p className={HINT}>Each account can use its own email service. Paste your Resend API key here.</p>
