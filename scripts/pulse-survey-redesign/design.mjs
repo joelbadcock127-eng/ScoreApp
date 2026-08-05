@@ -657,30 +657,30 @@ export function thanksPage() {
       slot(
         'share_fb',
         'Facebook share link',
-        'https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+        'https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Ftabletennis.accesoai.com.au'
       ),
       slot(
         'share_x',
         'X share link',
-        'https://twitter.com/intent/tweet?text=How%20do%20table%20tennis%20clubs%20across%20Australia%20really%20run%3F%20Add%20your%20club%20and%20the%20national%20results%20come%20back%20to%20you%2C%20free.&url=https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+        'https://twitter.com/intent/tweet?text=How%20do%20table%20tennis%20clubs%20across%20Australia%20really%20run%3F%20Add%20your%20club%20and%20the%20national%20results%20come%20back%20to%20you%2C%20free.&url=https%3A%2F%2Ftabletennis.accesoai.com.au'
       ),
       slot(
         'share_li',
         'LinkedIn share link',
-        'https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+        'https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Ftabletennis.accesoai.com.au'
       ),
       slot(
         'share_wa',
         'WhatsApp share link',
-        'https://api.whatsapp.com/send?text=How%20do%20table%20tennis%20clubs%20across%20Australia%20really%20run%3F%20Add%20your%20club%20to%20the%20national%20survey%20and%20the%20results%20come%20back%20to%20you%2C%20free%3A%20https%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+        'https://api.whatsapp.com/send?text=How%20do%20table%20tennis%20clubs%20across%20Australia%20really%20run%3F%20Add%20your%20club%20to%20the%20national%20survey%20and%20the%20results%20come%20back%20to%20you%2C%20free%3A%20https%3A%2F%2Ftabletennis.accesoai.com.au'
       ),
       slot(
         'share_mail',
         'Email share link',
-        'mailto:?subject=The%20Table%20Tennis%20Club%20Pulse%20Check&body=A%20quick%20survey%20for%20Australian%20table%20tennis%20club%20committees.%20Add%20your%20club%20and%20the%20national%20results%20come%20back%20to%20you%2C%20free%3A%0A%0Ahttps%3A%2F%2Fscore.accesoai.com.au%2Fs%2F11'
+        'mailto:?subject=The%20Table%20Tennis%20Club%20Pulse%20Check&body=A%20quick%20survey%20for%20Australian%20table%20tennis%20club%20committees.%20Add%20your%20club%20and%20the%20national%20results%20come%20back%20to%20you%2C%20free%3A%0A%0Ahttps%3A%2F%2Ftabletennis.accesoai.com.au'
       ),
       slot('share_copy', 'Copy-link line', 'Or copy the link and send it however you like:'),
-      slot('share_url', 'Share URL shown', 'score.accesoai.com.au/s/11'),
+      slot('share_url', 'Share URL shown', 'tabletennis.accesoai.com.au'),
       slot('footer1', 'Footer line 1', 'The Club Pulse Check is run by Joel Badcock, treasurer of the Devonport Table Tennis Association.'),
       slot('footer2', 'Footer line 2', 'Questions? Just reply to any email from us and it comes straight to Joel.'),
     ],
