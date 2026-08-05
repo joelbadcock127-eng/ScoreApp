@@ -501,6 +501,9 @@ export function clubSurveyConfig(name: string): ScorecardConfig {
         showBack: true,
         showCategory: true,
         optionTextColor: '#D7E0EF',
+        // Open-text boxes are white, so typed answers need ink, not the
+        // light option colour used on the dark page background.
+        inputTextColor: '#152042',
         buttonColor: '#E63946',
         questionTextColor: '#FFFFFF',
         backgroundColor: '#0B1220',

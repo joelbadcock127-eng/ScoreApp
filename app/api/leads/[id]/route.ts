@@ -66,11 +66,16 @@ async function sendCompletionEmails(
     .map((s) => s.trim())
     .filter((s) => /.+@.+\..+/.test(s));
   if (n?.enabled && recipients.length) {
+    // Reuse the result email's verified sender — without it the notification
+    // falls back to the provider's shared address (onboarding@resend.dev),
+    // which mailbox providers routinely file as spam.
     jobs.push(
       sendEmail({
         to: recipients,
         subject: stripTags(mergeFields(n.subject, fields)),
         html: mergeFields(n.content, fields),
+        fromAddress: re?.fromAddress || undefined,
+        fromName: re?.fromName || undefined,
         apiKey: config.email?.apiKey,
       })
     );

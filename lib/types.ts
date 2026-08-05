@@ -60,6 +60,10 @@ export interface QuestionsPageConfig {
     showBack: boolean;
     showCategory: boolean;
     optionTextColor: string;
+    /** Typed text inside open-text answer boxes. The box is always white, so
+     *  this stays independent of optionTextColor (which sits on the page
+     *  background and may be light on dark themes). */
+    inputTextColor?: string;
     buttonColor: string;
     questionTextColor: string;
     backgroundColor: string;
