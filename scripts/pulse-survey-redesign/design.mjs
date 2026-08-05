@@ -611,7 +611,7 @@ export function thanksPage() {
       slot(
         'lede',
         'Subline (merge tags work here)',
-        'Your answers are now part of the national picture. The full report is <b>reserved for {{lead.email}}</b>, your club’s <b>15% discount is locked in</b>, and a copy of your responses is on its way to your inbox.',
+        'Your answers are now part of the national picture. The full report is <b>reserved for {{lead.email}}</b>, your club’s <b>15% discount is locked in</b>, and a confirmation is on its way to your inbox.',
         'rich'
       ),
       slot('next_title', 'Next steps title', 'What happens from here'),
@@ -687,29 +687,47 @@ export function thanksPage() {
   };
 }
 
-// ——— Result email + matching config touches ————————————————————————————
+// ——— Emails + matching config touches ——————————————————————————————————
 //
-// The email a respondent receives right after completing the survey. It
-// carries the full story in Joel's voice: who is asking, the operating
-// software Devonport built (live at devtt.com.au), why the survey exists,
-// what they get back and the 15% thank-you. Plain paragraphs, no emojis,
-// no long dashes. {answers_summary} expands to their actual answers.
+// Both emails are written in Joel's voice, no emojis, no long dashes, and
+// neither repeats the respondent's answers. The account signature is
+// appended automatically at send time, so neither email signs off by hand.
 
-export const resultEmail = {
-  subject: 'Thanks {first_name}, your Club Pulse Check responses and what happens next',
+// The invite (Distribution) email: selfless and for the greater good. It
+// leads with the reader's reality, mentions what Devonport has managed only
+// in passing, and sells the national picture, not a product.
+export const inviteEmail = {
+  subject: 'A few minutes that help every table tennis club in Australia',
   content:
     '<p>Hi {first_name},</p>' +
-    '<p>Thanks for completing the {scorecard_name}. Your responses are in, and your club is now part of the national picture.</p>' +
-    '<p>A quick word on why this survey exists. I am Joel Badcock, the treasurer of the Devonport Table Tennis Association in Tasmania. Like most clubs, ours ran on a handful of dedicated people, and everything from registrations to fee chasing to fixtures sat on too few shoulders. When one of those people was away, things stopped.</p>' +
-    '<p>So we built operating software to carry that load for us. It runs our club today, and you can see it live on our website at <a href="https://devtt.com.au">devtt.com.au</a>: fixtures, results, ladders and player stats, all keeping themselves up to date.</p>' +
-    '<p>This Australia-wide survey is the next step. By asking every club the same questions, we can build a clear picture of the issues table tennis clubs across the country actually face, reliance on key people included, and share it back so everyone benefits.</p>' +
+    '<p>If you help run a table tennis club, this will sound familiar. A committee of a few dedicated people. Evenings that disappear into registrations, fee chasing and fixtures. The quiet worry about what happens if one key person ever steps away.</p>' +
+    '<p>I am Joel Badcock, treasurer at the Devonport Table Tennis Association in Tasmania, and plenty of those evenings were mine. Over the last couple of seasons our club has slowly handed most of that work to systems instead of people, and it has changed what running the club feels like. It also left us wondering how every other club is getting on, and whether what we have learned could be useful beyond Devonport.</p>' +
+    '<p>That is why this survey exists. We are asking every club in the country the same few questions about volunteers, admin, money and growth, so all of us can see the full picture: where the load really sits, what works, and what the strongest clubs do differently.</p>' +
+    '<p>{invite_button}</p>' +
+    '<p>The deal is simple:</p>' +
+    '<ul>' +
+    '<li>It takes a few minutes, and one response per club is plenty.</li>' +
+    '<li>Every participating club receives the full national results, free.</li>' +
+    '<li>No club is ever singled out. Results are reported in aggregate only.</li>' +
+    '<li>There is nothing to buy and nobody will call you. If we ever release something and your club wants it, completing the survey locks in 15% off as a thank-you.</li>' +
+    '</ul>' +
+    '<p>The clearer the national picture gets, the easier it becomes to give volunteers their evenings back, at every club, not just ours. We would love your club’s voice in it.</p>',
+};
+
+// The result email a respondent receives right after completing the survey.
+export const resultEmail = {
+  subject: 'Thanks {first_name}, your club is in the national picture',
+  content:
+    '<p>Hi {first_name},</p>' +
+    '<p>Thank you for completing the {scorecard_name}. Your responses are in, and your club is now part of the national picture.</p>' +
+    '<p>A quick word on why this survey exists. I am Joel Badcock, treasurer of the Devonport Table Tennis Association in Tasmania. Like most clubs, ours runs on a handful of dedicated people, so we know how heavy the registrations, fee chasing and fixture nights can get. Over time we have been able to hand most of that work to operating software we built for our own club, and it runs Devonport day to day. You can see it live at <a href="https://devtt.com.au" target="_blank" rel="noopener noreferrer">devtt.com.au</a>.</p>' +
+    '<p>The survey is the next step, for everyone. By asking every club the same questions, we can build a clear picture of the issues table tennis clubs across the country face, reliance on key people included, and share it back so every club benefits.</p>' +
     '<p><b>What happens next:</b></p>' +
-    '<p>Once responses are in from clubs across the country, the full national summary will be emailed to you. Every participating club receives it.</p>' +
-    '<p>Your 15% discount is locked in. There is no commitment and nothing you need to buy, but because you completed the survey, if your club ever purchases anything we release, 15% comes off. Consider it a thank-you.</p>' +
-    '<p>For your records, here is what you told us:</p>' +
-    '{answers_summary}' +
-    '<p>Questions, war stories or corrections, just reply to this email and it comes straight to me.</p>' +
-    '<p>Joel Badcock<br>Treasurer, Devonport Table Tennis Association<br><a href="https://devtt.com.au">devtt.com.au</a></p>',
+    '<ul>' +
+    '<li>Once responses are in from clubs across the country, the full national summary will be emailed to you. Every participating club receives it.</li>' +
+    '<li>Your 15% discount is locked in. There is no commitment and nothing you need to buy, but if your club ever purchases anything we release, 15% comes off. A thank-you for the few minutes.</li>' +
+    '</ul>' +
+    '<p>Questions, war stories or corrections, just reply to this email and it comes straight to me.</p>',
 };
 
 // Applied alongside the pages so the whole flow matches the new palette.
