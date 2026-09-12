@@ -44,6 +44,7 @@ const BASE_CSS = `
   --orange:#F4732C;--green:#12A150;
   background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;line-height:1.5;overflow:hidden}
 .ck h1,.ck h2,.ck h3,.ck .ck-display{font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0.01em}
+.ck h1,.ck h2{text-wrap:balance}
 .ck-wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 .ck-kicker{font-size:12.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--blue)}
 .ck-btn{display:inline-block;border:0;cursor:pointer;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700;
@@ -75,7 +76,7 @@ const LANDING_CSS = BASE_CSS + `
 .ck-dot{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#FF9A63,var(--orange) 60%,#D45A19);box-shadow:0 2px 6px rgba(244,115,44,.4)}
 .ck-top-pill{font-size:12.5px;font-weight:600;color:var(--blue-deep);background:var(--tint);border:1px solid #D6E4FC;border-radius:99px;padding:7px 15px;white-space:nowrap}
 
-.ck-hero{max-width:1120px;margin:0 auto;padding:40px 24px 84px;display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:center}
+.ck-hero{max-width:1120px;margin:0 auto;padding:40px 24px 104px;display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:center}
 .ck-h1{font-size:clamp(38px,5.2vw,58px);font-weight:700;line-height:1.06;margin:16px 0 0}
 .ck-h1 b{color:var(--blue);font-weight:700}
 .ck-lede{font-size:17.5px;line-height:1.65;color:var(--mut);max-width:540px;margin:20px 0 0}
@@ -88,7 +89,7 @@ const LANDING_CSS = BASE_CSS + `
 
 .ck-photo{position:relative}
 .ck-photo>img{display:block;width:100%;aspect-ratio:4/3.4;object-fit:cover;border-radius:20px;box-shadow:0 30px 70px rgba(10,27,46,.22)}
-.ck-photo-card{position:absolute;left:-26px;bottom:-30px;background:#fff;border:1px solid var(--line);border-radius:16px;
+.ck-photo-card{position:absolute;left:-30px;bottom:-60px;background:#fff;border:1px solid var(--line);border-radius:16px;
   padding:18px 22px;box-shadow:0 22px 50px rgba(10,27,46,.18);max-width:300px}
 .ck-photo-card p{margin:0}
 .ck-photo-card .ck-tick{padding:6px 0;font-size:13.5px;font-weight:600;color:#33415C}
@@ -181,6 +182,8 @@ const LANDING_CSS = BASE_CSS + `
   .ck-lede{max-width:none}
   .ck-photo{margin:0 0 26px}
   .ck-photo-card{left:12px;bottom:-26px}
+  .ck-shot{display:flex;flex-direction:column}
+  .ck-shot-tag{position:static;order:-1;max-width:none;margin:0 0 18px}
   .ck-who-grid,.ck-built-grid{grid-template-columns:1fr;gap:44px}
   .ck-portrait{max-width:290px}
   .ck-covers{padding:62px 0 66px}
@@ -197,7 +200,7 @@ const LANDING_CSS = BASE_CSS + `
 @media (max-width:560px){
   .ck-top-pill{display:none}
   .ck-cta-row .ck-btn-xl{width:100%}
-  .ck-photo-card{position:static;margin:-34px 14px 0;max-width:none}
+  .ck-photo-card{position:relative;z-index:1;margin:-34px 14px 0;max-width:none}
   .ck-band img{height:430px}
 }
 `;
@@ -415,7 +418,7 @@ export function landingPage() {
         'Deal card 3 body',
         'This is research, not a sales funnel. Worst case, you have spent a few minutes and the national results land in your inbox anyway.'
       ),
-      slot('deadline', 'Deadline pill', 'Complete the survey within 2 days of your invite to lock in the 15%'),
+      slot('deadline', 'Deadline pill', 'Complete the survey while it is open and the 15% is locked in for your club'),
       slot('who_kicker', 'Who section kicker', 'Who is asking'),
       slot('who_title', 'Who section title', 'From one committee to another'),
       slot(
