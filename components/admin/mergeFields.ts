@@ -9,6 +9,8 @@ import { MergeFieldOption } from '@/components/admin/editor/ui';
 // merged into result/notification emails.
 
 const PERSON: MergeFieldOption[] = [
+  { token: '{greeting}', label: 'Greeting', hint: '"Hi Shahla," or "Hi Table Tennis ACT committee," or "Hi there,"' },
+  { token: '{greeting_name}', label: 'Greeting name', hint: 'First name, else "<organisation> committee", else "there"' },
   { token: '{first_name}', label: 'First name' },
   { token: '{last_name}', label: 'Last name' },
   { token: '{email}', label: 'Email address' },

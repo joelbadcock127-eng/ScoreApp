@@ -31,25 +31,53 @@ interface Summary {
   recent: Recipient[];
 }
 
+type ParsedRow = { email: string; first_name: string; last_name: string; business: string };
+type Column = 'email' | 'first_name' | 'last_name' | 'business' | null;
+
+// Recognise a header row ("Email, First name, Last name, Club") so columns
+// can be mapped by name; otherwise columns are positional after the email:
+// first name, last name, business. Empty cells keep their position, so
+// "info@club.org.au, , , Some Club" puts the club in business, not first name.
+function headerColumns(cells: string[]): Column[] | null {
+  const cols = cells.map<Column>((c) => {
+    const h = c.toLowerCase();
+    if (/e-?mail/.test(h)) return 'email';
+    if (/first|given|contact|^name$/.test(h)) return 'first_name';
+    if (/last|surname|family/.test(h)) return 'last_name';
+    if (/business|club|organi[sz]ation|association|company|org\b/.test(h)) return 'business';
+    return null;
+  });
+  return cols.includes('email') ? cols : null;
+}
+
 // Parse pasted text / CSV into recipient rows. Accepts one address per line,
 // optionally followed by first name, last name, business (comma/semicolon/tab
-// separated, in any of the common export shapes). Header rows are skipped.
-function parseRows(text: string): { email: string; first_name: string; last_name: string; business: string }[] {
-  const rows: { email: string; first_name: string; last_name: string; business: string }[] = [];
+// separated, in any of the common export shapes).
+function parseRows(text: string): ParsedRow[] {
+  const rows: ParsedRow[] = [];
+  let header: Column[] | null = null;
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
     const cells = line.split(/[,;\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
     // The email can be in any column (e.g. "Name, email" exports).
     const emailIdx = cells.findIndex((c) => EMAIL_RE.test(c));
-    if (emailIdx === -1) continue; // header row or junk
-    const rest = cells.filter((_, i) => i !== emailIdx).filter(Boolean);
-    rows.push({
-      email: cells[emailIdx],
-      first_name: rest[0] ?? '',
-      last_name: rest[1] ?? '',
-      business: rest[2] ?? '',
-    });
+    if (emailIdx === -1) {
+      if (rows.length === 0 && !header) header = headerColumns(cells);
+      continue; // header row or junk
+    }
+    const row: ParsedRow = { email: cells[emailIdx], first_name: '', last_name: '', business: '' };
+    if (header) {
+      header.forEach((col, i) => {
+        if (col && col !== 'email' && cells[i]) row[col] = cells[i];
+      });
+    } else {
+      const rest = cells.filter((_, i) => i !== emailIdx);
+      row.first_name = rest[0] ?? '';
+      row.last_name = rest[1] ?? '';
+      row.business = rest[2] ?? '';
+    }
+    rows.push(row);
   }
   return rows;
 }
@@ -358,7 +386,7 @@ export default function DistributionEditor({
       {/* Import */}
       <p className={`${SECTION_LABEL} mt-10`}>Import recipients</p>
       <p className={HINT}>
-        Paste addresses (one per line, optionally “email, first name, last name, business”) or upload a CSV. Duplicates,
+        Paste addresses (one per line, optionally “email, first name, last name, business”; leave a cell empty to skip it, as in “info@club.org.au, , , Some Club”) or upload a CSV with a header row. Duplicates,
         addresses already on this scorecard, and anyone who has unsubscribed are skipped automatically.
       </p>
       <div className={`${CARD} mt-3`}>

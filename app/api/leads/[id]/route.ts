@@ -51,6 +51,7 @@ async function sendCompletionEmails(
       {
         first_name: lead.first_name,
         last_name: lead.last_name,
+        business: customFields.business ?? '',
         email: lead.email,
         status: 'Completed',
         score,
