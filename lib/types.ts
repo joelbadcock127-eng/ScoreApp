@@ -290,6 +290,9 @@ export interface ScorecardConfig {
   title: string;
   copyright: string;
   mode?: ScorecardMode;
+  // Survey mode only: public links open on the first question and the lead
+  // form is asked at the end, instead of showing the landing page first.
+  questionsFirst?: boolean;
   // 'custom' renders the AI-designed page from customPages instead of the
   // component-based views. Absent = 'components'.
   landingMode?: 'components' | 'custom';

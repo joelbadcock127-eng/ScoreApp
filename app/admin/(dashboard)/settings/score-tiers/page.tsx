@@ -5,5 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function ScoreTiersPage() {
   const config = await getConfig();
-  return <ScoreTiersEditor initialTiers={config.tiers} initialMode={config.mode ?? 'scorecard'} />;
+  return (
+    <ScoreTiersEditor
+      initialTiers={config.tiers}
+      initialMode={config.mode ?? 'scorecard'}
+      initialQuestionsFirst={config.questionsFirst === true}
+    />
+  );
 }

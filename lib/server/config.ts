@@ -238,6 +238,17 @@ export const getActiveOrDefaultId = cache(async (): Promise<number> => {
   return getSessionAccountId() != null ? 0 : 1;
 });
 
+// The address a scorecard is published on, for links in emails: its custom
+// domain, else its managed subdomain, else the origin the request came from
+// (the platform host). Invite links must use this rather than the admin's
+// host, so recipients land on the scorecard's own domain.
+export async function publicOrigin(id: number, fallbackOrigin: string): Promise<string> {
+  const sc = (await listScorecards()).find((s) => s.id === id);
+  if (sc?.custom_domain) return `https://${sc.custom_domain}`;
+  if (sc?.domain) return `https://${sc.domain}.${BASE_DOMAIN}`;
+  return fallbackOrigin;
+}
+
 export async function setDefaultScorecard(id: number) {
   const sb = supabaseAdmin();
   const { error: clearErr } = await sb.from('scorecard_config').update({ is_default: false }).eq('is_default', true);

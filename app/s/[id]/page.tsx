@@ -1,5 +1,6 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getConfig, listScorecards } from '@/lib/server/config';
+import { questionsFirst } from '@/lib/scoring';
 import ScorecardLanding from '@/components/ScorecardLanding';
 import { faviconIcons } from '@/lib/favicon';
 
@@ -41,5 +42,6 @@ export default async function ScorecardLandingPage({
   const id = await resolveId(params.id);
   if (id == null) notFound();
   const config = await getConfig(id);
+  if (questionsFirst(config)) redirect(`/quiz?scorecard=${id}`);
   return <ScorecardLanding config={config} scorecardId={id} hideChrome={searchParams?.chrome === '0'} />;
 }

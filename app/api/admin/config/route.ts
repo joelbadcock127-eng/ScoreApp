@@ -132,6 +132,7 @@ export async function PUT(req: NextRequest) {
   if (typeof body.title === 'string') config.title = body.title.slice(0, 120);
   if (typeof body.copyright === 'string') config.copyright = sanitizeRichText(body.copyright).slice(0, 200);
   if (body.mode === 'scorecard' || body.mode === 'survey') config.mode = body.mode;
+  if (typeof body.questionsFirst === 'boolean') config.questionsFirst = body.questionsFirst;
 
   if (body.branding && typeof body.branding === 'object') {
     const b = body.branding;

@@ -3,9 +3,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnswerDetail, Category, Question, QuestionsPageConfig, QuestionOption, ScorecardMode } from '@/lib/types';
+import { AnswerDetail, Category, Question, QuestionsPageConfig, QuestionOption, ScorecardConfig, ScorecardMode } from '@/lib/types';
 import { sanitizeRichText } from '@/lib/richtext';
 import { logoLink } from '@/lib/branding';
+import LeadFormFields from './LeadFormFields';
 import Spinner from './Spinner';
 
 export const DEFAULT_QUESTIONS_PAGE: QuestionsPageConfig = {
@@ -51,7 +52,10 @@ export default function QuizFlow({
   copyright = '',
   page,
   preview = false,
+  previewScorecardId,
   mode = 'scorecard',
+  scorecardId,
+  leadForm,
 }: {
   leadId: string;
   questions: Question[];
@@ -61,12 +65,20 @@ export default function QuizFlow({
   copyright?: string;
   page?: QuestionsPageConfig;
   preview?: boolean;
+  // Preview runs end on this scorecard's sample results / thank-you page.
+  previewScorecardId?: number;
   mode?: ScorecardMode;
+  // Questions-first surveys: no lead exists yet. The lead form is shown after
+  // the last question, the lead is created then, and the answers saved to it.
+  scorecardId?: number;
+  leadForm?: ScorecardConfig['leadForm'];
 }) {
+  const detailsAtEnd = Boolean(leadForm && scorecardId != null);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [choices, setChoices] = useState<Record<string, number[]>>({}); // selected option indices
   const [texts, setTexts] = useState<Record<string, string>>({});
+  const [askDetails, setAskDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const startedAt = useRef(Date.now());
@@ -132,6 +144,24 @@ export default function QuizFlow({
     return { value: score, selected: picked };
   }
 
+  // Saves the answers to a lead and moves on to its results / thank-you page.
+  async function complete(id: string, finalAnswers: Record<string, number>) {
+    const details: Record<string, AnswerDetail> = {};
+    for (const qq of questions) details[qq.id] = detailFor(qq, finalAnswers[qq.id] ?? 0);
+    const res = await fetch(`/api/leads/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'complete',
+        answers: finalAnswers,
+        answer_details: details,
+        duration_seconds: (Date.now() - startedAt.current) / 1000,
+      }),
+    });
+    if (!res.ok) throw new Error('Could not submit your answers. Please try again.');
+    router.push(`/results/${id}`);
+  }
+
   async function next() {
     const score =
       type === 'scale' ? value : type === 'text' ? 0 : selected.length ? scoreFor(q, selected) : 0;
@@ -141,27 +171,48 @@ export default function QuizFlow({
       setIndex(index + 1);
       return;
     }
-    setSubmitting(true);
-    setError('');
     if (preview) {
-      router.push('/results/preview');
+      setSubmitting(true);
+      router.push(previewScorecardId != null ? `/results/preview?scorecard=${previewScorecardId}` : '/results/preview');
       return;
     }
+    if (detailsAtEnd) {
+      // Answers are held on the client until the respondent gives their details.
+      setError('');
+      setAskDetails(true);
+      return;
+    }
+    setSubmitting(true);
+    setError('');
     try {
-      const details: Record<string, AnswerDetail> = {};
-      for (const qq of questions) details[qq.id] = detailFor(qq, withCurrent[qq.id] ?? 0);
-      const res = await fetch(`/api/leads/${leadId}`, {
-        method: 'PATCH',
+      await complete(leadId, withCurrent);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setSubmitting(false);
+    }
+  }
+
+  // Questions-first surveys: create the lead from the details form, then save
+  // the answers held on the client to it.
+  async function submitDetails(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!leadForm) return;
+    setSubmitting(true);
+    setError('');
+    const form = new FormData(e.currentTarget);
+    const payload: Record<string, unknown> = { scorecard_id: scorecardId };
+    for (const f of leadForm.fields.filter((f) => f.enabled)) {
+      payload[f.key] = f.type === 'checkbox' ? form.get(f.key) === 'on' : form.get(f.key) ?? '';
+    }
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'complete',
-          answers: withCurrent,
-          answer_details: details,
-          duration_seconds: (Date.now() - startedAt.current) / 1000,
-        }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Could not submit your answers. Please try again.');
-      router.push(`/results/${leadId}`);
+      if (!res.ok) throw new Error('Something went wrong. Please try again.');
+      const { id } = await res.json();
+      await complete(id, answers);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
       setSubmitting(false);
@@ -196,6 +247,35 @@ export default function QuizFlow({
         </header>
       )}
 
+      {askDetails && leadForm ? (
+        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 pb-16">
+          <button
+            onClick={() => setAskDetails(false)}
+            className="mx-auto mb-6 flex items-center gap-2 text-base hover:opacity-70"
+            style={optionStyle}
+          >
+            <span aria-hidden>←</span> BACK
+          </button>
+          <h1
+            className={`${alignClass} text-3xl font-medium leading-snug md:text-4xl`}
+            style={{ color: cfg.questions.questionTextColor }}
+          >
+            {leadForm.heading}
+          </h1>
+          <form onSubmit={submitDetails} className="mx-auto mt-10 w-full max-w-md rounded-xl bg-white p-6 shadow-card">
+            <LeadFormFields fields={leadForm.fields} />
+            {error && <p className="mt-4 text-sm text-tier-low">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="mt-6 flex w-full items-center justify-center gap-3 rounded-md py-4 text-lg font-medium text-white transition hover:brightness-110 disabled:opacity-60"
+              style={{ backgroundColor: leadForm.buttonColor || buttonColor }}
+            >
+              {submitting ? 'Submitting…' : leadForm.submitLabel}
+            </button>
+          </form>
+        </div>
+      ) : (
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 pb-16">
         {cfg.questions.showBack && index > 0 ? (
           <button
@@ -343,14 +423,15 @@ export default function QuizFlow({
           Next
         </button>
       </div>
+      )}
 
       {cfg.progress.show && (
         <div className="bg-gray-100 px-6 py-4">
-          <p className="text-center text-lg text-ink">{percent}% Complete</p>
+          <p className="text-center text-lg text-ink">{askDetails ? 100 : percent}% Complete</p>
           <div className="mx-auto mt-2 h-1.5 w-full max-w-xs rounded-full bg-blue-200">
             <div
               className="h-1.5 rounded-full transition-all"
-              style={{ width: `${percent}%`, backgroundColor: buttonColor }}
+              style={{ width: `${askDetails ? 100 : percent}%`, backgroundColor: buttonColor }}
             />
           </div>
         </div>

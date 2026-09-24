@@ -83,11 +83,12 @@ export function renderInvite(
   config: ScorecardConfig,
   lead: InviteRecipient,
   origin: string,
-  signatureHtml = ''
+  signatureHtml = '',
+  inviteLinkOverride?: string
 ): { subject: string; html: string; unsubscribeUrl: string } {
   const ie = config.inviteEmail;
   if (!ie) throw new Error('No invite email configured');
-  const inviteLink = `${origin}/quiz?lead=${lead.id}`;
+  const inviteLink = inviteLinkOverride ?? `${origin}/quiz?lead=${lead.id}`;
   const unsubscribeUrl = `${origin}/api/unsubscribe?t=${encodeURIComponent(unsubscribeToken(lead.id))}`;
   const fields = inviteFields(lead, config, inviteLink, config.branding.primaryColor);
   const body = applyEmailSpacing(mergeFields(ie.content, fields), ie.lineSpacing);

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionAccount, getSessionAccountId } from '@/lib/server/auth';
-import { getActiveOrDefaultId, getConfig, listMyScorecards } from '@/lib/server/config';
+import { getActiveOrDefaultId, getConfig, listMyScorecards, publicOrigin } from '@/lib/server/config';
 import { sendEmail } from '@/lib/server/email';
 import { InviteRecipient, renderInvite } from '@/lib/server/invites';
 import { signatureHtmlForScorecard } from '@/lib/server/signature';
@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const origin = req.nextUrl.origin;
+  // Links point at the scorecard's own address (custom domain or subdomain),
+  // not the admin host the send was triggered from.
+  const origin = await publicOrigin(scorecardId, req.nextUrl.origin);
   const sb = supabaseAdmin();
   // Account signature (if configured) is appended to every invite.
   const signatureHtml = await signatureHtmlForScorecard(scorecardId);
@@ -70,7 +72,11 @@ export async function POST(req: NextRequest) {
     // unsubscribe headers) so its spam/inbox placement reflects the real send.
     // "[Test]"-style bracket prefixes and missing List-Unsubscribe headers both
     // score worse with spam filters than the production email would.
-    const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin, signatureHtml);
+    // The sample lead is not a real row, so its link runs the questions as a
+    // preview of this scorecard and ends on its thank-you page, rather than
+    // a link that cannot be completed.
+    const testLink = `${origin}/quiz?preview=1&scorecard=${scorecardId}`;
+    const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin, signatureHtml, testLink);
     const result = await sendEmail({
       to: [to],
       subject: stripTags(subject),

@@ -6,6 +6,12 @@ export function isSurvey(config: Pick<ScorecardConfig, 'mode'>): boolean {
   return config.mode === 'survey';
 }
 
+// Survey-only setting: public links skip the landing page and open on the
+// first question, with the lead form asked at the end.
+export function questionsFirst(config: Pick<ScorecardConfig, 'mode' | 'questionsFirst'>): boolean {
+  return isSurvey(config) && config.questionsFirst === true;
+}
+
 export function tierFor(percent: number, tiers: Tier[]): Tier {
   const t = tiers.find((t) => percent >= t.from && percent <= t.to);
   return t ?? tiers[tiers.length - 1];

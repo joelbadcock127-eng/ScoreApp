@@ -6,12 +6,15 @@ import { ScorecardMode, Tier } from '@/lib/types';
 export default function ScoreTiersEditor({
   initialTiers,
   initialMode = 'scorecard',
+  initialQuestionsFirst = false,
 }: {
   initialTiers: Tier[];
   initialMode?: ScorecardMode;
+  initialQuestionsFirst?: boolean;
 }) {
   const [tiers, setTiers] = useState<Tier[]>(initialTiers);
   const [mode, setMode] = useState<ScorecardMode>(initialMode);
+  const [questionsFirst, setQuestionsFirst] = useState(initialQuestionsFirst);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -25,7 +28,7 @@ export default function ScoreTiersEditor({
     const res = await fetch('/api/admin/config', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tiers, mode }),
+      body: JSON.stringify({ tiers, mode, questionsFirst }),
     });
     setSaving(false);
     setMessage(res.ok ? 'Saved.' : 'Save failed.');
@@ -66,6 +69,31 @@ export default function ScoreTiersEditor({
           />
         </button>
       </div>
+
+      {survey && (
+        <div className="mt-6 flex items-start justify-between gap-6 rounded-xl border border-gray-200 bg-white p-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Open on the first question</p>
+            <p className="mt-2 text-muted">
+              Skip the landing page. Every link to this survey, the built-in link, the subdomain and any custom
+              domain, opens straight on question one. Respondents are asked for their name, email and other lead
+              form details after the last question, so a lead is only created once they finish. Invite links from
+              Distribution already know who the respondent is and are unaffected.
+            </p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={questionsFirst}
+            aria-label="Open on the first question"
+            onClick={() => setQuestionsFirst(!questionsFirst)}
+            className={`relative mt-1 h-7 w-12 flex-none rounded-full transition ${questionsFirst ? 'bg-primary' : 'bg-gray-300'}`}
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${questionsFirst ? 'left-6' : 'left-1'}`}
+            />
+          </button>
+        </div>
+      )}
 
       <div className="mt-6 rounded-xl border border-gray-200 bg-white p-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Score Tiers</p>
