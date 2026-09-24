@@ -7,23 +7,22 @@
 // template in lib/surveyTemplate.ts, so new scorecards created from the
 // template keep the old look.
 //
-// Design system (2026 refresh): a clean, official look. White and cool
-// grey sections, deep navy ink, one electric blue accent for every action,
-// and a ball orange used only as a tiny detail. Space Grotesk display type
-// over Inter body. No emojis anywhere: icons are inline SVG data URIs in
-// the CSS. Photography is professional stock (Unsplash CDN, free licence)
-// plus the club's own proof: real screenshots of the Devonport system
-// (devtt.com.au) and Joel for the byline. Every line of copy is a slot,
-// so the whole page stays editable in the admin's Custom Design editor.
+// Landing page ("How does your club compare?", 2026): white and pale blue
+// sections, deep navy type, one green for every action, Plus Jakarta Sans,
+// and real photography (a player at the table, Joel at the club). Icons are
+// SVG data URIs in the CSS. Every line of copy is a slot, so the whole page
+// stays editable in the admin's Custom Design editor.
+//
+// Thank-you page: the earlier clean white and navy design, Space Grotesk
+// display over Inter, icons as SVG data URIs in the CSS.
 // ————————————————————————————————————————————————————————————————————————
 
 const IMG = 'https://lenicbvdsepyljntsnht.supabase.co/storage/v1/object/public/scorecard-images/pulse';
 
 // Stock photography, hotlinked from the Unsplash CDN (their licence allows
-// hotlinking and commercial use, no attribution required). Both are slots,
-// so they can be swapped in Custom Design without touching code.
+// hotlinking and commercial use, no attribution required). It is a slot, so
+// it can be swapped in Custom Design without touching code.
 const PHOTO_HERO = 'https://images.unsplash.com/photo-1518928286447-dc161b7cd6fb?auto=format&fit=crop&w=1600&q=80';
-const PHOTO_BAND = 'https://images.unsplash.com/photo-1659303388053-6078a001ea21?auto=format&fit=crop&w=2000&q=80';
 
 const slot = (key, label, value, type = 'text') => ({ key, type, label, value });
 
@@ -69,280 +68,277 @@ const BASE_CSS = `
 `;
 
 // ——— Landing page ——————————————————————————————————————————————————————
+//
+// "How does your club compare?" A light, plain spoken research page: white
+// and pale blue sections, deep navy type, one green for every action, and
+// real photography (the player serving, Joel at the club). Icons are SVG
+// data URIs in the CSS because the sanitiser strips <svg>. Every line of
+// copy is a slot so it stays editable in Custom Design. Desktop is a two
+// column page; below 860px everything stacks to one column and buttons go
+// full width.
 
-const LANDING_CSS = BASE_CSS + `
-.ck-top{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1120px;margin:0 auto;padding:22px 24px}
-.ck-mark{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',Inter,sans-serif;font-weight:700;font-size:17px}
-.ck-dot{width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 32% 28%,#FF9A63,var(--orange) 60%,#D45A19);box-shadow:0 2px 6px rgba(244,115,44,.4)}
-.ck-top-pill{font-size:12.5px;font-weight:600;color:var(--blue-deep);background:var(--tint);border:1px solid #D6E4FC;border-radius:99px;padding:7px 15px;white-space:nowrap}
+const FONT_CSS = `
+@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:200 800;font-display:swap;src:url(https://fonts.gstatic.com/s/plusjakartasans/v12/LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2) format('woff2')}
+`;
 
-.ck-hero{max-width:1120px;margin:0 auto;padding:40px 24px 104px;display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:center}
-.ck-h1{font-size:clamp(38px,5.2vw,58px);font-weight:700;line-height:1.06;margin:16px 0 0}
-.ck-h1 b{color:var(--blue);font-weight:700}
-.ck-lede{font-size:17.5px;line-height:1.65;color:var(--mut);max-width:540px;margin:20px 0 0}
-.ck-cta-row{display:flex;align-items:center;flex-wrap:wrap;gap:18px;margin-top:30px}
-.ck-meta{font-size:13.5px;font-weight:600;color:var(--mut);max-width:260px;line-height:1.5}
-.ck-from{display:flex;align-items:center;gap:12px;margin-top:34px;padding-top:24px;border-top:1px solid var(--line)}
-.ck-from img{width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid #fff;box-shadow:0 4px 12px rgba(10,27,46,.18)}
-.ck-from p{margin:0;font-size:13.5px;color:var(--mut);line-height:1.45}
-.ck-from p b{display:block;color:var(--ink);font-size:14.5px}
+// Stroke icons, navy unless noted. Keep them in one place so a colour change
+// is a single edit.
+const I = (paths, stroke = '%230B2A4A', w = 1.9) =>
+  `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke}' stroke-width='${w}' stroke-linecap='round' stroke-linejoin='round'%3E${paths}%3C/svg%3E")`;
+const P = {
+  clock: "%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E",
+  bars: "%3Cpath d='M4 20V14'/%3E%3Cpath d='M10 20V9'/%3E%3Cpath d='M16 20V4'/%3E%3Cpath d='M22 20H2'/%3E",
+  people: "%3Ccircle cx='9' cy='8' r='3.5'/%3E%3Cpath d='M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6'/%3E%3Ccircle cx='17' cy='9' r='2.5'/%3E%3Cpath d='M16 14.2c3 .2 5.5 2.4 5.5 5.8'/%3E",
+  lock: "%3Crect x='4' y='10' width='16' height='11' rx='2'/%3E%3Cpath d='M8 10V7a4 4 0 0 1 8 0v3'/%3E",
+  doc: "%3Cpath d='M7 3h7l5 5v13H7z'/%3E%3Cpath d='M14 3v5h5'/%3E%3Cpath d='M10 13h6M10 17h6'/%3E",
+  coins: "%3Cellipse cx='12' cy='6' rx='7' ry='3'/%3E%3Cpath d='M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6'/%3E%3Cpath d='M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6'/%3E",
+  trend: "%3Cpath d='M3 17l6-6 4 4 8-8'/%3E%3Cpath d='M14 7h7v7'/%3E",
+  tick: "%3Cpath d='M20 6L9 17l-5-5'/%3E",
+  shield: "%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E",
+  person: "%3Ccircle cx='12' cy='8' r='4'/%3E%3Cpath d='M4 21c0-4 3.6-7 8-7s8 3 8 7'/%3E",
+  hands: "%3Cpath d='M11 12l-3-3a2 2 0 0 0-3 3l5 5a4 4 0 0 0 6 0l4-4a2 2 0 0 0-3-3l-2 2'/%3E%3Cpath d='M12 11l3-3a2 2 0 0 1 3 3'/%3E",
+  arrow: "%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E",
+};
 
-.ck-photo{position:relative}
-.ck-photo>img{display:block;width:100%;aspect-ratio:4/3.4;object-fit:cover;border-radius:20px;box-shadow:0 30px 70px rgba(10,27,46,.22)}
-.ck-photo-card{position:absolute;left:-30px;bottom:-60px;background:#fff;border:1px solid var(--line);border-radius:16px;
-  padding:18px 22px;box-shadow:0 22px 50px rgba(10,27,46,.18);max-width:300px}
-.ck-photo-card p{margin:0}
-.ck-photo-card .ck-tick{padding:6px 0;font-size:13.5px;font-weight:600;color:#33415C}
-.ck-photo-caption{position:absolute;right:14px;top:14px;font-size:11.5px;font-weight:600;color:#fff;background:rgba(8,24,48,.55);border-radius:8px;padding:6px 11px;backdrop-filter:blur(4px)}
+const LANDING_CSS = FONT_CSS + `
+.cp{--navy:#0B2A4A;--ink:#12213A;--mut:#4A5A70;--bg:#FFFFFF;--bg2:#F3F7FB;--line:#DCE5EF;--green:#1E9E4A;--green-deep:#177F3B;--green-tint:#E8F6EC;
+  background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;font-size:17px;line-height:1.55;overflow:hidden}
+.cp *{box-sizing:border-box}
+.cp h1,.cp h2,.cp h3{font-family:'Plus Jakarta Sans',Inter,sans-serif;font-weight:800;letter-spacing:-0.02em;line-height:1.08;margin:0;color:var(--navy);text-wrap:balance}
+.cp p{margin:0}
+.cp-wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+.cp-kicker{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+.cp-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:17px;
+  color:#fff;background:var(--green);border-radius:10px;padding:16px 26px;min-height:56px;text-decoration:none;transition:background .15s ease}
+.cp-btn:hover{background:var(--green-deep)}
+.cp-btn:focus-visible{outline:3px solid var(--navy);outline-offset:3px}
+.cp-btn::after{content:'';width:18px;height:18px;background:no-repeat center/18px ${I(P.arrow, 'white', 2.4)}}
 
-.ck-covers{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:80px 0 84px}
-.ck-covers-head{text-align:center;max-width:660px;margin:0 auto}
-.ck-covers h2{font-size:clamp(27px,3.8vw,40px);font-weight:700;line-height:1.12;margin:14px 0 0}
-.ck-covers-sub{font-size:16.5px;line-height:1.65;color:var(--mut);margin:16px 0 0}
-.ck-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:16px;margin-top:46px}
-.ck-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px 24px;transition:transform .18s ease,box-shadow .18s ease}
-.ck-card:hover{transform:translateY(-4px);box-shadow:0 16px 38px rgba(10,27,46,.09)}
-.ck-card h3{font-size:17.5px;font-weight:700;line-height:1.3;margin:16px 0 7px}
-.ck-card p{font-size:14.5px;line-height:1.6;color:var(--mut);margin:0}
+/* top bar */
+.cp-top{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1120px;margin:0 auto;padding:16px 24px;border-bottom:1px solid var(--line)}
+.cp-brand{display:flex;align-items:center;gap:12px}
+.cp-paddle{position:relative;width:26px;height:26px;flex:none}
+.cp-paddle::before{content:'';position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:#D2333B}
+.cp-paddle::after{content:'';position:absolute;right:1px;bottom:0;width:6px;height:11px;border-radius:3px;background:#B98552;transform:rotate(-45deg)}
+.cp-brand b{font-weight:800;font-size:17px;color:var(--navy)}
+.cp-brand span{display:block;font-size:12px;color:var(--mut);line-height:1.3;border-left:1px solid var(--line);padding-left:12px}
+.cp-top-right{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
 
-.ck-back{padding:88px 24px 0}
-.ck-back-panel{max-width:1120px;margin:0 auto;background:linear-gradient(155deg,var(--navy) 0%,var(--navy-deep) 100%);border-radius:28px;
-  padding:64px 56px;position:relative;overflow:hidden}
-.ck-back-panel::before{content:'';position:absolute;right:-120px;top:-120px;width:340px;height:340px;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,rgba(29,99,237,.35),rgba(29,99,237,.02) 70%)}
-.ck-back-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:56px;align-items:center;position:relative;z-index:1}
-.ck-back .ck-kicker{color:#7FA9F7}
-.ck-back h2{color:#fff;font-size:clamp(27px,3.8vw,40px);font-weight:700;line-height:1.12;margin:14px 0 0}
-.ck-back-sub{color:#B9C8DF;font-size:16px;line-height:1.7;margin:16px 0 0}
-.ck-report{background:#fff;border-radius:18px;padding:30px 30px 24px;box-shadow:0 30px 70px rgba(0,0,0,.35)}
-.ck-report-eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);margin:0}
-.ck-report-title{font-family:'Space Grotesk',Inter,sans-serif;font-size:24px;font-weight:700;line-height:1.15;margin:9px 0 0;color:var(--ink)}
-.ck-report-sub{font-size:13.5px;color:var(--mut);margin:8px 0 0}
-.ck-report-list{list-style:none;margin:16px 0 0;padding:0}
-.ck-report-list li{display:flex;gap:11px;align-items:flex-start;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px;font-weight:600;color:#33415C;line-height:1.45}
-.ck-report-list li:last-of-type{border-bottom:0}
-.ck-report-list li::before{content:'';flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px;background:linear-gradient(135deg,var(--blue),#6D9BF5)}
-.ck-deals{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:44px;position:relative;z-index:1}
-.ck-deal{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px 22px}
-.ck-deal .ck-ico{background-color:rgba(255,255,255,.10)}
-.ck-deal h3{color:#fff;font-size:17px;font-weight:700;margin:14px 0 7px}
-.ck-deal p{color:#B9C8DF;font-size:14px;line-height:1.65;margin:0}
-.ck-deadline{display:inline-block;margin-top:32px;font-size:13px;font-weight:700;color:var(--navy-deep);background:#FFE9D8;border-radius:99px;padding:9px 18px;position:relative;z-index:1}
+/* hero */
+.cp-hero{max-width:1120px;margin:0 auto;padding:36px 24px 44px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.cp-h1{font-size:clamp(38px,5vw,60px)}
+.cp-h1 b{color:var(--green);font-weight:800}
+.cp-lede{font-size:18px;color:var(--ink);margin-top:20px;max-width:520px}
+.cp-lede2{font-size:16.5px;color:var(--mut);margin-top:14px;max-width:520px}
+.cp-hero .cp-btn{margin-top:26px}
+.cp-facts{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:26px 0 0;padding:0}
+.cp-facts li{display:flex;gap:12px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:var(--ink);font-weight:500}
+.cp-facts li b{font-weight:700}
+.cp-facts i{flex:none;width:34px;height:34px;background:no-repeat center/30px}
+.cp-facts .cp-i-clock{background-image:${I(P.clock)}}
+.cp-facts .cp-i-bars{background-image:${I(P.bars)}}
+.cp-facts .cp-i-people{background-image:${I(P.people)}}
+.cp-lockline{display:flex;gap:8px;align-items:center;margin-top:20px;font-size:13px;color:var(--mut)}
+.cp-lockline::before{content:'';flex:none;width:14px;height:14px;background:no-repeat center/14px ${I(P.lock, '%234A5A70', 2.2)}}
+.cp-photo{position:relative;min-height:320px;border-radius:18px;overflow:hidden;background:var(--navy)}
+.cp-photo img{display:block;width:100%;height:100%;min-height:320px;aspect-ratio:4/3.6;object-fit:cover;object-position:center top}
+.cp-photo::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,.35),transparent 40%)}
 
-.ck-who{padding:96px 0 88px}
-.ck-who-grid{display:grid;grid-template-columns:.82fr 1.18fr;gap:64px;align-items:center}
-.ck-portrait{position:relative;max-width:340px;margin:0 auto}
-.ck-portrait::before{content:'';position:absolute;inset:20px -16px -16px 20px;border-radius:22px;background:var(--tint)}
-.ck-portrait img{position:relative;display:block;width:100%;aspect-ratio:4/4.5;object-fit:cover;object-position:top;border-radius:22px;box-shadow:0 24px 54px rgba(10,27,46,.18)}
-.ck-who h2{font-size:clamp(28px,3.8vw,40px);font-weight:700;line-height:1.1;margin:14px 0 0}
-.ck-who p{font-size:16px;line-height:1.75;color:var(--mut);margin:18px 0 0}
-.ck-sig{margin-top:26px}
-.ck-sig b{font-family:'Space Grotesk',Inter,sans-serif;font-size:19px;font-weight:700;color:var(--ink)}
-.ck-sig span{display:block;font-size:13.5px;color:var(--mut);margin-top:3px}
+/* asked */
+.cp-asked{background:var(--bg2);padding:56px 0 60px}
+.cp-asked h2,.cp-back h2,.cp-who h2,.cp-few h2{font-size:clamp(28px,3.4vw,40px);margin-top:8px}
+.cp-sub{font-size:17px;color:var(--mut);margin-top:12px;max-width:640px}
+.cp-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:28px}
+.cp-card{border-radius:16px;padding:24px 22px 26px}
+.cp-card i{display:block;width:40px;height:40px;background:no-repeat left center/38px}
+.cp-card h3{font-size:19px;margin-top:18px}
+.cp-card p{font-size:14.5px;color:var(--mut);margin-top:8px;line-height:1.5}
+.cp-card-blue{background:#E6F0FA}.cp-card-blue i{background-image:${I(P.people, '%231A4F86', 1.8)}}
+.cp-card-green{background:#E7F6EC}.cp-card-green i{background-image:${I(P.doc, '%23177F3B', 1.8)}}
+.cp-card-yellow{background:#FBF3DC}.cp-card-yellow i{background-image:${I(P.coins, '%23A87814', 1.8)}}
+.cp-card-red{background:#FBE9E9}.cp-card-red i{background-image:${I(P.trend, '%23B4342E', 1.8)}}
+.cp-note{display:flex;gap:10px;align-items:center;margin-top:20px;background:var(--green-tint);border:1px solid #CBE9D4;border-radius:12px;padding:14px 18px;font-size:15px;color:var(--ink)}
+.cp-note::before{content:'';flex:none;width:20px;height:20px;border-radius:50%;background:var(--green) no-repeat center/12px ${I(P.tick, 'white', 3)}}
+.cp-note b{font-weight:700}
 
-.ck-built{background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:84px 0}
-.ck-built-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:60px;align-items:center}
-.ck-shot{position:relative;padding:0 0 52px 30px}
-.ck-laptop{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 30px 70px rgba(10,27,46,.16);overflow:hidden}
-.ck-laptop-bar{display:flex;align-items:center;gap:6px;padding:10px 14px;background:#EDF1F7;border-bottom:1px solid var(--line)}
-.ck-laptop-bar span{width:8px;height:8px;border-radius:50%;background:#C9D3E2}
-.ck-laptop img{display:block;width:100%}
-.ck-phone{position:absolute;left:0;bottom:0;width:30%;max-width:175px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:7px;box-shadow:0 26px 60px rgba(10,27,46,.24);transform:rotate(-2deg)}
-.ck-phone img{display:block;width:100%;border-radius:14px}
-.ck-shot-tag{position:absolute;right:0;bottom:12px;background:var(--navy-deep);color:#fff;font-size:12.5px;font-weight:600;line-height:1.45;border-radius:12px;padding:12px 16px;max-width:250px;box-shadow:0 16px 36px rgba(8,24,48,.30)}
-.ck-built h2{font-size:clamp(27px,3.8vw,38px);font-weight:700;line-height:1.12;margin:14px 0 0}
-.ck-built-body{font-size:16px;line-height:1.7;color:var(--mut);margin:18px 0 0}
-.ck-ticks{list-style:none;margin:22px 0 0;padding:0}
-.ck-ticks li{padding:7px 0;font-size:15px;font-weight:600;color:#33415C;line-height:1.5}
-.ck-built-punch{font-size:15.5px;font-weight:700;color:var(--ink);margin:24px 0 0}
+/* back */
+.cp-back{padding:60px 0 64px}
+.cp-back-grid{display:grid;grid-template-columns:1fr .9fr;gap:40px;align-items:center}
+.cp-ticks{list-style:none;padding:0;margin:20px 0 0;display:grid;gap:9px}
+.cp-ticks li{display:flex;gap:10px;align-items:flex-start;font-size:15.5px;color:var(--ink)}
+.cp-ticks li::before{content:'';flex:none;width:20px;height:20px;margin-top:1px;border-radius:50%;background:var(--green) no-repeat center/12px ${I(P.tick, 'white', 3)}}
+.cp-agg{font-size:13.5px;color:var(--mut);margin-top:18px}
+.cp-back .cp-btn{margin-top:22px}
+/* the report, drawn in CSS: three sheets, the front one titled */
+.cp-report{position:relative;height:380px}
+.cp-sheet{position:absolute;background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 20px 50px rgba(11,42,74,.14)}
+.cp-sheet-1{left:6%;top:26px;width:52%;height:320px;transform:rotate(-4deg);padding:26px 22px;z-index:3}
+.cp-sheet-1 small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--green)}
+.cp-sheet-1 h3{font-size:22px;line-height:1.1;margin-top:8px}
+.cp-sheet-1 p{font-size:11.5px;color:var(--mut);margin-top:8px;line-height:1.4}
+.cp-dots{position:absolute;left:22px;right:22px;bottom:22px;height:110px;border-radius:8px;background:var(--bg2);overflow:hidden}
+.cp-dots span{position:absolute;width:9px;height:9px;border-radius:50%;background:var(--green)}
+.cp-dots span:nth-child(1){left:18%;top:28%}.cp-dots span:nth-child(2){left:34%;top:60%}.cp-dots span:nth-child(3){left:55%;top:22%}
+.cp-dots span:nth-child(4){left:70%;top:48%}.cp-dots span:nth-child(5){left:80%;top:75%}.cp-dots span:nth-child(6){left:44%;top:82%}.cp-dots span:nth-child(7){left:62%;top:66%}
+.cp-sheet-2{left:44%;top:0;width:40%;height:300px;transform:rotate(5deg);padding:20px 18px;z-index:2}
+.cp-bars{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:40px;padding-bottom:0;border-bottom:2px solid var(--line)}
+.cp-bars span{flex:1;background:#2F6FB2;border-radius:3px 3px 0 0}
+.cp-bars span:nth-child(1){height:35%}.cp-bars span:nth-child(2){height:55%}.cp-bars span:nth-child(3){height:48%}.cp-bars span:nth-child(4){height:80%}.cp-bars span:nth-child(5){height:100%}
+.cp-sheet-3{left:62%;top:150px;width:36%;height:210px;transform:rotate(9deg);padding:18px;z-index:1}
+.cp-donut{width:110px;height:110px;border-radius:50%;margin:16px auto 0;background:conic-gradient(#D2333B 0 68%,#2F6FB2 68% 100%);position:relative}
+.cp-donut::after{content:'68%';position:absolute;inset:26px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:var(--navy)}
+.cp-sheet-line{height:7px;border-radius:4px;background:var(--line);margin-top:8px}
+.cp-sheet-line.w1{width:70%}.cp-sheet-line.w2{width:45%}
 
-.ck-band{position:relative;margin-top:0}
-.ck-band img{display:block;width:100%;height:440px;object-fit:cover}
-.ck-band-shade{position:absolute;inset:0;background:linear-gradient(100deg,rgba(8,24,48,.86) 0%,rgba(8,24,48,.55) 48%,rgba(8,24,48,.18) 100%)}
-.ck-band-inner{position:absolute;inset:0;display:flex;align-items:center}
-.ck-band-copy{max-width:1120px;margin:0 auto;padding:0 24px;width:100%}
-.ck-band-quote{font-family:'Space Grotesk',Inter,sans-serif;color:#fff;font-size:clamp(23px,3.2vw,32px);font-weight:700;line-height:1.3;max-width:560px;margin:0}
-.ck-band-quote b{color:#8FB4F9}
-.ck-band-note{color:#C6D4E8;font-size:14.5px;line-height:1.6;max-width:460px;margin:16px 0 0}
+/* who */
+.cp-who{background:var(--bg2);padding:56px 0 60px}
+.cp-who-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:44px;align-items:center}
+.cp-portrait{border-radius:16px;overflow:hidden;box-shadow:0 20px 50px rgba(11,42,74,.14);background:var(--navy)}
+.cp-portrait img{display:block;width:100%;height:auto;aspect-ratio:4/3.6;object-fit:cover;object-position:center top}
+.cp-who p.cp-body{font-size:16.5px;color:var(--ink);margin-top:14px}
+.cp-sig{margin-top:22px;font-size:15px}
+.cp-sig b{display:block;font-weight:800;color:var(--navy);font-size:16px}
+.cp-sig i{color:var(--mut)}
 
-.ck-cta{padding:88px 24px 96px}
-.ck-cta-panel{max-width:1120px;margin:0 auto;background:linear-gradient(130deg,var(--blue) 0%,var(--blue-deep) 100%);border-radius:28px;text-align:center;padding:68px 32px;position:relative;overflow:hidden}
-.ck-cta-panel::before{content:'';position:absolute;left:6%;top:-60px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.10)}
-.ck-cta-panel::after{content:'';position:absolute;right:5%;bottom:-80px;width:210px;height:210px;border-radius:50%;background:rgba(255,255,255,.07)}
-.ck-cta h2{color:#fff;font-size:clamp(28px,4.2vw,44px);font-weight:700;margin:0;position:relative;z-index:1}
-.ck-cta p{color:rgba(255,255,255,.92);font-size:16.5px;line-height:1.6;max-width:540px;margin:16px auto 0;position:relative;z-index:1}
-.ck-cta .ck-btn{margin-top:30px;position:relative;z-index:1}
-.ck-cta-note{font-size:13.5px;color:rgba(255,255,255,.85);margin-top:18px;position:relative;z-index:1}
+/* few */
+.cp-few{padding:56px 0 64px}
+.cp-few-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:28px}
+.cp-few-item{display:grid;grid-template-columns:40px 1fr;gap:12px;align-items:start}
+.cp-few-item i{width:40px;height:40px;background:no-repeat center/34px}
+.cp-few-item h3{font-size:16.5px;line-height:1.25}
+.cp-few-item p{font-size:14px;color:var(--mut);margin-top:8px;line-height:1.5}
+.cp-i-shield{background-image:${I(P.shield, '%231A4F86')}}
+.cp-i-person{background-image:${I(P.person, '%231A4F86')}}
+.cp-i-clock2{background-image:${I(P.clock, '%231A4F86')}}
+.cp-i-hands{background-image:${I(P.hands, '%231A4F86')}}
 
-.ck-foot{text-align:center;padding:28px 24px 36px}
-.ck-foot p{margin:0;font-size:13px;color:var(--mut);line-height:1.7}
+/* final */
+.cp-final{background:linear-gradient(120deg,#0B2A4A,#153E68 70%,#1A4F86);color:#fff;padding:64px 0 70px;position:relative;overflow:hidden}
+.cp-final::before{content:'';position:absolute;right:-60px;bottom:-40px;width:520px;height:220px;background:linear-gradient(180deg,#1B3F66,#0E2B4B);border-radius:12px;transform:rotate(-8deg);opacity:.9}
+.cp-final::after{content:'';position:absolute;right:120px;bottom:64px;width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#FFFFFF,#E9EDF2 60%,#B8C1CC);box-shadow:0 18px 30px rgba(0,0,0,.45)}
+.cp-final .cp-wrap{position:relative;z-index:1}
+.cp-final h2{color:#fff;font-size:clamp(28px,3.4vw,40px);max-width:620px}
+.cp-final p{margin-top:14px;font-size:17px;color:#D6E2F0;max-width:560px}
+.cp-final p b{color:#fff}
+.cp-final .cp-btn{margin-top:24px}
+.cp-final .cp-small{font-size:13px;color:#B9C9DC;margin-top:14px}
+.cp-foot{text-align:center;font-size:13px;color:var(--mut);padding:22px 24px}
 
-@media (max-width:920px){
-  .ck-hero{grid-template-columns:1fr;gap:56px;padding-top:12px;padding-bottom:64px}
-  .ck-lede{max-width:none}
-  .ck-photo{margin:0}
-  .ck-photo-card{position:static;margin:16px 0 0;max-width:none}
-  .ck-shot{display:flex;flex-direction:column}
-  .ck-shot-tag{position:static;order:-1;max-width:none;margin:0 0 18px}
-  .ck-who-grid,.ck-built-grid{grid-template-columns:1fr;gap:44px}
-  .ck-portrait{max-width:290px}
-  .ck-covers{padding:62px 0 66px}
-  .ck-who{padding:72px 0 64px}
-  .ck-built{padding:64px 0}
-  .ck-back{padding-top:66px}
-  .ck-back-panel{padding:48px 26px}
-  .ck-back-grid{grid-template-columns:1fr;gap:40px}
-  .ck-band img{height:380px}
-  .ck-cta{padding:66px 24px 72px}
-  .ck-cta-panel{padding:54px 24px;border-radius:24px}
-  .ck-shot{padding-left:16px}
+@media (max-width:860px){
+  .cp-top{padding:14px 20px}
+  .cp-brand span,.cp-top-right{display:none}
+  .cp-hero{grid-template-columns:1fr;gap:28px;padding:28px 20px 40px}
+  .cp-h1{font-size:clamp(34px,9.5vw,44px)}
+  .cp-lede{font-size:17px}
+  .cp-hero .cp-btn,.cp-back .cp-btn,.cp-final .cp-btn{width:100%}
+  .cp-facts{grid-template-columns:1fr;gap:12px}
+  .cp-facts li{font-size:15px}
+  .cp-photo{min-height:0;order:-1}
+  .cp-photo img{min-height:0;aspect-ratio:16/11}
+  .cp-photo::after{display:none}
+  .cp-wrap{padding:0 20px}
+  .cp-cards{grid-template-columns:1fr 1fr;gap:12px}
+  .cp-card{padding:20px 18px}
+  .cp-back-grid,.cp-who-grid{grid-template-columns:1fr;gap:32px}
+  .cp-report{width:100%;height:300px;max-width:420px;margin:0 auto}
+  .cp-sheet-1{height:260px}.cp-sheet-2{height:240px}.cp-sheet-3{top:120px;height:170px}
+  .cp-portrait{max-width:420px}
+  .cp-few-grid{grid-template-columns:1fr 1fr;gap:22px}
+  .cp-final{padding:52px 0 60px}
+  .cp-final::before,.cp-final::after{display:none}
 }
-@media (max-width:560px){
-  .ck-top-pill{display:none}
-  .ck-cta-row .ck-btn-xl{width:100%}
-  .ck-band img{height:430px}
+@media (max-width:520px){
+  .cp-cards,.cp-few-grid{grid-template-columns:1fr}
+  .cp-report{height:260px}
+  .cp-sheet-1{height:250px;padding:20px 18px}.cp-sheet-1 h3{font-size:18px}.cp-dots{height:70px;left:18px;right:18px;bottom:18px}.cp-sheet-2{height:210px}.cp-sheet-3{display:none}
 }
 `;
 
 const LANDING_HTML = `
-<div class="cp-page ck">
-  <header class="ck-top">
-    <span class="ck-mark"><span class="ck-dot"></span>{{text:brand}}</span>
-    <span class="ck-top-pill">{{text:top_pill}}</span>
+<div class="cp-page cp">
+  <header class="cp-top">
+    <div class="cp-brand"><span class="cp-paddle"></span><div><b>{{text:brand}}</b></div><span>{{text:brand_tag}}</span></div>
+    <span class="cp-top-right">{{text:top_right}}</span>
   </header>
 
-  <section class="ck-hero">
+  <section class="cp-hero">
     <div>
-      <p class="ck-kicker">{{text:kicker}}</p>
-      <h1 class="ck-h1">{{rich:hero_title}}</h1>
-      <p class="ck-lede">{{text:hero_sub}}</p>
-      <div class="ck-cta-row">
-        <button class="ck-btn ck-btn-blue ck-btn-xl" data-start-scorecard>{{text:hero_cta}}</button>
-        <span class="ck-meta">{{text:hero_meta}}</span>
-      </div>
-      <div class="ck-from">
-        <img src="{{image:joel_photo}}" alt="Joel Badcock">
-        <p><b>{{text:from_name}}</b>{{text:from_role}}</p>
-      </div>
+      <h1 class="cp-h1">{{rich:hero_title}}</h1>
+      <p class="cp-lede">{{text:hero_p1}}</p>
+      <p class="cp-lede2">{{text:hero_p2}}</p>
+      <button class="cp-btn" data-start-scorecard>{{text:hero_cta}}</button>
+      <ul class="cp-facts">
+        <li><i class="cp-i-clock"></i><span>{{rich:fact1}}</span></li>
+        <li><i class="cp-i-bars"></i><span>{{rich:fact2}}</span></li>
+        <li><i class="cp-i-people"></i><span>{{rich:fact3}}</span></li>
+      </ul>
+      <p class="cp-lockline">{{text:lockline}}</p>
     </div>
-    <div class="ck-photo">
-      <img src="{{image:hero_photo}}" alt="A table tennis player serving during a competitive match">
-      <span class="ck-photo-caption">{{text:hero_caption}}</span>
-      <div class="ck-photo-card">
-        <p class="ck-tick">{{text:stat1}}</p>
-        <p class="ck-tick">{{text:stat2}}</p>
-        <p class="ck-tick">{{text:stat3}}</p>
-      </div>
-    </div>
+    <div class="cp-photo"><img src="{{image:hero_photo}}" alt="A table tennis player at the table, mid rally"></div>
   </section>
 
-  <section class="ck-covers">
-    <div class="ck-wrap">
-      <div class="ck-covers-head">
-        <p class="ck-kicker">{{text:covers_kicker}}</p>
-        <h2>{{text:covers_title}}</h2>
-        <p class="ck-covers-sub">{{text:covers_sub}}</p>
-      </div>
-      <div class="ck-cards">
-        <div class="ck-card"><span class="ck-ico ck-ico-users"></span><h3>{{text:c1_title}}</h3><p>{{text:c1_body}}</p></div>
-        <div class="ck-card"><span class="ck-ico ck-ico-clock"></span><h3>{{text:c2_title}}</h3><p>{{text:c2_body}}</p></div>
-        <div class="ck-card"><span class="ck-ico ck-ico-dollar"></span><h3>{{text:c3_title}}</h3><p>{{text:c3_body}}</p></div>
-        <div class="ck-card"><span class="ck-ico ck-ico-trend"></span><h3>{{text:c4_title}}</h3><p>{{text:c4_body}}</p></div>
-      </div>
+  <section class="cp-asked"><div class="cp-wrap">
+    <p class="cp-kicker">{{text:asked_kicker}}</p>
+    <h2>{{text:asked_title}}</h2>
+    <p class="cp-sub">{{text:asked_sub}}</p>
+    <div class="cp-cards">
+      <div class="cp-card cp-card-blue"><i></i><h3>{{text:c1_title}}</h3><p>{{text:c1_body}}</p></div>
+      <div class="cp-card cp-card-green"><i></i><h3>{{text:c2_title}}</h3><p>{{text:c2_body}}</p></div>
+      <div class="cp-card cp-card-yellow"><i></i><h3>{{text:c3_title}}</h3><p>{{text:c3_body}}</p></div>
+      <div class="cp-card cp-card-red"><i></i><h3>{{text:c4_title}}</h3><p>{{text:c4_body}}</p></div>
     </div>
-  </section>
+    <p class="cp-note"><span>{{rich:asked_note}}</span></p>
+  </div></section>
 
-  <section class="ck-back">
-    <div class="ck-back-panel">
-      <div class="ck-back-grid">
-        <div>
-          <p class="ck-kicker">{{text:back_kicker}}</p>
-          <h2>{{text:back_title}}</h2>
-          <p class="ck-back-sub">{{text:back_sub}}</p>
-        </div>
-        <div class="ck-report">
-          <p class="ck-report-eyebrow">{{text:report_eyebrow}}</p>
-          <p class="ck-report-title">{{text:report_title}}</p>
-          <p class="ck-report-sub">{{text:report_sub}}</p>
-          <ul class="ck-report-list">
-            <li>{{text:report_li1}}</li>
-            <li>{{text:report_li2}}</li>
-            <li>{{text:report_li3}}</li>
-            <li>{{text:report_li4}}</li>
-            <li>{{text:report_li5}}</li>
-          </ul>
-        </div>
-      </div>
-      <div class="ck-deals">
-        <div class="ck-deal"><span class="ck-ico ck-ico-report"></span><h3>{{text:d1_title}}</h3><p>{{text:d1_body}}</p></div>
-        <div class="ck-deal"><span class="ck-ico ck-ico-percent"></span><h3>{{text:d2_title}}</h3><p>{{text:d2_body}}</p></div>
-        <div class="ck-deal"><span class="ck-ico ck-ico-shield"></span><h3>{{text:d3_title}}</h3><p>{{text:d3_body}}</p></div>
-      </div>
-      <span class="ck-deadline">{{text:deadline}}</span>
+  <section class="cp-back"><div class="cp-wrap cp-back-grid">
+    <div>
+      <p class="cp-kicker">{{text:back_kicker}}</p>
+      <h2>{{text:back_title}}</h2>
+      <p class="cp-sub">{{text:back_sub}}</p>
+      <ul class="cp-ticks">
+        <li>{{text:r1}}</li><li>{{text:r2}}</li><li>{{text:r3}}</li><li>{{text:r4}}</li><li>{{text:r5}}</li><li>{{text:r6}}</li>
+      </ul>
+      <p class="cp-agg">{{text:back_agg}}</p>
+      <button class="cp-btn" data-start-scorecard>{{text:back_cta}}</button>
     </div>
-  </section>
-
-  <section class="ck-who">
-    <div class="ck-wrap ck-who-grid">
-      <div class="ck-portrait"><img src="{{image:joel_portrait}}" alt="Joel Badcock at the table"></div>
-      <div>
-        <p class="ck-kicker">{{text:who_kicker}}</p>
-        <h2>{{text:who_title}}</h2>
-        <p>{{text:who_p1}}</p>
-        <p>{{text:who_p2}}</p>
-        <div class="ck-sig"><b>{{text:sig_name}}</b><span>{{text:sig_role}}</span></div>
-      </div>
+    <div class="cp-report" aria-hidden="true">
+      <div class="cp-sheet cp-sheet-1"><small>{{text:report_eyebrow}}</small><h3>{{text:report_title}}</h3><p>{{text:report_sub}}</p>
+        <div class="cp-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="cp-sheet cp-sheet-2"><div class="cp-sheet-line w1"></div><div class="cp-sheet-line w2"></div><div class="cp-bars"><span></span><span></span><span></span><span></span><span></span></div></div>
+      <div class="cp-sheet cp-sheet-3"><div class="cp-sheet-line w1"></div><div class="cp-donut"></div></div>
     </div>
-  </section>
+  </div></section>
 
-  <section class="ck-built">
-    <div class="ck-wrap ck-built-grid">
-      <div class="ck-shot">
-        <div class="ck-laptop">
-          <div class="ck-laptop-bar"><span></span><span></span><span></span></div>
-          <img src="{{image:shot_desktop}}" alt="The Devonport Table Tennis club website on desktop">
-        </div>
-        <div class="ck-phone"><img src="{{image:shot_mobile}}" alt="Live fixtures and ladders on a phone"></div>
-        <div class="ck-shot-tag">{{text:shot_tag}}</div>
-      </div>
-      <div>
-        <p class="ck-kicker">{{text:built_kicker}}</p>
-        <h2>{{text:built_title}}</h2>
-        <p class="ck-built-body">{{text:built_body}}</p>
-        <ul class="ck-ticks">
-          <li class="ck-tick">{{text:t1}}</li>
-          <li class="ck-tick">{{text:t2}}</li>
-          <li class="ck-tick">{{text:t3}}</li>
-          <li class="ck-tick">{{text:t4}}</li>
-        </ul>
-        <p class="ck-built-punch">{{text:built_punch}}</p>
-      </div>
+  <section class="cp-who"><div class="cp-wrap cp-who-grid">
+    <div class="cp-portrait"><img src="{{image:joel_portrait}}" alt="Joel Badcock at the Devonport club"></div>
+    <div>
+      <p class="cp-kicker">{{text:who_kicker}}</p>
+      <h2>{{text:who_title}}</h2>
+      <p class="cp-body">{{text:who_p1}}</p>
+      <p class="cp-body">{{text:who_p2}}</p>
+      <p class="cp-sig"><b>{{text:sig_name}}</b><i>{{text:sig_role}}</i></p>
     </div>
-  </section>
+  </div></section>
 
-  <section class="ck-band">
-    <img src="{{image:band_photo}}" alt="A table tennis rally in progress">
-    <div class="ck-band-shade"></div>
-    <div class="ck-band-inner">
-      <div class="ck-band-copy">
-        <p class="ck-band-quote">{{rich:band_quote}}</p>
-        <p class="ck-band-note">{{text:band_note}}</p>
-      </div>
+  <section class="cp-few"><div class="cp-wrap">
+    <p class="cp-kicker">{{text:few_kicker}}</p>
+    <h2>{{text:few_title}}</h2>
+    <div class="cp-few-grid">
+      <div class="cp-few-item"><i class="cp-i-shield"></i><div><h3>{{text:k1_title}}</h3><p>{{text:k1_body}}</p></div></div>
+      <div class="cp-few-item"><i class="cp-i-person"></i><div><h3>{{text:k2_title}}</h3><p>{{text:k2_body}}</p></div></div>
+      <div class="cp-few-item"><i class="cp-i-clock2"></i><div><h3>{{text:k3_title}}</h3><p>{{text:k3_body}}</p></div></div>
+      <div class="cp-few-item"><i class="cp-i-hands"></i><div><h3>{{text:k4_title}}</h3><p>{{text:k4_body}}</p></div></div>
     </div>
-  </section>
+  </div></section>
 
-  <section class="ck-cta">
-    <div class="ck-cta-panel">
-      <h2>{{text:cta_title}}</h2>
-      <p>{{text:cta_sub}}</p>
-      <button class="ck-btn ck-btn-white ck-btn-xl" data-start-scorecard>{{text:cta_btn}}</button>
-      <p class="ck-cta-note">{{text:cta_note}}</p>
-    </div>
-  </section>
+  <section class="cp-final"><div class="cp-wrap">
+    <h2>{{text:cta_title}}</h2>
+    <p>{{rich:cta_sub}}</p>
+    <button class="cp-btn" data-start-scorecard>{{text:cta_btn}}</button>
+    <p class="cp-small">{{text:cta_note}}</p>
+  </div></section>
 
-  <footer class="ck-foot">
-    <p>{{text:footer1}}<br>{{text:footer2}}</p>
-  </footer>
+  <footer class="cp-foot">{{text:footer1}} {{text:footer2}}</footer>
 </div>`;
 
 export function landingPage() {
@@ -351,123 +347,80 @@ export function landingPage() {
     css: LANDING_CSS,
     slots: [
       slot('brand', 'Wordmark', 'Club Pulse Check'),
-      slot('top_pill', 'Top-right pill', 'The national table tennis club survey'),
-      slot('kicker', 'Hero kicker', 'For committee members at Australian clubs'),
-      slot('hero_title', 'Headline', 'How do table tennis clubs across Australia <b>really run?</b>', 'rich'),
+      slot('brand_tag', 'Tagline beside the wordmark', 'Help shape the future of table tennis in Australia'),
+      slot('top_right', 'Top right label', 'National club survey'),
+      slot('hero_title', 'Headline', 'How does your club <b>compare?</b>', 'rich'),
       slot(
-        'hero_sub',
-        'Hero subline',
-        'We are asking committees at every club in the country the same questions about volunteers, admin, money and growth. Answer for your club in a few minutes, and the full national results come back to you, free.'
+        'hero_p1',
+        'Hero paragraph 1',
+        'We are asking table tennis clubs across Australia the same short set of questions about volunteers, admin, money and membership.'
       ),
-      slot('hero_cta', 'Hero button', 'Start the survey'),
-      slot('hero_meta', 'Next to hero button', 'Takes a few minutes. No commitment. Every participating club receives the national results.'),
-      slot('joel_photo', 'Small avatar photo (hero)', `${IMG}/joel.jpg`, 'image'),
-      slot('from_name', 'Hero byline name', 'Joel Badcock'),
-      slot('from_role', 'Hero byline role', 'Treasurer, Devonport Table Tennis Association'),
+      slot(
+        'hero_p2',
+        'Hero paragraph 2',
+        'If you help run your club, you can answer based on what you know. You do not need committee approval or perfectly exact figures.'
+      ),
+      slot('hero_cta', 'Hero button', 'Start the Club Pulse Check'),
+      slot('fact1', 'Fact 1', 'Takes about <b>5 minutes</b>', 'rich'),
+      slot('fact2', 'Fact 2', 'Every participating club receives the <b>national results</b>', 'rich'),
+      slot('fact3', 'Fact 3', '<b>One response</b> per club is plenty', 'rich'),
+      slot('lockline', 'Line under the facts', 'No commitment. Your club will never be singled out in the results.'),
       slot('hero_photo', 'Hero photo', PHOTO_HERO, 'image'),
-      slot('hero_caption', 'Hero photo caption', 'Australian Open, table tennis'),
-      slot('stat1', 'Hero card line 1', 'One survey for every state'),
-      slot('stat2', 'Hero card line 2', 'Results shared with every participating club'),
-      slot('stat3', 'Hero card line 3', 'Free, and one response per club is plenty'),
-      slot('covers_kicker', 'Covers section kicker', 'What we ask'),
-      slot('covers_title', 'Covers section title', 'Four pressure points every committee knows'),
-      slot(
-        'covers_sub',
-        'Covers section subline',
-        'Every question comes from the day to day reality of running a club. Answer from wherever you sit on the committee, president, secretary, treasurer or the person who simply does the lot.'
-      ),
-      slot('c1_title', 'Card 1 title', 'Volunteers and key people'),
-      slot('c1_body', 'Card 1 body', 'How much rests on one or two people, and what happens when they need a break.'),
-      slot('c2_title', 'Card 2 title', 'Admin and time'),
-      slot('c2_body', 'Card 2 body', 'Registrations, fixtures, minutes and newsletters. Where the volunteer hours actually go.'),
-      slot('c3_title', 'Card 3 title', 'Money and funding'),
-      slot('c3_body', 'Card 3 body', 'Collecting fees, chasing grants and knowing where the club stands financially.'),
-      slot('c4_title', 'Card 4 title', 'Members and growth'),
-      slot('c4_body', 'Card 4 body', 'Whether membership is growing or shrinking, and what growing clubs do differently.'),
+      slot('asked_kicker', 'Asked section kicker', 'What you will be asked'),
+      slot('asked_title', 'Asked section title', 'Nothing you need to prepare'),
+      slot('asked_sub', 'Asked section subline', 'We are looking for a practical picture of how clubs actually run. You will be asked about four things:'),
+      slot('c1_title', 'Card 1 title', 'Volunteers'),
+      slot('c1_body', 'Card 1 body', 'How many people keep the club running and whether too much depends on one or two people.'),
+      slot('c2_title', 'Card 2 title', 'Admin'),
+      slot('c2_body', 'Card 2 body', 'Where time goes across registrations, fixtures, results, communication and other club work.'),
+      slot('c3_title', 'Card 3 title', 'Money'),
+      slot('c3_body', 'Card 3 body', 'How fees, grants and everyday finances are handled.'),
+      slot('c4_title', 'Card 4 title', 'Members'),
+      slot('c4_body', 'Card 4 body', 'Whether the club is growing, shrinking or staying about the same.'),
+      slot('asked_note', 'Green note', '<b>Best estimates</b> are completely fine. We know every club is different.', 'rich'),
       slot('back_kicker', 'Report section kicker', 'What you get back'),
-      slot('back_title', 'Report section title', 'One national report, sent to every club that takes part'),
-      slot(
-        'back_sub',
-        'Report section subline',
-        'You know how your club runs. The report shows you how everyone else does it, with real answers from clubs across the country. It is not published anywhere else, taking part is the only way to see it.'
-      ),
-      slot('report_eyebrow', 'Report card eyebrow', 'Yours when you take part'),
-      slot('report_title', 'Report card title', 'The National Club Pulse Report'),
-      slot('report_sub', 'Report card subtitle', 'Answers from clubs in every state, in one clear summary:'),
-      slot('report_li1', 'Report line 1', 'How many people it really takes to run a club'),
-      slot('report_li2', 'Report line 2', 'Where the volunteer hours actually go'),
-      slot('report_li3', 'Report line 3', 'How clubs collect fees and chase grants'),
-      slot('report_li4', 'Report line 4', 'Whether membership is growing or shrinking'),
-      slot('report_li5', 'Report line 5', 'What the strongest clubs do differently'),
-      slot('d1_title', 'Deal card 1 title', 'The full national report'),
-      slot(
-        'd1_body',
-        'Deal card 1 body',
-        'Every answer from every state in one summary, emailed to every participating club as soon as the survey closes.'
-      ),
-      slot('d2_title', 'Deal card 2 title', '15% off, locked in'),
-      slot(
-        'd2_body',
-        'Deal card 2 body',
-        'Complete the survey and your club keeps 15% off anything we ever release. There is no obligation to buy a thing.'
-      ),
-      slot('d3_title', 'Deal card 3 title', 'Zero commitment'),
-      slot(
-        'd3_body',
-        'Deal card 3 body',
-        'This is research, not a sales funnel. Worst case, you have spent a few minutes and the national results land in your inbox anyway.'
-      ),
-      slot('deadline', 'Deadline pill', 'Complete the survey while it is open and the 15% is locked in for your club'),
+      slot('back_title', 'Report section title', 'The National Club Pulse Report'),
+      slot('back_sub', 'Report section subline', 'When the survey closes, every participating club receives a summary of the national results.'),
+      slot('r1', 'Report line 1', 'How many volunteers clubs rely on'),
+      slot('r2', 'Report line 2', 'Where committee time is being spent'),
+      slot('r3', 'Report line 3', 'Which jobs create the most admin'),
+      slot('r4', 'Report line 4', 'How clubs handle fees and funding'),
+      slot('r5', 'Report line 5', 'Whether membership is growing or declining'),
+      slot('r6', 'Report line 6', 'How your club compares with the wider national picture'),
+      slot('back_agg', 'Aggregate note', 'The results will be reported in aggregate. Individual clubs will not be named or ranked.'),
+      slot('back_cta', 'Report section button', 'Add your club to the national picture'),
+      slot('report_eyebrow', 'Report cover eyebrow', 'National survey'),
+      slot('report_title', 'Report cover title', 'The National Club Pulse Report'),
+      slot('report_sub', 'Report cover subline', 'Insights from table tennis clubs across Australia'),
       slot('who_kicker', 'Who section kicker', 'Who is asking'),
-      slot('who_title', 'Who section title', 'From one committee to another'),
+      slot('who_title', 'Who section title', 'From one club committee to another'),
+      slot('joel_portrait', 'Portrait photo', `${IMG}/joel.jpg`, 'image'),
       slot(
         'who_p1',
         'Who paragraph 1',
-        'I am Joel Badcock, treasurer of the Devonport Table Tennis Association in Tasmania. Like most clubs, ours runs on a handful of dedicated people, and I am one of them. I know exactly where the evenings go, because plenty of them were mine.'
+        'I am Joel Badcock, treasurer of the Devonport Table Tennis Association in Tasmania. Like most clubs, we have seen how much work can end up sitting with a handful of volunteers.'
       ),
       slot(
         'who_p2',
         'Who paragraph 2',
-        'This survey exists because I want the same answers you probably do. Is every club carrying the same load, or are some doing it smarter? Answer the questions and everything we learn comes straight back to you. Nobody is selling you anything today.'
+        'We started improving the way our own club operates, which made me curious about whether clubs around Australia face the same problems. This survey is designed to find out, and everyone who contributes gets the results back.'
       ),
       slot('sig_name', 'Signature name', 'Joel Badcock'),
       slot('sig_role', 'Signature role', 'Treasurer, Devonport Table Tennis Association'),
-      slot('joel_portrait', 'Large portrait photo', `${IMG}/joel.jpg`, 'image'),
-      slot('built_kicker', 'Built section kicker', 'Why you can trust the questions'),
-      slot('built_title', 'Built section title', 'We built our way out of the paperwork'),
-      slot(
-        'built_body',
-        'Built section body',
-        'Our committee got tired of relying on one or two key people for everything, so we built operating software that runs the club for us. It powers Devonport today, live at devtt.com.au:'
-      ),
-      slot('t1', 'Tick 1', 'Registrations and memberships that handle themselves'),
-      slot('t2', 'Tick 2', 'Fee reminders that do the chasing for us'),
-      slot('t3', 'Tick 3', 'Fixtures, results and ladders that update on their own'),
-      slot('t4', 'Tick 4', 'Scoresheets scanned and entered automatically'),
-      slot(
-        'built_punch',
-        'Built section punchline',
-        'The survey tells us whether other clubs carry the same load. The results show you how your club compares. Fair trade.'
-      ),
-      slot('shot_desktop', 'Desktop screenshot', `${IMG}/dtta-desktop.jpg`, 'image'),
-      slot('shot_mobile', 'Phone screenshot', `${IMG}/dtta-mobile.jpg`, 'image'),
-      slot('shot_tag', 'Screenshot caption card', 'The system we built for our own club, live today at devtt.com.au'),
-      slot('band_photo', 'Full-width photo', PHOTO_BAND, 'image'),
-      slot(
-        'band_quote',
-        'Band quote',
-        'The clearer the picture of how clubs really run, the easier it gets to give volunteers their <b>evenings back</b>.',
-        'rich'
-      ),
-      slot(
-        'band_note',
-        'Band note',
-        'Results are reported in aggregate only. No individual club is ever singled out, and every participating club receives the summary.'
-      ),
-      slot('cta_title', 'Bottom CTA title', 'Add your club to the national picture'),
-      slot('cta_sub', 'Bottom CTA subline', 'A few minutes now. The full national results when they land. One response per club is plenty.'),
-      slot('cta_btn', 'Bottom CTA button', 'Start the survey'),
-      slot('cta_note', 'Bottom CTA note', 'Free. No commitment. 15% off anything we release, locked in for participating clubs.'),
+      slot('few_kicker', 'Important things kicker', 'A few important things'),
+      slot('few_title', 'Important things title', 'Straightforward, confidential and no commitment'),
+      slot('k1_title', 'Point 1 title', 'Your club stays anonymous'),
+      slot('k1_body', 'Point 1 body', 'Results are reported in aggregate only. No individual club is ever singled out.'),
+      slot('k2_title', 'Point 2 title', 'You can answer yourself'),
+      slot('k2_body', 'Point 2 body', 'If you are involved in running the club, you can complete it based on what you know. No committee approval needed.'),
+      slot('k3_title', 'Point 3 title', 'One response per club'),
+      slot('k3_body', 'Point 3 body', 'Just one person needs to complete the survey for your club.'),
+      slot('k4_title', 'Point 4 title', 'No commitment'),
+      slot('k4_body', 'Point 4 body', 'This is research, not a sales funnel. You will always receive the national results, and there is no obligation to buy anything.'),
+      slot('cta_title', 'Bottom CTA title', 'Help build a clearer picture of how table tennis clubs really run'),
+      slot('cta_sub', 'Bottom CTA subline', 'A few minutes now. The full <b>national results</b> when they land.', 'rich'),
+      slot('cta_btn', 'Bottom CTA button', 'Start the Club Pulse Check'),
+      slot('cta_note', 'Bottom CTA note', 'No commitment. Your club will never be singled out in the results.'),
       slot('footer1', 'Footer line 1', 'The Club Pulse Check is run by Joel Badcock, treasurer of the Devonport Table Tennis Association.'),
       slot('footer2', 'Footer line 2', 'Questions? Just reply to the email that brought you here.'),
     ],
@@ -734,19 +687,19 @@ export const resultEmail = {
 
 // Applied alongside the pages so the whole flow matches the new palette.
 export const brandingPatch = {
-  primaryColor: '#1D63ED',
-  secondaryColor: '#0A1B2E',
+  primaryColor: '#1E9E4A',
+  secondaryColor: '#0B2A4A',
 };
 
 export const questionColorsPatch = {
-  backgroundColor: '#0A1B2E',
-  buttonColor: '#1D63ED',
+  backgroundColor: '#0B2A4A',
+  buttonColor: '#1E9E4A',
   questionTextColor: '#FFFFFF',
   optionTextColor: '#C9D6E8',
-  inputTextColor: '#0A1B2E',
+  inputTextColor: '#0B2A4A',
 };
 
-export const leadFormButtonColor = '#1D63ED';
+export const leadFormButtonColor = '#1E9E4A';
 
 export const shareDescription =
   'A short survey on what it really takes to run a table tennis club: volunteers, admin, money and growth. Add your club, and receive the national results free.';
