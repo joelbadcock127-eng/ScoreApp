@@ -6,6 +6,7 @@ const cache: <T extends (...args: never[]) => unknown>(fn: T) => T =
 import { defaultConfig } from '../defaultConfig';
 import { blankConfig } from '../blankConfig';
 import { clubSurveyConfig } from '../surveyTemplate';
+import { clubCompareConfig } from '../clubCompareTemplate';
 import { ScorecardConfig } from '../types';
 import { supabaseAdmin } from './supabase';
 import { getSessionAccountId } from './auth';
@@ -108,6 +109,7 @@ export async function listMyScorecards(): Promise<ScorecardSummary[]> {
 export const SCORECARD_TEMPLATES: Record<string, (name: string) => ScorecardConfig> = {
   blank: blankConfig,
   'club-survey': clubSurveyConfig,
+  'club-compare': clubCompareConfig,
 };
 
 export async function createScorecard(name: string, template = 'blank'): Promise<number> {

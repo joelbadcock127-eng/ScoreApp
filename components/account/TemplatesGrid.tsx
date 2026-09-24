@@ -13,6 +13,13 @@ const TEMPLATES: { name: string; blurb: string; tint: string; template?: string 
     template: 'club-survey',
   },
   {
+    name: 'Club Pulse Check (compare design)',
+    blurb:
+      'The same table tennis committee survey with the "How does your club compare?" landing page: Australia logo, the four areas, the national report and Joel\u2019s note. A separate scorecard, so the live pulse survey is untouched.',
+    tint: 'from-emerald-500 to-sky-600',
+    template: 'club-compare',
+  },
+  {
     name: 'The AI Opportunity Assessment',
     blurb:
       'A copy of your flagship scored assessment exactly as it is today — 23 questions, tiered results pages and the PDF report — ready to rebrand for a new audience.',
