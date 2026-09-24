@@ -100,12 +100,24 @@ const P = {
   arrow: "%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E",
 };
 
+// Logo: Australia (with Tasmania) in navy, a red bat over the south east.
+const LOGO_SVG =
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 96'>" +
+  "<path fill='#0B2A4A' d='M6 40 L10 31 L18 27 L24 21 L31 19 L35 13 L41 13 L43 8 L49 6 L51 10 L55 8 L59 4 L63 6 L61 12 L65 16 L67 22 L69 16 L71 8 L73 2 L75 6 L77 16 L81 22 L85 28 L89 34 L93 42 L95 50 L93 58 L89 66 L83 72 L77 76 L71 74 L67 70 L63 66 L59 62 L57 66 L51 62 L41 58 L31 60 L23 62 L15 66 L9 64 L7 56 L5 47 Z'/>" +
+  "<path fill='#0B2A4A' d='M76 82 L83 81 L84 87 L79 90 L75 87 Z'/>" +
+  "<path d='M91 80 L104 93' stroke='#FFFFFF' stroke-width='12' stroke-linecap='round'/>" +
+  "<path d='M91 80 L104 93' stroke='#A8743F' stroke-width='7' stroke-linecap='round'/>" +
+  "<circle cx='83' cy='67' r='18' fill='#D2333B' stroke='#FFFFFF' stroke-width='4'/>" +
+  "<circle cx='58' cy='84' r='6.5' fill='#F4A11D' stroke='#FFFFFF' stroke-width='2.5'/>" +
+  '</svg>';
+const LOGO = `url("data:image/svg+xml,${encodeURIComponent(LOGO_SVG)}")`;
+
 const LANDING_CSS = FONT_CSS + `
 .cp{--navy:#0B2A4A;--ink:#12213A;--mut:#4A5A70;--bg:#FFFFFF;--bg2:#F3F7FB;--line:#DCE5EF;--green:#1E9E4A;--green-deep:#177F3B;--green-tint:#E8F6EC;
   background:var(--bg);color:var(--ink);font-family:'Plus Jakarta Sans',Inter,system-ui,sans-serif;font-size:17px;line-height:1.55;overflow:hidden}
 .cp *{box-sizing:border-box}
 .cp h1,.cp h2,.cp h3{font-family:'Plus Jakarta Sans',Inter,sans-serif;font-weight:800;letter-spacing:-0.02em;line-height:1.08;margin:0;color:var(--navy);text-wrap:balance}
-.cp p{margin:0}
+.cp :where(p){margin:0}
 .cp-wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 .cp-kicker{font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
 .cp-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border:0;cursor:pointer;font-family:inherit;font-weight:700;font-size:17px;
@@ -117,28 +129,26 @@ const LANDING_CSS = FONT_CSS + `
 /* top bar */
 .cp-top{display:flex;align-items:center;justify-content:space-between;gap:16px;max-width:1120px;margin:0 auto;padding:16px 24px;border-bottom:1px solid var(--line)}
 .cp-brand{display:flex;align-items:center;gap:12px}
-.cp-paddle{position:relative;width:26px;height:26px;flex:none}
-.cp-paddle::before{content:'';position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:#D2333B}
-.cp-paddle::after{content:'';position:absolute;right:1px;bottom:0;width:6px;height:11px;border-radius:3px;background:#B98552;transform:rotate(-45deg)}
+.cp-paddle{width:46px;height:42px;flex:none;background:no-repeat center/contain ${LOGO}}
 .cp-brand b{font-weight:800;font-size:17px;color:var(--navy)}
-.cp-brand span{display:block;font-size:12px;color:var(--mut);line-height:1.3;border-left:1px solid var(--line);padding-left:12px}
+.cp-brand-tag{display:block;font-size:12px;color:var(--mut);line-height:1.3;border-left:1px solid var(--line);padding-left:12px}
 .cp-top-right{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
 
 /* hero */
-.cp-hero{max-width:1120px;margin:0 auto;padding:36px 24px 44px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.cp-hero{max-width:1120px;margin:0 auto;padding:48px 24px 56px;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
 .cp-h1{font-size:clamp(38px,5vw,60px)}
 .cp-h1 b{color:var(--green);font-weight:800}
-.cp-lede{font-size:18px;color:var(--ink);margin-top:20px;max-width:520px}
-.cp-lede2{font-size:16.5px;color:var(--mut);margin-top:14px;max-width:520px}
-.cp-hero .cp-btn{margin-top:26px}
-.cp-facts{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:26px 0 0;padding:0}
-.cp-facts li{display:flex;gap:12px;align-items:flex-start;font-size:13.5px;line-height:1.4;color:var(--ink);font-weight:500}
+.cp-lede{font-size:18px;color:var(--ink);margin-top:24px;max-width:520px}
+.cp-lede2{font-size:16.5px;color:var(--mut);margin-top:16px;max-width:520px}
+.cp-hero .cp-btn{margin-top:30px}
+.cp-facts{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin:32px 0 0;padding:0}
+.cp-facts li{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.45;color:var(--ink);font-weight:500}
 .cp-facts li b{font-weight:700}
-.cp-facts i{flex:none;width:34px;height:34px;background:no-repeat center/30px}
+.cp-facts i{flex:none;width:30px;height:30px;background:no-repeat center/26px}
 .cp-facts .cp-i-clock{background-image:${I(P.clock)}}
 .cp-facts .cp-i-bars{background-image:${I(P.bars)}}
 .cp-facts .cp-i-people{background-image:${I(P.people)}}
-.cp-lockline{display:flex;gap:8px;align-items:center;margin-top:20px;font-size:13px;color:var(--mut)}
+.cp-lockline{display:flex;gap:8px;align-items:center;margin-top:28px;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--mut)}
 .cp-lockline::before{content:'';flex:none;width:14px;height:14px;background:no-repeat center/14px ${I(P.lock, '%234A5A70', 2.2)}}
 .cp-photo{position:relative;min-height:320px;border-radius:18px;overflow:hidden;background:var(--navy)}
 .cp-photo img{display:block;width:100%;height:100%;min-height:320px;aspect-ratio:4/3.6;object-fit:cover;object-position:center top}
@@ -226,12 +236,12 @@ const LANDING_CSS = FONT_CSS + `
 
 @media (max-width:860px){
   .cp-top{padding:14px 20px}
-  .cp-brand span,.cp-top-right{display:none}
+  .cp-brand-tag,.cp-top-right{display:none}
   .cp-hero{grid-template-columns:1fr;gap:28px;padding:28px 20px 40px}
   .cp-h1{font-size:clamp(34px,9.5vw,44px)}
   .cp-lede{font-size:17px}
   .cp-hero .cp-btn,.cp-back .cp-btn,.cp-final .cp-btn{width:100%}
-  .cp-facts{grid-template-columns:1fr;gap:12px}
+  .cp-facts{grid-template-columns:1fr;gap:14px;margin-top:28px}
   .cp-facts li{font-size:15px}
   .cp-photo{min-height:0;order:-1}
   .cp-photo img{min-height:0;aspect-ratio:16/11}
@@ -257,7 +267,7 @@ const LANDING_CSS = FONT_CSS + `
 const LANDING_HTML = `
 <div class="cp-page cp">
   <header class="cp-top">
-    <div class="cp-brand"><span class="cp-paddle"></span><div><b>{{text:brand}}</b></div><span>{{text:brand_tag}}</span></div>
+    <div class="cp-brand"><span class="cp-paddle"></span><div><b>{{text:brand}}</b></div><span class="cp-brand-tag">{{text:brand_tag}}</span></div>
     <span class="cp-top-right">{{text:top_right}}</span>
   </header>
 
@@ -362,8 +372,8 @@ export function landingPage() {
       ),
       slot('hero_cta', 'Hero button', 'Start the Club Pulse Check'),
       slot('fact1', 'Fact 1', 'Takes about <b>5 minutes</b>', 'rich'),
-      slot('fact2', 'Fact 2', 'Every participating club receives the <b>national results</b>', 'rich'),
-      slot('fact3', 'Fact 3', '<b>One response</b> per club is plenty', 'rich'),
+      slot('fact2', 'Fact 2', '<b>National results</b> for every club', 'rich'),
+      slot('fact3', 'Fact 3', '<b>One response</b> per club', 'rich'),
       slot('lockline', 'Line under the facts', 'No commitment. Your club will never be singled out in the results.'),
       slot('hero_photo', 'Hero photo', PHOTO_HERO, 'image'),
       slot('asked_kicker', 'Asked section kicker', 'What you will be asked'),
