@@ -180,8 +180,8 @@ const LANDING_CSS = BASE_CSS + `
 @media (max-width:920px){
   .ck-hero{grid-template-columns:1fr;gap:56px;padding-top:12px;padding-bottom:64px}
   .ck-lede{max-width:none}
-  .ck-photo{margin:0 0 26px}
-  .ck-photo-card{left:12px;bottom:-26px}
+  .ck-photo{margin:0}
+  .ck-photo-card{position:static;margin:16px 0 0;max-width:none}
   .ck-shot{display:flex;flex-direction:column}
   .ck-shot-tag{position:static;order:-1;max-width:none;margin:0 0 18px}
   .ck-who-grid,.ck-built-grid{grid-template-columns:1fr;gap:44px}
@@ -200,7 +200,6 @@ const LANDING_CSS = BASE_CSS + `
 @media (max-width:560px){
   .ck-top-pill{display:none}
   .ck-cta-row .ck-btn-xl{width:100%}
-  .ck-photo-card{position:relative;z-index:1;margin:-34px 14px 0;max-width:none}
   .ck-band img{height:430px}
 }
 `;
