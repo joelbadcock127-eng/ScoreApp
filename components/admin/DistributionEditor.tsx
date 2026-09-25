@@ -198,26 +198,36 @@ export default function DistributionEditor({
   // ——— Remove queued recipients before they are sent. ——————————————————
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [removing, setRemoving] = useState(false);
-  const queuedRows = (summary?.recent ?? []).filter((r) => r.status === 'invited' && !r.invited_at);
-  const allPicked = queuedRows.length > 0 && queuedRows.every((r) => picked.has(r.id));
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const allRows = summary?.recent ?? [];
+  const allPicked = allRows.length > 0 && allRows.every((r) => picked.has(r.id));
+  // Sent or completed rows are history: removing them needs a second click.
+  const pickedSent = allRows.filter((r) => picked.has(r.id) && (r.invited_at || r.status === 'completed')).length;
   function togglePick(id: string) {
     const next = new Set(picked);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setPicked(next);
+    setConfirmRemove(false);
   }
   function togglePickAll() {
-    setPicked(allPicked ? new Set() : new Set(queuedRows.map((r) => r.id)));
+    setPicked(allPicked ? new Set() : new Set(allRows.map((r) => r.id)));
+    setConfirmRemove(false);
   }
   async function removePicked() {
     if (picked.size === 0) return;
+    if (pickedSent > 0 && !confirmRemove) {
+      setConfirmRemove(true);
+      return;
+    }
     setRemoving(true);
     await fetch('/api/admin/invites', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: Array.from(picked) }),
+      body: JSON.stringify({ ids: Array.from(picked), includeSent: pickedSent > 0 }),
     });
     setPicked(new Set());
+    setConfirmRemove(false);
     setRemoving(false);
     refresh();
   }
@@ -590,30 +600,43 @@ export default function DistributionEditor({
         <>
           <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
             <p className={SECTION_LABEL}>Recipients</p>
-            {queuedRows.length > 0 && (
+            <div className="flex items-center gap-3">
+              {confirmRemove && (
+                <span className="text-sm text-tier-low">
+                  {pickedSent} of these {pickedSent === 1 ? 'has' : 'have'} been sent or completed. Their answers go too.
+                </span>
+              )}
               <button
                 onClick={removePicked}
                 disabled={removing || picked.size === 0}
-                className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-tier-low hover:bg-red-50 disabled:opacity-50"
+                className={`rounded-md border px-4 py-1.5 text-sm font-medium disabled:opacity-50 ${
+                  confirmRemove
+                    ? 'border-tier-low bg-tier-low text-white hover:brightness-110'
+                    : 'border-gray-300 bg-white text-tier-low hover:bg-red-50'
+                }`}
               >
-                {removing ? 'Removing…' : picked.size > 0 ? `Remove ${picked.size} from queue` : 'Tick queued rows to remove them'}
+                {removing
+                  ? 'Removing…'
+                  : confirmRemove
+                    ? `Yes, erase ${picked.size}`
+                    : picked.size > 0
+                      ? `Remove ${picked.size}`
+                      : 'Tick rows to remove them'}
               </button>
-            )}
+            </div>
           </div>
           <div className={`${CARD} mt-3 overflow-x-auto p-0`}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-muted">
                   <th className="w-10 px-4 py-3">
-                    {queuedRows.length > 0 && (
-                      <input
-                        type="checkbox"
-                        aria-label="Select all queued"
-                        checked={allPicked}
-                        onChange={togglePickAll}
-                        className="h-4 w-4 accent-[color:var(--primary)]"
-                      />
-                    )}
+                    <input
+                      type="checkbox"
+                      aria-label="Select all"
+                      checked={allPicked}
+                      onChange={togglePickAll}
+                      className="h-4 w-4 accent-[color:var(--primary)]"
+                    />
                   </th>
                   <th className="px-5 py-3 font-semibold">Email</th>
                   <th className="px-5 py-3 font-semibold">Name</th>
@@ -626,15 +649,13 @@ export default function DistributionEditor({
                 {summary.recent.map((r) => (
                   <tr key={r.id} className={picked.has(r.id) ? 'bg-red-50/60' : undefined}>
                     <td className="px-4 py-2.5">
-                      {r.status === 'invited' && !r.invited_at && (
-                        <input
-                          type="checkbox"
-                          aria-label={`Select ${r.email}`}
-                          checked={picked.has(r.id)}
-                          onChange={() => togglePick(r.id)}
-                          className="h-4 w-4 accent-[color:var(--primary)]"
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${r.email}`}
+                        checked={picked.has(r.id)}
+                        onChange={() => togglePick(r.id)}
+                        className="h-4 w-4 accent-[color:var(--primary)]"
+                      />
                     </td>
                     <td className="px-5 py-2.5">{r.email}</td>
                     <td className="px-5 py-2.5">{[r.first_name, r.last_name].filter(Boolean).join(' ')}</td>

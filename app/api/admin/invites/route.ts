@@ -127,9 +127,10 @@ export async function POST(req: NextRequest) {
   });
 }
 
-// DELETE: remove queued recipients (imported, not yet sent) from this
-// scorecard. Body: { ids: string[] }. Rows that have already been invited or
-// completed are never touched, so history stays intact.
+// DELETE: remove recipients from this scorecard. Body: { ids: string[],
+// includeSent?: boolean }. By default only queued rows (imported, not yet
+// sent) go; with includeSent the admin has confirmed that invited and
+// completed rows, answers included, should be erased too (test entries).
 export async function DELETE(req: NextRequest) {
   const accountId = getSessionAccountId();
   const scorecardId = await ownedScorecardId();
@@ -141,14 +142,9 @@ export async function DELETE(req: NextRequest) {
     ? body.ids.filter((id: unknown) => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)).slice(0, 500)
     : [];
   if (ids.length === 0) return NextResponse.json({ removed: 0 });
-  const { data, error } = await supabaseAdmin()
-    .from('leads')
-    .delete()
-    .eq('scorecard_id', scorecardId)
-    .eq('status', 'invited')
-    .is('invited_at', null)
-    .in('id', ids)
-    .select('id');
+  let q = supabaseAdmin().from('leads').delete().eq('scorecard_id', scorecardId).in('id', ids);
+  if (body?.includeSent !== true) q = q.eq('status', 'invited').is('invited_at', null);
+  const { data, error } = await q.select('id');
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ removed: data?.length ?? 0 });
 }
