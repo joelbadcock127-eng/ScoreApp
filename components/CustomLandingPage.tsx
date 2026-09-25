@@ -9,14 +9,18 @@ import VisitBeacon from '@/components/VisitBeacon';
 export default function CustomLandingPage({
   config,
   scorecardId,
+  leadId,
+  preview = false,
 }: {
   config: ScorecardConfig;
   scorecardId?: number;
+  leadId?: string;
+  preview?: boolean;
 }) {
   const page = config.customPages!.landing!;
   const html = mergeCustomPage(page, { scorecardTitle: config.title });
   return (
-    <StartScorecard leadForm={config.leadForm} scorecardId={scorecardId}>
+    <StartScorecard leadForm={config.leadForm} scorecardId={scorecardId} leadId={leadId} preview={preview}>
       <VisitBeacon scorecardId={scorecardId} />
       <style dangerouslySetInnerHTML={{ __html: `.cp-page img{max-width:100%}${page.css}` }} />
       <main dangerouslySetInnerHTML={{ __html: html }} />

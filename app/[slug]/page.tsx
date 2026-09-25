@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { getConfig, listScorecards, ScorecardSummary } from '@/lib/server/config';
-import { questionsFirst } from '@/lib/scoring';
+import { resolveLandingEntry } from '@/lib/server/landingEntry';
 import ScorecardLanding from '@/components/ScorecardLanding';
 import { faviconIcons } from '@/lib/favicon';
 
@@ -38,11 +38,20 @@ export default async function SlugLandingPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams?: { chrome?: string };
+  searchParams?: { chrome?: string; lead?: string; preview?: string };
 }) {
   const sc = await resolveBySlug(params.slug);
   if (!sc) notFound();
   const config = await getConfig(sc.id);
-  if (questionsFirst(config)) redirect(`/quiz?scorecard=${sc.id}`);
-  return <ScorecardLanding config={config} scorecardId={sc.id} hideChrome={searchParams?.chrome === '0'} />;
+  const entry = await resolveLandingEntry(sc.id, config, searchParams);
+  if (entry.redirectTo) redirect(entry.redirectTo);
+  return (
+    <ScorecardLanding
+      config={config}
+      scorecardId={sc.id}
+      leadId={entry.leadId}
+      preview={entry.preview}
+      hideChrome={searchParams?.chrome === '0'}
+    />
+  );
 }

@@ -39,10 +39,14 @@ function CtaButton({
 export default function LandingView({
   config,
   scorecardId,
+  leadId,
+  preview = false,
   hideChrome = false,
 }: {
   config: ScorecardConfig;
   scorecardId?: number;
+  leadId?: string;
+  preview?: boolean;
   hideChrome?: boolean;
 }) {
   const { landing, leadForm } = config;
@@ -55,7 +59,7 @@ export default function LandingView({
   const logoHref = logoLink(config.branding);
 
   return (
-    <StartScorecard leadForm={leadForm} scorecardId={scorecardId}>
+    <StartScorecard leadForm={leadForm} scorecardId={scorecardId} leadId={leadId} preview={preview}>
       <main>
         <VisitBeacon scorecardId={scorecardId} />
         {/* Header */}
@@ -139,7 +143,7 @@ export default function LandingView({
               </section>
             );
           const extra = extras.find((x) => x.id === sk);
-          if (extra) return <ExtraSectionView key={sk} section={extra} config={config} scorecardId={scorecardId} />;
+          if (extra) return <ExtraSectionView key={sk} section={extra} config={config} scorecardId={scorecardId} leadId={leadId} preview={preview} />;
           return null;
         })}
 

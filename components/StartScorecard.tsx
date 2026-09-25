@@ -7,14 +7,21 @@ import LeadFormFields from './LeadFormFields';
 import Modal from './Modal';
 import Spinner from './Spinner';
 
-// Wraps the landing page; any element with [data-start-scorecard] opens the lead form modal.
+// Wraps the landing page; any element with [data-start-scorecard] opens the
+// lead form modal. When the visitor is already known (an invite link carries
+// their lead id) or this is a preview run, the button goes straight to the
+// questions instead.
 export default function StartScorecard({
   leadForm,
   scorecardId,
+  leadId,
+  preview = false,
   children,
 }: {
   leadForm: ScorecardConfig['leadForm'];
   scorecardId?: number;
+  leadId?: string;
+  preview?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -25,11 +32,14 @@ export default function StartScorecard({
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('[data-start-scorecard]');
-      if (target) setOpen(true);
+      if (!target) return;
+      if (leadId) router.push(`/quiz?lead=${leadId}`);
+      else if (preview) router.push(scorecardId != null ? `/quiz?preview=1&scorecard=${scorecardId}` : '/quiz?preview=1');
+      else setOpen(true);
     };
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
-  }, []);
+  }, [leadId, preview, scorecardId, router]);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

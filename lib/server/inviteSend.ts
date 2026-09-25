@@ -1,6 +1,6 @@
 import { ScorecardConfig } from '../types';
 import { sendEmail } from './email';
-import { InviteRecipient, renderInvite } from './invites';
+import { InviteRecipient, inviteLandingUrl, renderInvite } from './invites';
 import { signatureHtmlForScorecard } from './signature';
 import { supabaseAdmin } from './supabase';
 import { publicOrigin } from './config';
@@ -109,7 +109,8 @@ export async function sendInvitePass(
       await sb.from('leads').update({ invited_at: new Date().toISOString(), status: 'unsubscribed' }).eq('id', lead.id);
       continue;
     }
-    const { subject, html, unsubscribeUrl } = renderInvite(config, lead, origin, signatureHtml);
+    const inviteLink = inviteLandingUrl(origin, fallbackOrigin, scorecardId, `lead=${lead.id}`);
+    const { subject, html, unsubscribeUrl } = renderInvite(config, lead, origin, signatureHtml, inviteLink);
     const result = await sendEmail({
       to: [lead.email],
       subject: stripTags(subject),

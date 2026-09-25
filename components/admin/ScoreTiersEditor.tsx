@@ -75,10 +75,11 @@ export default function ScoreTiersEditor({
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Open on the first question</p>
             <p className="mt-2 text-muted">
-              Skip the landing page. Every link to this survey, the built-in link, the subdomain and any custom
-              domain, opens straight on question one. Respondents are asked for their name, email and other lead
-              form details after the last question, so a lead is only created once they finish. Invite links from
-              Distribution already know who the respondent is and are unaffected.
+              Skip the landing page. Every link to this survey, the built-in link, the subdomain, any custom domain
+              and the personal links in invites, opens straight on question one. Public visitors are asked for
+              their name, email and other lead form details after the last question, so a lead is only created once
+              they finish. Invited visitors are already known, so they are never asked. Off, everyone sees the
+              landing page first; for invited visitors its start button goes straight to the questions.
             </p>
           </div>
           <button

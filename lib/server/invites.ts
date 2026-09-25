@@ -78,6 +78,18 @@ export function inviteFooter(senderName: string, senderAddress: string, unsubscr
   );
 }
 
+/**
+ * The scorecard's landing page address for links in emails. On the
+ * scorecard's own domain that is the root; on the platform host it is
+ * /s/<id>. The landing page reads ?lead= (an invited visitor: the start
+ * button skips the details form) and ?preview=1 (a test run), and honours
+ * the survey's "open on the first question" setting itself.
+ */
+export function inviteLandingUrl(origin: string, fallbackOrigin: string, scorecardId: number, query: string): string {
+  const base = origin === fallbackOrigin ? `${origin}/s/${scorecardId}` : origin;
+  return `${base}/?${query}`;
+}
+
 /** Full invite HTML for one recipient: header image + merged body + account
  *  signature + compliance footer. */
 export function renderInvite(
@@ -89,7 +101,7 @@ export function renderInvite(
 ): { subject: string; html: string; unsubscribeUrl: string } {
   const ie = config.inviteEmail;
   if (!ie) throw new Error('No invite email configured');
-  const inviteLink = inviteLinkOverride ?? `${origin}/quiz?lead=${lead.id}`;
+  const inviteLink = inviteLinkOverride ?? `${origin}/?lead=${lead.id}`;
   const unsubscribeUrl = `${origin}/api/unsubscribe?t=${encodeURIComponent(unsubscribeToken(lead.id))}`;
   const fields = inviteFields(lead, config, inviteLink, config.branding.primaryColor);
   const body = applyEmailSpacing(mergeFields(ie.content, fields), ie.lineSpacing);

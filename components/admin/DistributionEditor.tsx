@@ -431,7 +431,7 @@ export default function DistributionEditor({
             <span className={`text-sm ${testMsg.ok ? 'text-tier-high' : 'text-tier-low'}`}>{testMsg.text}</span>
           )}
         </div>
-        <p className={HINT}>Save first — the test uses the last saved version. The link in the test opens a preview run of the questions and the thank-you page; nothing is recorded as a lead.</p>
+        <p className={HINT}>Save first — the test uses the last saved version. The link in the test opens the landing page exactly as a recipient sees it, then a preview run of the questions and the thank-you page; nothing is recorded as a lead.</p>
       </div>
 
       {/* Signature (account-wide) */}

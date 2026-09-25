@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionAccount, getSessionAccountId } from '@/lib/server/auth';
 import { getActiveOrDefaultId, getConfig, listMyScorecards, publicOrigin, saveConfig } from '@/lib/server/config';
 import { sendEmail } from '@/lib/server/email';
-import { InviteRecipient, renderInvite } from '@/lib/server/invites';
+import { InviteRecipient, inviteLandingUrl, renderInvite } from '@/lib/server/invites';
 import { DRIP_MAX_PER_DAY, inviteBlocker, sendDripAllowance, sendInvitePass } from '@/lib/server/inviteSend';
 import { signatureHtmlForScorecard } from '@/lib/server/signature';
 import { stripTags } from '@/lib/richtext';
@@ -67,9 +67,10 @@ export async function POST(req: NextRequest) {
     const signatureHtml = await signatureHtmlForScorecard(scorecardId);
     // Send the test exactly like a real invite (same subject, same mailbox-level
     // unsubscribe headers) so its spam/inbox placement reflects the real send.
-    // The sample lead is not a real row, so its link runs the questions as a
-    // preview of this scorecard and ends on its thank-you page.
-    const testLink = `${origin}/quiz?preview=1&scorecard=${scorecardId}`;
+    // The sample lead is not a real row, so its link opens the landing page
+    // in preview: the start button runs the questions without saving and
+    // ends on this scorecard's thank-you page.
+    const testLink = inviteLandingUrl(origin, req.nextUrl.origin, scorecardId, 'preview=1');
     const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin, signatureHtml, testLink);
     const result = await sendEmail({
       to: [to],

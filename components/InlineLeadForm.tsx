@@ -11,10 +11,16 @@ import Spinner from './Spinner';
 export default function InlineLeadForm({
   leadForm,
   scorecardId,
+  leadId,
+  preview = false,
   disabled = false,
 }: {
   leadForm: ScorecardConfig['leadForm'];
   scorecardId?: number;
+  // Invite visitors are already a lead: the form updates their details
+  // rather than creating a second lead. Previews save nothing.
+  leadId?: string;
+  preview?: boolean;
   disabled?: boolean;
 }) {
   const [submitting, setSubmitting] = useState(false);
@@ -33,6 +39,20 @@ export default function InlineLeadForm({
     }
     if (scorecardId != null) payload.scorecard_id = scorecardId;
     try {
+      if (preview) {
+        router.push(scorecardId != null ? `/quiz?preview=1&scorecard=${scorecardId}` : '/quiz?preview=1');
+        return;
+      }
+      if (leadId) {
+        const res = await fetch(`/api/leads/${leadId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_details', ...payload }),
+        });
+        if (!res.ok) throw new Error('Something went wrong. Please try again.');
+        router.push(`/quiz?lead=${leadId}`);
+        return;
+      }
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
