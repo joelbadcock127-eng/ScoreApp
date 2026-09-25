@@ -18,6 +18,7 @@ interface Recipient {
   id: string;
   first_name: string;
   last_name: string;
+  business: string;
   email: string;
   status: string;
   invited_at: string | null;
@@ -567,6 +568,8 @@ export default function DistributionEditor({
                 <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-5 py-3 font-semibold">Email</th>
                   <th className="px-5 py-3 font-semibold">Name</th>
+                  <th className="px-5 py-3 font-semibold">Business</th>
+                  <th className="px-5 py-3 font-semibold">Greeting</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
                 </tr>
               </thead>
@@ -575,6 +578,15 @@ export default function DistributionEditor({
                   <tr key={r.id}>
                     <td className="px-5 py-2.5">{r.email}</td>
                     <td className="px-5 py-2.5">{[r.first_name, r.last_name].filter(Boolean).join(' ')}</td>
+                    <td className="px-5 py-2.5 text-muted">{r.business}</td>
+                    {/* Exactly what {first_name_business} renders for this row. */}
+                    <td className="px-5 py-2.5 text-muted">
+                      {(r.first_name || '').trim() || (r.business || '').trim() ? (
+                        <>Hi {(r.first_name || '').trim() || (r.business || '').trim()},</>
+                      ) : (
+                        <span className="font-semibold text-tier-low">Hi , (no name or business)</span>
+                      )}
+                    </td>
                     <td className="px-5 py-2.5">
                       {r.status === 'completed' ? (
                         <span className="rounded-full bg-tier-high/10 px-2.5 py-0.5 text-xs font-bold text-tier-high">

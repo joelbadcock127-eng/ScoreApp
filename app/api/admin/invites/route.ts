@@ -27,7 +27,7 @@ export async function GET() {
   const sb = supabaseAdmin();
   const { data: leads, error } = await sb
     .from('leads')
-    .select('id, first_name, last_name, email, status, invited_at, created_at')
+    .select('id, first_name, last_name, business, email, status, invited_at, created_at')
     .eq('scorecard_id', scorecardId)
     .in('status', ['invited', 'completed'])
     .not('email', 'eq', '')
