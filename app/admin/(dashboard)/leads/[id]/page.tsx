@@ -6,6 +6,7 @@ import { isSurvey, tierFor, questionMax } from '@/lib/scoring';
 import { stripTags } from '@/lib/richtext';
 import { AnswerDetail, CategoryScore, Lead } from '@/lib/types';
 import Donut from '@/components/Donut';
+import DeleteLeadButton from '@/components/admin/DeleteLeadButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +88,8 @@ export default async function LeadDetailPage({
               </>
             )}
           </div>
+
+          <DeleteLeadButton leadId={lead.id} label={[lead.first_name, lead.last_name].filter(Boolean).join(' ') || lead.email} />
         </div>
 
         {/* Right column */}
