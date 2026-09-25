@@ -29,6 +29,7 @@ interface Summary {
   sent: number;
   completed: number;
   suppressed: number;
+  listedTotal?: number;
   drip: { perDay: number; startedAt: string | null; sentToday: number } | null;
   recent: Recipient[];
 }
@@ -84,6 +85,12 @@ function parseRows(text: string): ParsedRow[] {
   return rows;
 }
 
+function fmtSent(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function StatChip({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-center">
@@ -121,10 +128,11 @@ export default function DistributionEditor({
 
   // ——— Recipient summary ———————————————————————————————————————————————
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [filter, setFilter] = useState<'all' | 'queued' | 'invited' | 'completed'>('all');
   const refresh = useCallback(async () => {
-    const res = await fetch('/api/admin/invites');
+    const res = await fetch(`/api/admin/invites?status=${filter}`);
     if (res.ok) setSummary(await res.json());
-  }, []);
+  }, [filter]);
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -596,10 +604,37 @@ export default function DistributionEditor({
       </div>
 
       {/* Recipients */}
-      {summary && summary.recent.length > 0 && (
+      {summary && (summary.recent.length > 0 || filter !== 'all') && (
         <>
           <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-            <p className={SECTION_LABEL}>Recipients</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className={SECTION_LABEL}>Recipients</p>
+              <div className="ml-3 flex rounded-md border border-gray-200 bg-white p-0.5 text-xs font-medium">
+                {(
+                  [
+                    ['all', 'All'],
+                    ['queued', `Queued ${summary.queued}`],
+                    ['invited', `Sent ${summary.sent}`],
+                    ['completed', `Completed ${summary.completed}`],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setFilter(key);
+                      setPicked(new Set());
+                      setConfirmRemove(false);
+                    }}
+                    className={`rounded px-3 py-1 ${filter === key ? 'bg-navy text-white' : 'text-muted hover:text-ink'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {(summary.listedTotal ?? 0) > summary.recent.length && (
+                <span className="text-xs text-muted">Showing {summary.recent.length} of {summary.listedTotal}</span>
+              )}
+            </div>
             <div className="flex items-center gap-3">
               {confirmRemove && (
                 <span className="text-sm text-tier-low">
@@ -643,9 +678,17 @@ export default function DistributionEditor({
                   <th className="px-5 py-3 font-semibold">Business</th>
                   <th className="px-5 py-3 font-semibold">Greeting</th>
                   <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 font-semibold">Sent</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
+                {summary.recent.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-6 text-center text-sm text-muted">
+                      Nothing here yet.
+                    </td>
+                  </tr>
+                )}
                 {summary.recent.map((r) => (
                   <tr key={r.id} className={picked.has(r.id) ? 'bg-red-50/60' : undefined}>
                     <td className="px-4 py-2.5">
@@ -681,6 +724,7 @@ export default function DistributionEditor({
                         </span>
                       )}
                     </td>
+                    <td className="px-5 py-2.5 text-muted">{r.invited_at ? fmtSent(r.invited_at) : ''}</td>
                   </tr>
                 ))}
               </tbody>

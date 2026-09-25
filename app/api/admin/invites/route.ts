@@ -17,8 +17,11 @@ async function ownedScorecardId(): Promise<number | null> {
   return mine.some((s) => s.id === id) ? id : null;
 }
 
-// GET: recipient summary + recent recipients for the Distribution tab.
-export async function GET() {
+// GET: recipient summary + recipients for the Distribution tab. ?status=
+// queued|invited|completed narrows the list (default: everything); sent and
+// completed rows come newest send first, queued rows newest import first.
+export async function GET(req: NextRequest) {
+  const filter = req.nextUrl.searchParams.get('status') ?? 'all';
   const accountId = getSessionAccountId();
   const scorecardId = await ownedScorecardId();
   if (accountId == null || scorecardId == null) {
@@ -42,9 +45,20 @@ export async function GET() {
 
   // Only invite-originated rows: organic completions have no invited_at.
   const rows = (leads ?? []).filter((l) => l.status === 'invited' || l.invited_at != null);
-  const queued = rows.filter((l) => l.status === 'invited' && !l.invited_at).length;
-  const sent = rows.filter((l) => l.invited_at != null && l.status !== 'completed').length;
-  const completed = rows.filter((l) => l.invited_at != null && l.status === 'completed').length;
+  const isQueued = (l: { status: string; invited_at: string | null }) => l.status === 'invited' && !l.invited_at;
+  const isSent = (l: { status: string; invited_at: string | null }) => l.invited_at != null && l.status !== 'completed';
+  const isDone = (l: { status: string; invited_at: string | null }) => l.invited_at != null && l.status === 'completed';
+  const queued = rows.filter(isQueued).length;
+  const sent = rows.filter(isSent).length;
+  const completed = rows.filter(isDone).length;
+  const listed =
+    filter === 'queued'
+      ? rows.filter(isQueued)
+      : filter === 'invited'
+        ? rows.filter(isSent).sort((a, b) => String(b.invited_at).localeCompare(String(a.invited_at)))
+        : filter === 'completed'
+          ? rows.filter(isDone).sort((a, b) => String(b.invited_at).localeCompare(String(a.invited_at)))
+          : rows;
   const config = await getConfig(scorecardId);
   const drip = config.inviteEmail?.drip;
   return NextResponse.json({
@@ -52,7 +66,8 @@ export async function GET() {
     sent,
     completed,
     suppressed: suppressed ?? 0,
-    recent: rows.slice(0, 100),
+    recent: listed.slice(0, 100),
+    listedTotal: listed.length,
     drip: drip?.enabled ? { perDay: drip.perDay, startedAt: drip.startedAt ?? null, sentToday: await sentInLastDay(scorecardId) } : null,
   });
 }
