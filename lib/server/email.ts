@@ -27,22 +27,12 @@ export interface EmailMessage {
 // address as the reply-to instead.
 const FREE_MAIL = /@(gmail|googlemail|outlook|hotmail|live|yahoo|icloud|me|aol)\./i;
 
-// Who to address an email to when the list is patchy: the first name when
-// there is one, the organisation's committee when only the organisation is
-// known (club lists are mostly generic inboxes), else "there".
-//   {greeting_name}  Shahla · Table Tennis ACT committee · there
-//   {greeting}       Hi Shahla, · Hi Table Tennis ACT committee, · Hi there,
-export function greetingName(firstName: string, business: string): string {
-  const first = (firstName ?? '').trim();
-  if (first) return first;
-  const org = (business ?? '').trim();
-  if (org) return /committee/i.test(org) ? org : `${org} committee`;
-  return 'there';
-}
-
-export function greetingFields(firstName: string, business: string): { greeting: string; greeting_name: string } {
-  const name = greetingName(firstName, business);
-  return { greeting_name: name, greeting: `Hi ${name},` };
+// {first_name_business}: the first name when there is one, else the
+// business / organisation name. For lists where a person is only sometimes
+// known but the organisation always is (club committees, generic inboxes),
+// so "Hi {first_name_business}," never renders as "Hi ,".
+export function firstNameOrBusiness(firstName: string, business: string): string {
+  return (firstName ?? '').trim() || (business ?? '').trim();
 }
 
 export function mergeFields(template: string, fields: Record<string, string | number>): string {
@@ -111,7 +101,7 @@ export function resultEmailFields(ctx: ResultEmailContext, color = '#1c78fe'): R
   return {
     ...ctx,
     business: ctx.business ?? '',
-    ...greetingFields(ctx.first_name, ctx.business ?? ''),
+    first_name_business: firstNameOrBusiness(ctx.first_name, ctx.business ?? ''),
     answers_summary: ctx.answers_summary ?? '',
     report_download: emailButton(ctx.report_link, 'Download my report (PDF)', color),
     results_button: emailButton(ctx.results_link, 'View my results', color),

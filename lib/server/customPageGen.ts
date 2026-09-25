@@ -68,7 +68,7 @@ CREATIVE DIRECTION — this is where you earn your keep:
 
 const RESULTS_RULES = `
 Extra merge tags available on this RESULTS page (live per-lead data — use them, do not invent slot copy for data):
-  {{lead.first_name}} {{lead.business}} — greet the reader personally.
+  {{lead.first_name}} {{lead.business}} — greet the reader personally. {{lead.first_name_business}} — first name when known, else the business, for lists where a person is not always known.
   {{score.overall}} — overall percentage number. {{tier.label}} {{tier.color}} — their result tier.
   {{tier.headline}} {{tier.body}} — the tier-specific result copy (body is pre-formatted paragraphs; place inside a <div>).
   Charts (pre-rendered, inherit text colour from their container — pick the 2–3 that best fit your design; always include one overall chart and one per-category chart):

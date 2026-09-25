@@ -14,6 +14,7 @@ import { tierFor } from './scoring';
 //   {{scorecard.title}}
 // Results pages additionally get live data:
 //   {{lead.first_name}} {{lead.last_name}} {{lead.email}} {{lead.business}}
+//   {{lead.first_name_business}}  first name when known, else business
 //   {{score.overall}} {{score.total}} {{score.max}}
 //   {{tier.key}} {{tier.label}} {{tier.color}} {{tier.headline}} {{tier.body}}
 //   {{category:KEY.label}} .percent .tierLabel .color .text
@@ -477,6 +478,7 @@ export function mergeCustomPage(
     'lead.last_name': escapeHtml(data.lead?.last_name ?? ''),
     'lead.email': escapeHtml(data.lead?.email ?? ''),
     'lead.business': escapeHtml(data.lead?.business ?? ''),
+    'lead.first_name_business': escapeHtml((data.lead?.first_name ?? '').trim() || data.lead?.business || ''),
     'score.overall': String(data.overall ?? ''),
     'score.total': String(data.total ?? ''),
     'score.max': String(data.max ?? ''),

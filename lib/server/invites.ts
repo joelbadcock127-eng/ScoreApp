@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { ScorecardConfig } from '../types';
-import { applyEmailSpacing, emailButton, greetingFields, mergeFields, withEmailHeader } from './email';
+import { applyEmailSpacing, emailButton, firstNameOrBusiness, mergeFields, withEmailHeader } from './email';
 
 // ——— Unsubscribe tokens: <leadId>.<hmac> ————————————————————————————————
 // Signed with the same secret chain as sessions so no new env var is needed.
@@ -54,7 +54,7 @@ export function inviteFields(
     last_name: lead.last_name,
     email: lead.email,
     business: lead.business,
-    ...greetingFields(lead.first_name, lead.business),
+    first_name_business: firstNameOrBusiness(lead.first_name, lead.business),
     scorecard_name: config.title,
     invite_link: inviteLink,
     invite_button: emailButton(inviteLink, `Get your score`, primaryColor),
