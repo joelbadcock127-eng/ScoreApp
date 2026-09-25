@@ -484,6 +484,8 @@ export async function PUT(req: NextRequest) {
       lineSpacing: lineSpacing(r.lineSpacing),
       senderName: String(r.senderName ?? '').slice(0, 200),
       senderAddress: String(r.senderAddress ?? '').slice(0, 300),
+      // Drip state is set by the Send button, never by the template editor.
+      drip: config.inviteEmail?.drip,
     };
   }
 

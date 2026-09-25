@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionAccountId } from '@/lib/server/auth';
-import { getActiveOrDefaultId, listMyScorecards } from '@/lib/server/config';
+import { getActiveOrDefaultId, getConfig, listMyScorecards } from '@/lib/server/config';
+import { sentInLastDay } from '@/lib/server/inviteSend';
 import { supabaseAdmin } from '@/lib/server/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -44,12 +45,15 @@ export async function GET() {
   const queued = rows.filter((l) => l.status === 'invited' && !l.invited_at).length;
   const sent = rows.filter((l) => l.invited_at != null && l.status !== 'completed').length;
   const completed = rows.filter((l) => l.invited_at != null && l.status === 'completed').length;
+  const config = await getConfig(scorecardId);
+  const drip = config.inviteEmail?.drip;
   return NextResponse.json({
     queued,
     sent,
     completed,
     suppressed: suppressed ?? 0,
     recent: rows.slice(0, 100),
+    drip: drip?.enabled ? { perDay: drip.perDay, startedAt: drip.startedAt ?? null, sentToday: await sentInLastDay(scorecardId) } : null,
   });
 }
 

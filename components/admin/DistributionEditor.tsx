@@ -28,6 +28,7 @@ interface Summary {
   sent: number;
   completed: number;
   suppressed: number;
+  drip: { perDay: number; startedAt: string | null; sentToday: number } | null;
   recent: Recipient[];
 }
 
@@ -192,6 +193,40 @@ export default function DistributionEditor({
   const [progress, setProgress] = useState<{ sent: number; failed: number; remaining: number } | null>(null);
   const [sendErr, setSendErr] = useState('');
   const stopRef = useRef(false);
+
+  // ——— Drip: a fixed number per day instead of the whole queue at once. ——
+  const [drip, setDrip] = useState(false);
+  const [perDay, setPerDay] = useState(10);
+  const dripOn = summary?.drip ?? null;
+
+  async function startDrip() {
+    setSending(true);
+    setSendErr('');
+    const res = await fetch('/api/admin/invites/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm: true, drip: { perDay } }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) setSendErr(json.error || 'Send failed.');
+    else {
+      setProgress({ sent: json.sent ?? 0, failed: json.failed ?? 0, remaining: json.remaining ?? 0 });
+      if (json.errors?.length) setSendErr(json.errors[0]);
+    }
+    setSending(false);
+    refresh();
+  }
+
+  async function pauseDrip() {
+    setSending(true);
+    await fetch('/api/admin/invites/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ drip: { enabled: false } }),
+    });
+    setSending(false);
+    refresh();
+  }
 
   async function sendAll() {
     setSending(true);
@@ -446,15 +481,65 @@ export default function DistributionEditor({
             most countries, including under the Australian Spam Act.
           </span>
         </label>
+        {dripOn ? (
+          <div className="mt-5 rounded-md bg-blue-50 px-4 py-3 text-sm text-ink">
+            <p>
+              <b>Drip is running:</b> {dripOn.perDay} a day. {dripOn.sentToday} sent in the last 24 hours, {queued} still
+              queued. The next lot goes out automatically each morning until the queue is empty. Anything you import
+              joins the queue.
+            </p>
+            <button
+              onClick={pauseDrip}
+              disabled={sending}
+              className="mt-3 rounded-md border border-gray-300 bg-white px-5 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-60"
+            >
+              {sending ? 'Pausing…' : 'Pause drip'}
+            </button>
+          </div>
+        ) : (
+          <label className="mt-4 flex cursor-pointer flex-wrap items-center gap-3 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={drip}
+              onChange={(e) => setDrip(e.target.checked)}
+              className="h-4 w-4 accent-[color:var(--primary)]"
+            />
+            <span>Drip</span>
+            {drip && (
+              <>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={perDay}
+                  onChange={(e) => setPerDay(Math.max(1, Math.min(100, Math.round(Number(e.target.value) || 1))))}
+                  className="w-20 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <span className="text-muted">
+                  per day. Sends that many now, then the same again each morning until the queue is empty. Watch the
+                  replies from the first day or two before the rest go out.
+                </span>
+              </>
+            )}
+          </label>
+        )}
         <div className="mt-5 flex flex-wrap items-center gap-4">
-          <button
-            onClick={sendAll}
-            disabled={sending || !consent || queued === 0}
-            className="rounded-md bg-primary px-8 py-2.5 font-medium text-white hover:brightness-110 disabled:opacity-60"
-          >
-            {sending ? 'Sending…' : queued > 0 ? `Send ${queued} invite${queued === 1 ? '' : 's'}` : 'Nothing queued'}
-          </button>
-          {sending && (
+          {!dripOn && (
+            <button
+              onClick={drip ? startDrip : sendAll}
+              disabled={sending || !consent || queued === 0}
+              className="rounded-md bg-primary px-8 py-2.5 font-medium text-white hover:brightness-110 disabled:opacity-60"
+            >
+              {sending
+                ? 'Sending…'
+                : queued === 0
+                  ? 'Nothing queued'
+                  : drip
+                    ? `Start drip: ${Math.min(perDay, queued)} today, ${perDay} a day`
+                    : `Send ${queued} invite${queued === 1 ? '' : 's'}`}
+            </button>
+          )}
+          {sending && !drip && (
             <button
               onClick={() => (stopRef.current = true)}
               className="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium hover:bg-gray-50"

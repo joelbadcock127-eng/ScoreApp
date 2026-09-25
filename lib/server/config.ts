@@ -142,7 +142,7 @@ export async function insertScorecard(name: string, config: ScorecardConfig, acc
   return data.id as number;
 }
 
-const fetchConfigById = cache(async (id: number): Promise<ScorecardConfig | null> => {
+export const fetchConfigById = cache(async (id: number): Promise<ScorecardConfig | null> => {
   const sb = supabaseAdmin();
   const { data, error } = await sb.from('scorecard_config').select('config').eq('id', id).maybeSingle();
   if (error) throw error;

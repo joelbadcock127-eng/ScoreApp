@@ -38,6 +38,8 @@ Next.js + Tailwind on the front, Supabase for storage, the Claude API (Haiku) fo
    - `ANTHROPIC_API_KEY` — enables real AI Builder generation (keep it in the deployment's
      env settings only; never commit it)
    - `AI_BUILDER_MOCK=1` — force sample mode even with a key
+   - `CRON_SECRET` — protects the daily invite drip job (`/api/cron/invites`, scheduled in
+     `vercel.json`). Set it in the deployment's env settings or drips never send.
 3. `npm install && npm run dev`
 
 Scoring: each answer scores its position (1–5). Category % = points / max points;

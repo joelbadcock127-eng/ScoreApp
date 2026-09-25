@@ -210,6 +210,10 @@ export interface InviteEmailConfig {
   // (business name + physical/postal address — required by anti-spam law).
   senderName: string;
   senderAddress: string;
+  // Drip sending: instead of the whole queue at once, up to perDay invites
+  // every 24 hours until the queue is empty. Started from the Send button
+  // (which records consent); continued by the daily job.
+  drip?: { enabled: boolean; perDay: number; startedAt?: string };
 }
 
 export interface Branding {

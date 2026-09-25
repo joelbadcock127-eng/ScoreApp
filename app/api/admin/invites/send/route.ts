@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionAccount, getSessionAccountId } from '@/lib/server/auth';
-import { getActiveOrDefaultId, getConfig, listMyScorecards, publicOrigin } from '@/lib/server/config';
+import { getActiveOrDefaultId, getConfig, listMyScorecards, publicOrigin, saveConfig } from '@/lib/server/config';
 import { sendEmail } from '@/lib/server/email';
 import { InviteRecipient, renderInvite } from '@/lib/server/invites';
+import { DRIP_MAX_PER_DAY, inviteBlocker, sendDripAllowance, sendInvitePass } from '@/lib/server/inviteSend';
 import { signatureHtmlForScorecard } from '@/lib/server/signature';
-import { supabaseAdmin } from '@/lib/server/supabase';
 import { stripTags } from '@/lib/richtext';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// One click sends one batch; the client keeps calling while `remaining` > 0.
-// Small batches keep each invocation well inside serverless time limits and
-// under provider rate limits.
-const BATCH_SIZE = 20;
-const SEND_GAP_MS = 550; // Resend allows ~2 requests/second
+// POST actions:
+//   { test: true, to }                  a rendered test invite to one address
+//   { confirm: true }                   one batch (~20) of the queue; the
+//                                       client keeps calling while remaining > 0
+//   { confirm: true, drip: { perDay } } start a drip: record it on the
+//                                       scorecard, send today's allowance now;
+//                                       the daily job sends the rest
+//   { drip: { enabled: false } }        pause the drip (queue stays)
 
 async function ownedScorecardId(): Promise<number | null> {
   if (getSessionAccountId() == null) return null;
   const id = await getActiveOrDefaultId();
   const mine = await listMyScorecards();
   return mine.some((s) => s.id === id) ? id : null;
-}
-
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 export async function POST(req: NextRequest) {
@@ -37,22 +36,17 @@ export async function POST(req: NextRequest) {
   const config = await getConfig(scorecardId);
   const ie = config.inviteEmail;
 
-  if (!ie || !stripTags(ie.content ?? '').trim() || !(ie.subject ?? '').trim()) {
-    return NextResponse.json({ error: 'Write and save the invite email (subject and content) first.' }, { status: 400 });
-  }
-  if (!ie.senderName.trim()) {
-    return NextResponse.json(
-      { error: 'Add your sender identification (business name) first — anti-spam law requires every bulk email to say who it’s from.' },
-      { status: 400 }
-    );
+  // ——— Pause a drip: no email involved, so no template checks. ——————————
+  if (body.drip && typeof body.drip === 'object' && body.drip.enabled === false) {
+    if (ie?.drip) {
+      config.inviteEmail = { ...ie, drip: { ...ie.drip, enabled: false } };
+      await saveConfig(config, scorecardId);
+    }
+    return NextResponse.json({ ok: true, drip: null });
   }
 
-  // Links point at the scorecard's own address (custom domain or subdomain),
-  // not the admin host the send was triggered from.
-  const origin = await publicOrigin(scorecardId, req.nextUrl.origin);
-  const sb = supabaseAdmin();
-  // Account signature (if configured) is appended to every invite.
-  const signatureHtml = await signatureHtmlForScorecard(scorecardId);
+  const blocker = inviteBlocker(config);
+  if (blocker || !ie) return NextResponse.json({ error: blocker ?? 'No invite email configured.' }, { status: 400 });
 
   // ——— Test send: the rendered invite with sample data, to the admin. ————
   if (body.test) {
@@ -68,13 +62,13 @@ export async function POST(req: NextRequest) {
       email: to,
       business: 'Example Pty Ltd',
     };
+    // Links point at the scorecard's own address, not the admin host.
+    const origin = await publicOrigin(scorecardId, req.nextUrl.origin);
+    const signatureHtml = await signatureHtmlForScorecard(scorecardId);
     // Send the test exactly like a real invite (same subject, same mailbox-level
     // unsubscribe headers) so its spam/inbox placement reflects the real send.
-    // "[Test]"-style bracket prefixes and missing List-Unsubscribe headers both
-    // score worse with spam filters than the production email would.
     // The sample lead is not a real row, so its link runs the questions as a
-    // preview of this scorecard and ends on its thank-you page, rather than
-    // a link that cannot be completed.
+    // preview of this scorecard and ends on its thank-you page.
     const testLink = `${origin}/quiz?preview=1&scorecard=${scorecardId}`;
     const { subject, html, unsubscribeUrl } = renderInvite(config, sample, origin, signatureHtml, testLink);
     const result = await sendEmail({
@@ -97,7 +91,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // ——— Real batch. Requires the sender's explicit consent confirmation. ——
+  // ——— Real sends require the sender's explicit consent confirmation. ——
   if (body.confirm !== true) {
     return NextResponse.json(
       { error: 'Confirm that your recipients consented to hear from you before sending.' },
@@ -105,69 +99,23 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data: queued, error } = await sb
-    .from('leads')
-    .select('id, first_name, last_name, email, business')
-    .eq('scorecard_id', scorecardId)
-    .eq('status', 'invited')
-    .is('invited_at', null)
-    .order('created_at', { ascending: true })
-    .limit(BATCH_SIZE);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const batch = (queued ?? []) as InviteRecipient[];
-  if (batch.length === 0) return NextResponse.json({ sent: 0, failed: 0, remaining: 0, errors: [] });
-
-  // Suppression is re-checked at send time, not just at import, so an
-  // unsubscribe between the two is always honoured.
-  const { data: sup } = await sb
-    .from('suppressions')
-    .select('email')
-    .eq('account_id', accountId)
-    .in('email', batch.map((l) => l.email));
-  const suppressedSet = new Set((sup ?? []).map((s) => String(s.email).toLowerCase()));
-
-  let sent = 0;
-  let failed = 0;
-  const errors: string[] = [];
-  for (const lead of batch) {
-    if (suppressedSet.has(lead.email.toLowerCase())) {
-      // Drop silently from the queue — they asked not to be emailed.
-      await sb.from('leads').update({ invited_at: new Date().toISOString(), status: 'unsubscribed' }).eq('id', lead.id);
-      continue;
+  try {
+    // ——— Start a drip: save it, then send today's allowance. ————————————
+    if (body.drip && typeof body.drip === 'object') {
+      const perDay = Math.round(Number(body.drip.perDay));
+      if (!Number.isFinite(perDay) || perDay < 1 || perDay > DRIP_MAX_PER_DAY) {
+        return NextResponse.json({ error: `Enter how many to send per day, from 1 to ${DRIP_MAX_PER_DAY}.` }, { status: 400 });
+      }
+      config.inviteEmail = { ...ie, drip: { enabled: true, perDay, startedAt: new Date().toISOString() } };
+      await saveConfig(config, scorecardId);
+      const r = await sendDripAllowance(scorecardId, accountId, config, req.nextUrl.origin);
+      return NextResponse.json({ ...r, drip: { perDay } });
     }
-    const { subject, html, unsubscribeUrl } = renderInvite(config, lead, origin, signatureHtml);
-    const result = await sendEmail({
-      to: [lead.email],
-      subject: stripTags(subject),
-      html,
-      fromAddress: ie.fromAddress || undefined,
-      fromName: ie.fromName || undefined,
-      replyTo: ie.replyTo || undefined,
-      apiKey: config.email?.apiKey,
-      // One-click unsubscribe at the mailbox level (Gmail/Yahoo require this
-      // for bulk senders).
-      headers: {
-        'List-Unsubscribe': `<${unsubscribeUrl}>`,
-        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-      },
-    });
-    if (result.sent) {
-      sent++;
-      await sb.from('leads').update({ invited_at: new Date().toISOString() }).eq('id', lead.id);
-    } else {
-      failed++;
-      if (errors.length < 3) errors.push(result.error || 'send failed');
-      if (result.provider === 'none' || /rate|quota|limit|429/i.test(result.error ?? '')) break; // stop the batch, keep the queue
-    }
-    await sleep(SEND_GAP_MS);
+
+    // ——— Send everything, one batch per call. ——————————————————————————
+    const r = await sendInvitePass(scorecardId, accountId, config, req.nextUrl.origin);
+    return NextResponse.json(r);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Send failed.' }, { status: 500 });
   }
-
-  const { count: remaining } = await sb
-    .from('leads')
-    .select('id', { count: 'exact', head: true })
-    .eq('scorecard_id', scorecardId)
-    .eq('status', 'invited')
-    .is('invited_at', null);
-
-  return NextResponse.json({ sent, failed, remaining: remaining ?? 0, errors });
 }
