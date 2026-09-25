@@ -18,10 +18,19 @@ async function scorecardParam(raw: string | undefined): Promise<number | undefin
   return all.some((s) => s.id === id) ? id : undefined;
 }
 
+async function leadRow(leadId: string | undefined): Promise<{ scorecard_id: number | null; first_name: string } | null> {
+  if (!leadId || !/^[0-9a-f-]{36}$/i.test(leadId)) return null;
+  const { data } = await supabaseAdmin()
+    .from('leads')
+    .select('scorecard_id, first_name')
+    .eq('id', leadId)
+    .maybeSingle<{ scorecard_id: number | null; first_name: string }>();
+  return data ?? null;
+}
+
 async function leadScorecardId(leadId: string | undefined): Promise<number | undefined> {
-  if (!leadId || !/^[0-9a-f-]{36}$/i.test(leadId)) return undefined;
-  const { data } = await supabaseAdmin().from('leads').select('scorecard_id').eq('id', leadId).maybeSingle();
-  return data?.scorecard_id ? (data.scorecard_id as number) : undefined;
+  const row = await leadRow(leadId);
+  return row?.scorecard_id ? row.scorecard_id : undefined;
 }
 
 // Favicon from the scorecard the lead started on (matching the page body's
@@ -44,8 +53,12 @@ export default async function QuizPage({ searchParams }: { searchParams: Params 
 
   if (leadId) {
     // Questions must come from the scorecard the lead started on, not the default.
-    const config = await getConfig(await leadScorecardId(leadId));
-    return <QuizFlow leadId={leadId} {...common(config)} />;
+    const row = await leadRow(leadId);
+    const config = await getConfig(row?.scorecard_id ?? undefined);
+    // Imported from a list with no contact name (a club's shared inbox):
+    // ask just for their name after the last question.
+    const askName = row != null && !(row.first_name ?? '').trim();
+    return <QuizFlow leadId={leadId} askNameAtEnd={askName} {...common(config)} />;
   }
 
   if (preview) {

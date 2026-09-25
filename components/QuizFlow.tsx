@@ -56,6 +56,7 @@ export default function QuizFlow({
   mode = 'scorecard',
   scorecardId,
   leadForm,
+  askNameAtEnd = false,
 }: {
   leadId: string;
   questions: Question[];
@@ -72,8 +73,20 @@ export default function QuizFlow({
   // the last question, the lead is created then, and the answers saved to it.
   scorecardId?: number;
   leadForm?: ScorecardConfig['leadForm'];
+  // An invited lead with no name on file: after the last question, ask just
+  // for their name, then save the answers to their existing lead.
+  askNameAtEnd?: boolean;
 }) {
   const detailsAtEnd = Boolean(leadForm && scorecardId != null);
+  const NAME_FIELDS: ScorecardConfig['leadForm']['fields'] = [
+    { key: 'first_name', label: 'First name', type: 'text', required: true, enabled: true },
+    { key: 'last_name', label: 'Last name', type: 'text', required: false, enabled: true },
+  ];
+  const endForm: ScorecardConfig['leadForm'] | undefined = detailsAtEnd
+    ? leadForm
+    : askNameAtEnd
+      ? { heading: 'Last thing: who should we send the results to?', fields: NAME_FIELDS, submitLabel: 'Finish' }
+      : undefined;
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [choices, setChoices] = useState<Record<string, number[]>>({}); // selected option indices
@@ -176,7 +189,7 @@ export default function QuizFlow({
       router.push(previewScorecardId != null ? `/results/preview?scorecard=${previewScorecardId}` : '/results/preview');
       return;
     }
-    if (detailsAtEnd) {
+    if (endForm) {
       // Answers are held on the client until the respondent gives their details.
       setError('');
       setAskDetails(true);
@@ -196,15 +209,26 @@ export default function QuizFlow({
   // the answers held on the client to it.
   async function submitDetails(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!leadForm) return;
+    if (!endForm) return;
     setSubmitting(true);
     setError('');
     const form = new FormData(e.currentTarget);
     const payload: Record<string, unknown> = { scorecard_id: scorecardId };
-    for (const f of leadForm.fields.filter((f) => f.enabled)) {
+    for (const f of endForm.fields.filter((f) => f.enabled)) {
       payload[f.key] = f.type === 'checkbox' ? form.get(f.key) === 'on' : form.get(f.key) ?? '';
     }
     try {
+      if (!detailsAtEnd) {
+        // Existing invited lead: add the name, then save their answers to it.
+        const res = await fetch(`/api/leads/${leadId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_details', first_name: payload.first_name, last_name: payload.last_name }),
+        });
+        if (!res.ok) throw new Error('Something went wrong. Please try again.');
+        await complete(leadId, answers);
+        return;
+      }
       const res = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,7 +271,7 @@ export default function QuizFlow({
         </header>
       )}
 
-      {askDetails && leadForm ? (
+      {askDetails && endForm ? (
         <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center px-6 pb-16">
           <button
             onClick={() => setAskDetails(false)}
@@ -260,18 +284,18 @@ export default function QuizFlow({
             className={`${alignClass} text-3xl font-medium leading-snug md:text-4xl`}
             style={{ color: cfg.questions.questionTextColor }}
           >
-            {leadForm.heading}
+            {endForm.heading}
           </h1>
           <form onSubmit={submitDetails} className="mx-auto mt-10 w-full max-w-md rounded-xl bg-white p-6 shadow-card">
-            <LeadFormFields fields={leadForm.fields} />
+            <LeadFormFields fields={endForm.fields} />
             {error && <p className="mt-4 text-sm text-tier-low">{error}</p>}
             <button
               type="submit"
               disabled={submitting}
               className="mt-6 flex w-full items-center justify-center gap-3 rounded-md py-4 text-lg font-medium text-white transition hover:brightness-110 disabled:opacity-60"
-              style={{ backgroundColor: leadForm.buttonColor || buttonColor }}
+              style={{ backgroundColor: endForm.buttonColor || buttonColor }}
             >
-              {submitting ? 'Submitting…' : leadForm.submitLabel}
+              {submitting ? 'Submitting…' : endForm.submitLabel}
             </button>
           </form>
         </div>
