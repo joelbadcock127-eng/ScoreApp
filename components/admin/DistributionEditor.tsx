@@ -195,6 +195,33 @@ export default function DistributionEditor({
   const [sendErr, setSendErr] = useState('');
   const stopRef = useRef(false);
 
+  // ——— Remove queued recipients before they are sent. ——————————————————
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [removing, setRemoving] = useState(false);
+  const queuedRows = (summary?.recent ?? []).filter((r) => r.status === 'invited' && !r.invited_at);
+  const allPicked = queuedRows.length > 0 && queuedRows.every((r) => picked.has(r.id));
+  function togglePick(id: string) {
+    const next = new Set(picked);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setPicked(next);
+  }
+  function togglePickAll() {
+    setPicked(allPicked ? new Set() : new Set(queuedRows.map((r) => r.id)));
+  }
+  async function removePicked() {
+    if (picked.size === 0) return;
+    setRemoving(true);
+    await fetch('/api/admin/invites', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: Array.from(picked) }),
+    });
+    setPicked(new Set());
+    setRemoving(false);
+    refresh();
+  }
+
   // ——— Drip: a fixed number per day instead of the whole queue at once. ——
   const [drip, setDrip] = useState(false);
   const [perDay, setPerDay] = useState(10);
@@ -561,11 +588,33 @@ export default function DistributionEditor({
       {/* Recipients */}
       {summary && summary.recent.length > 0 && (
         <>
-          <p className={`${SECTION_LABEL} mt-10`}>Recipients</p>
+          <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
+            <p className={SECTION_LABEL}>Recipients</p>
+            {queuedRows.length > 0 && (
+              <button
+                onClick={removePicked}
+                disabled={removing || picked.size === 0}
+                className="rounded-md border border-gray-300 bg-white px-4 py-1.5 text-sm font-medium text-tier-low hover:bg-red-50 disabled:opacity-50"
+              >
+                {removing ? 'Removing…' : picked.size > 0 ? `Remove ${picked.size} from queue` : 'Tick queued rows to remove them'}
+              </button>
+            )}
+          </div>
           <div className={`${CARD} mt-3 overflow-x-auto p-0`}>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="w-10 px-4 py-3">
+                    {queuedRows.length > 0 && (
+                      <input
+                        type="checkbox"
+                        aria-label="Select all queued"
+                        checked={allPicked}
+                        onChange={togglePickAll}
+                        className="h-4 w-4 accent-[color:var(--primary)]"
+                      />
+                    )}
+                  </th>
                   <th className="px-5 py-3 font-semibold">Email</th>
                   <th className="px-5 py-3 font-semibold">Name</th>
                   <th className="px-5 py-3 font-semibold">Business</th>
@@ -575,7 +624,18 @@ export default function DistributionEditor({
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {summary.recent.map((r) => (
-                  <tr key={r.id}>
+                  <tr key={r.id} className={picked.has(r.id) ? 'bg-red-50/60' : undefined}>
+                    <td className="px-4 py-2.5">
+                      {r.status === 'invited' && !r.invited_at && (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${r.email}`}
+                          checked={picked.has(r.id)}
+                          onChange={() => togglePick(r.id)}
+                          className="h-4 w-4 accent-[color:var(--primary)]"
+                        />
+                      )}
+                    </td>
                     <td className="px-5 py-2.5">{r.email}</td>
                     <td className="px-5 py-2.5">{[r.first_name, r.last_name].filter(Boolean).join(' ')}</td>
                     <td className="px-5 py-2.5 text-muted">{r.business}</td>

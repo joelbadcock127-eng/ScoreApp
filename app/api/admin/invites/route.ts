@@ -126,3 +126,29 @@ export async function POST(req: NextRequest) {
     invalid,
   });
 }
+
+// DELETE: remove queued recipients (imported, not yet sent) from this
+// scorecard. Body: { ids: string[] }. Rows that have already been invited or
+// completed are never touched, so history stays intact.
+export async function DELETE(req: NextRequest) {
+  const accountId = getSessionAccountId();
+  const scorecardId = await ownedScorecardId();
+  if (accountId == null || scorecardId == null) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  const body = await req.json().catch(() => null);
+  const ids = Array.isArray(body?.ids)
+    ? body.ids.filter((id: unknown) => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)).slice(0, 500)
+    : [];
+  if (ids.length === 0) return NextResponse.json({ removed: 0 });
+  const { data, error } = await supabaseAdmin()
+    .from('leads')
+    .delete()
+    .eq('scorecard_id', scorecardId)
+    .eq('status', 'invited')
+    .is('invited_at', null)
+    .in('id', ids)
+    .select('id');
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ removed: data?.length ?? 0 });
+}
